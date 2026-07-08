@@ -1,0 +1,16 @@
+{
+  "name": "student-book-tracker",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run tauri -w @app/desktop -- dev",
+    "dev:api": "npm run dev -w @app/sync-api",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "npm run lint --workspaces"
+  }
+}
