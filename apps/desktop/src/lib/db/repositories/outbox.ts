@@ -1,3 +1,5 @@
+import type { SyncCommand } from "@app/shared";
+
 import type { SqlDatabase } from "../local-db";
 
 export type OutboxStatus = "pending" | "syncing" | "synced" | "rejected";
@@ -36,6 +38,23 @@ export async function enqueueOutboxCommand(database: SqlDatabase, row: OutboxRow
       row.updatedAt,
     ],
   );
+}
+
+export async function enqueueSyncCommand(
+  database: SqlDatabase,
+  command: SyncCommand,
+  createdAt: string,
+): Promise<void> {
+  await enqueueOutboxCommand(database, {
+    id: command.id,
+    commandType: command.type,
+    payloadJson: JSON.stringify(command),
+    status: "pending",
+    attempts: 0,
+    lastError: null,
+    createdAt,
+    updatedAt: createdAt,
+  });
 }
 
 export async function listPendingOutboxRows(database: SqlDatabase): Promise<OutboxRow[]> {

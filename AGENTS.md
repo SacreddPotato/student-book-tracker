@@ -96,7 +96,24 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
 - Environment note: local desktop SQLite data is created at `%APPDATA%\com.studentbooktracker.app\student-book-tracker.db` during Tauri dev runs.
 
+### Segment 5: Local Inventory Transactions
+
+- Status: completed on `pre-release`.
+- Added `apps/desktop/src/lib/services/inventory-service.ts` with local-first workflows for `addBookStock`, `issueBooksToStudent`, and `reverseTransaction`.
+- Stock increases now create an inventory transaction and item, update book quantity, and enqueue an `ADD_BOOK_STOCK` outbox command.
+- Student issue now validates all selected books have stock before mutating, creates transaction items and `student_books` rows, decrements book quantities, and enqueues `ISSUE_BOOKS_TO_STUDENT`.
+- Reversal now creates an inverse transaction, updates the original transaction reversal pointer, restores affected book quantities, marks issued student books reversed when relevant, and enqueues `REVERSE_TRANSACTION`.
+- Added repository helpers for book/student lookups, transaction lookup, issued-book rows, and reversal updates.
+- Added `apps/desktop/src/lib/services/inventory-service.test.ts` covering stock increase, student issue decrement, zero-stock local failure, reversal stock restore, and double-reversal failure.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/services/inventory-service.test.ts`
+  - `npm run test -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- Segment 5 should implement local inventory transactions.
-- Start with service tests for stock increase, student issue decrement, zero-stock issue failure, reversal stock restore, and double reversal failure.
+- Segment 6 should build the Books tab UI.
+- Start by wiring book list/form tests against the local DB/repository layer and the `addBookStock` service.

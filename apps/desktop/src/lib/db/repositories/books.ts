@@ -62,6 +62,42 @@ export async function listBooks(database: SqlDatabase): Promise<BookRow[]> {
   );
 }
 
+export async function getBookById(database: SqlDatabase, bookId: string): Promise<BookRow | null> {
+  const rows = await database.select<BookRow>(
+    `SELECT
+      id,
+      scope_id AS scopeId,
+      name,
+      education_stage AS educationStage,
+      quantity,
+      created_at AS createdAt,
+      updated_at AS updatedAt,
+      deleted_at AS deletedAt
+    FROM books
+    WHERE id = $1
+      AND deleted_at IS NULL`,
+    [bookId],
+  );
+
+  return rows[0] ?? null;
+}
+
+export async function getBooksByIds(
+  database: SqlDatabase,
+  bookIds: readonly string[],
+): Promise<BookRow[]> {
+  const books: BookRow[] = [];
+
+  for (const bookId of bookIds) {
+    const book = await getBookById(database, bookId);
+    if (book) {
+      books.push(book);
+    }
+  }
+
+  return books;
+}
+
 export async function updateBookQuantity(
   database: SqlDatabase,
   bookId: string,

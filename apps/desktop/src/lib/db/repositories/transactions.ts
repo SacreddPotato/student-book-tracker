@@ -22,6 +22,16 @@ export type InventoryTransactionItemRow = {
   createdAt: string;
 };
 
+export type StudentBookRow = {
+  id: string;
+  scopeId: string;
+  studentId: string;
+  bookId: string;
+  issuedTransactionId: string;
+  createdAt: string;
+  reversedAt: string | null;
+};
+
 export async function createInventoryTransaction(
   database: SqlDatabase,
   transaction: InventoryTransactionRow,
@@ -76,6 +86,30 @@ export async function createInventoryTransaction(
   }
 }
 
+export async function getInventoryTransactionById(
+  database: SqlDatabase,
+  transactionId: string,
+): Promise<InventoryTransactionRow | null> {
+  const rows = await database.select<InventoryTransactionRow>(
+    `SELECT
+      id,
+      scope_id AS scopeId,
+      type,
+      student_id AS studentId,
+      reversed_transaction_id AS reversedTransactionId,
+      reversed_by_transaction_id AS reversedByTransactionId,
+      device_id AS deviceId,
+      command_id AS commandId,
+      occurred_at AS occurredAt,
+      created_at AS createdAt
+    FROM inventory_transactions
+    WHERE id = $1`,
+    [transactionId],
+  );
+
+  return rows[0] ?? null;
+}
+
 export async function listInventoryTransactions(
   database: SqlDatabase,
 ): Promise<InventoryTransactionRow[]> {
@@ -92,7 +126,7 @@ export async function listInventoryTransactions(
       occurred_at AS occurredAt,
       created_at AS createdAt
     FROM inventory_transactions
-    ORDER BY occurred_at DESC, created_at DESC`,
+    ORDER BY occurred_at DESC, created_at DESC, id DESC`,
   );
 }
 
@@ -112,5 +146,60 @@ export async function listInventoryTransactionItems(
     WHERE transaction_id = $1
     ORDER BY created_at, id`,
     [transactionId],
+  );
+}
+
+export async function createStudentBookRows(
+  database: SqlDatabase,
+  rows: StudentBookRow[],
+): Promise<void> {
+  for (const row of rows) {
+    await database.execute(
+      `INSERT INTO student_books (
+        id,
+        scope_id,
+        student_id,
+        book_id,
+        issued_transaction_id,
+        created_at,
+        reversed_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        row.id,
+        row.scopeId,
+        row.studentId,
+        row.bookId,
+        row.issuedTransactionId,
+        row.createdAt,
+        row.reversedAt,
+      ],
+    );
+  }
+}
+
+export async function markStudentBookRowsReversedForTransaction(
+  database: SqlDatabase,
+  transactionId: string,
+  reversedAt: string,
+): Promise<void> {
+  await database.execute(
+    `UPDATE student_books
+    SET reversed_at = $1
+    WHERE issued_transaction_id = $2
+      AND reversed_at IS NULL`,
+    [reversedAt, transactionId],
+  );
+}
+
+export async function markInventoryTransactionReversed(
+  database: SqlDatabase,
+  transactionId: string,
+  reversedByTransactionId: string,
+): Promise<void> {
+  await database.execute(
+    `UPDATE inventory_transactions
+    SET reversed_by_transaction_id = $1
+    WHERE id = $2`,
+    [reversedByTransactionId, transactionId],
   );
 }

@@ -66,3 +66,27 @@ export async function listStudents(database: SqlDatabase): Promise<StudentRow[]>
     ORDER BY name`,
   );
 }
+
+export async function getStudentById(
+  database: SqlDatabase,
+  studentId: string,
+): Promise<StudentRow | null> {
+  const rows = await database.select<StudentRow>(
+    `SELECT
+      id,
+      scope_id AS scopeId,
+      name,
+      government_id AS governmentId,
+      education_stage AS educationStage,
+      grade_level AS gradeLevel,
+      created_at AS createdAt,
+      updated_at AS updatedAt,
+      deleted_at AS deletedAt
+    FROM students
+    WHERE id = $1
+      AND deleted_at IS NULL`,
+    [studentId],
+  );
+
+  return rows[0] ?? null;
+}
