@@ -78,7 +78,25 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### Segment 4: Local SQLite Persistence
+
+- Status: completed on `pre-release`.
+- Installed and configured the Tauri SQL plugin for SQLite in the desktop app and Rust shell.
+- Added local SQLite schema and migration modules for all shared tables plus `sync_outbox`, `sync_state`, and `app_settings`.
+- Added repository functions for students, books, inventory transactions, transaction items, and outbox rows under `apps/desktop/src/lib/db`.
+- Desktop startup now loads the local database and runs migrations from `apps/desktop/src/routes/+layout.svelte`.
+- Added a `node:sqlite` in-memory Vitest harness for local schema, migration idempotency, and repository behavior.
+- Verification completed:
+  - `npm run test -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `cargo check` in `apps/desktop/src-tauri` with `%USERPROFILE%\.cargo\bin` prepended to PATH
+  - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
+- Environment note: local desktop SQLite data is created at `%APPDATA%\com.studentbooktracker.app\student-book-tracker.db` during Tauri dev runs.
+
 ## Next Segment Starting Point
 
-- Segment 4 should add local SQLite persistence.
-- Start by adding schema/migration tests for the required shared and local-only tables and indexes.
+- Segment 5 should implement local inventory transactions.
+- Start with service tests for stock increase, student issue decrement, zero-stock issue failure, reversal stock restore, and double reversal failure.
