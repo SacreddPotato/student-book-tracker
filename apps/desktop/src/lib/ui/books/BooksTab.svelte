@@ -71,7 +71,7 @@
   onMount(() => {
     void refreshBooks().catch(() => {
       loading = false;
-      errorKey = "errors.validationFailed";
+      errorKey = "errors.booksLoadFailed";
     });
   });
 

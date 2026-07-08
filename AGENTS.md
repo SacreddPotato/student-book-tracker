@@ -157,6 +157,24 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run build`
   - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
 
+### Frontend Cleanup: Shell Chrome, Copy, And Export Guard
+
+- Status: completed on `pre-release` after Segment 7.
+- Disabled native Tauri window decorations and added custom shell window controls for minimize, maximize, and close.
+- Replaced the shell language dropdown with a compact EN/AR toggle.
+- Removed confusing offline-only shell copy: `Offline desktop workspace` and `Offline ready`.
+- Students empty state now shows only `No students yet` when no students exist; the issue-books prompt appears only after at least one student exists and no student is selected.
+- Books and Students load failures now use tab-specific messages instead of the generic `Validation failed` copy.
+- Updated Segment 9 export planning so printing/export is disabled unless a concrete grade group is selected.
+- Segment 9 should add translated helper text: `Choose a grade group before exporting.`
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/routes/page-shell.test.ts src/lib/ui/students/students-tab.test.ts src/lib/ui/books/books-tab.test.ts`
+  - `npm run test -w @app/desktop`
+  - `npm run typecheck -w @app/desktop`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
+
 ## Next Segment Starting Point
 
 - Segment 8 should build Logs tab inventory history and reversal UI.

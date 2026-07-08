@@ -105,6 +105,44 @@ describe("StudentsTab", () => {
     database.close();
   });
 
+  it("shows only the student-empty message when no students exist", async () => {
+    render(StudentsTab, { props: { database } });
+
+    expect(await screen.findByText("No students yet")).toBeInTheDocument();
+    expect(screen.queryByText("Select a student to issue books")).not.toBeInTheDocument();
+  });
+
+  it("shows the select-student prompt when students exist but none is selected", async () => {
+    await seedStudent(database, {
+      id: "student-1",
+      name: "Mona Ahmed",
+      governmentId: "29801011234567",
+      educationStage: "primary",
+      gradeLevel: "primary1",
+    });
+
+    render(StudentsTab, { props: { database } });
+
+    expect(await screen.findByRole("row", { name: /Mona Ahmed/i })).toBeInTheDocument();
+    expect(screen.getByText("Select a student to issue books")).toBeInTheDocument();
+  });
+
+  it("uses a student-specific load error instead of the generic validation message", async () => {
+    render(StudentsTab, {
+      props: {
+        database: {
+          execute: async () => undefined,
+          select: async () => {
+            throw new Error("database unavailable");
+          },
+        },
+      },
+    });
+
+    expect(await screen.findByText("Could not load students.")).toBeInTheDocument();
+    expect(screen.queryByText("Validation failed")).not.toBeInTheDocument();
+  });
+
   it("creates and edits students with stage-specific grades and grouped filters", async () => {
     const user = userEvent.setup();
     render(StudentsTab, {

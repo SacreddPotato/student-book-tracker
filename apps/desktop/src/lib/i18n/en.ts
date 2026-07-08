@@ -1,7 +1,6 @@
 export const en = {
   app: {
     title: "Student Book Tracker",
-    eyebrow: "Offline desktop workspace",
     language: "Language",
     primarySections: "Primary sections",
     recordsCount: "0 records",
@@ -52,6 +51,11 @@ export const en = {
     export: "Export",
     addStock: "Add stock",
   },
+  window: {
+    minimize: "Minimize window",
+    maximize: "Maximize window",
+    close: "Close window",
+  },
   books: {
     inventory: "Book inventory",
     addBook: "Add book",
@@ -94,7 +98,6 @@ export const en = {
     rejectedSyncCommand: "A sync command was rejected.",
   },
   sync: {
-    offlineReady: "Offline ready",
     synced: "Synced",
     syncing: "Syncing",
     offline: "Offline",
@@ -114,7 +117,8 @@ export const en = {
     studentSignature: "student signature",
   },
   errors: {
-    validationFailed: "Validation failed",
+    studentsLoadFailed: "Could not load students.",
+    booksLoadFailed: "Could not load books.",
     insufficientStock: "Insufficient stock",
     unknownStudent: "Unknown student",
     unknownBook: "Unknown book",

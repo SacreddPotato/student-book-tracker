@@ -74,6 +74,22 @@ describe("BooksTab", () => {
     database.close();
   });
 
+  it("uses a book-specific load error instead of the generic validation message", async () => {
+    render(BooksTab, {
+      props: {
+        database: {
+          execute: async () => undefined,
+          select: async () => {
+            throw new Error("database unavailable");
+          },
+        },
+      },
+    });
+
+    expect(await screen.findByText("Could not load books.")).toBeInTheDocument();
+    expect(screen.queryByText("Validation failed")).not.toBeInTheDocument();
+  });
+
   it("updates the visible quantity after adding stock", async () => {
     const user = userEvent.setup();
     await seedBook(database, {

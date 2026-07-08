@@ -3,7 +3,6 @@ import type { TranslationDictionary } from "./en";
 export const ar = {
   app: {
     title: "متتبع كتب الطلاب",
-    eyebrow: "مساحة عمل مكتبية بلا اتصال",
     language: "اللغة",
     primarySections: "الأقسام الرئيسية",
     recordsCount: "٠ سجلات",
@@ -54,6 +53,11 @@ export const ar = {
     export: "تصدير",
     addStock: "إضافة مخزون",
   },
+  window: {
+    minimize: "تصغير النافذة",
+    maximize: "تكبير النافذة",
+    close: "إغلاق النافذة",
+  },
   books: {
     inventory: "مخزون الكتب",
     addBook: "إضافة كتاب",
@@ -96,7 +100,6 @@ export const ar = {
     rejectedSyncCommand: "تم رفض أمر مزامنة.",
   },
   sync: {
-    offlineReady: "جاهز بلا اتصال",
     synced: "تمت المزامنة",
     syncing: "جار المزامنة",
     offline: "غير متصل",
@@ -116,7 +119,8 @@ export const ar = {
     studentSignature: "توقيع الطالب",
   },
   errors: {
-    validationFailed: "فشل التحقق",
+    studentsLoadFailed: "تعذر تحميل الطلاب.",
+    booksLoadFailed: "تعذر تحميل الكتب.",
     insufficientStock: "المخزون غير كاف",
     unknownStudent: "طالب غير معروف",
     unknownBook: "كتاب غير معروف",

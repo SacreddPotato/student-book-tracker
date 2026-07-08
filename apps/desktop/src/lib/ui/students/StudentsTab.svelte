@@ -140,7 +140,7 @@
 
     void refreshStudentsAndBooks().catch(() => {
       loading = false;
-      errorKey = "errors.validationFailed";
+      errorKey = "errors.studentsLoadFailed";
     });
 
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
@@ -350,7 +350,7 @@
         onToggle={toggleDraftBook}
         onConfirm={confirmIssue}
       />
-    {:else}
+    {:else if students.length > 0}
       <aside class="student-book-placeholder">
         <p>{t("students.selectStudentPrompt")}</p>
       </aside>

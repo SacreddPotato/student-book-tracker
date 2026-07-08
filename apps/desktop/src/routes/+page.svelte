@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+
   import {
     getTranslation,
     language,
-    languages,
     setLanguage,
     type Language,
     type TranslationKey,
@@ -32,8 +33,20 @@
     return getTranslation($language, key);
   }
 
-  function handleLanguageChange(event: Event): void {
-    setLanguage((event.currentTarget as HTMLSelectElement).value as Language);
+  function selectLanguage(nextLanguage: Language): void {
+    setLanguage(nextLanguage);
+  }
+
+  async function minimizeWindow(): Promise<void> {
+    await getCurrentWindow().minimize();
+  }
+
+  async function toggleMaximizeWindow(): Promise<void> {
+    await getCurrentWindow().toggleMaximize();
+  }
+
+  async function closeWindow(): Promise<void> {
+    await getCurrentWindow().close();
   }
 
   function requestTabChange(nextTab: AppTabId): void {
@@ -66,22 +79,54 @@
 
 <main class="app-shell">
   <header class="top-bar">
-    <div>
-      <p class="eyebrow">{t("app.eyebrow")}</p>
+    <div class="title-drag-region" data-tauri-drag-region>
       <h1>{t("app.title")}</h1>
     </div>
-    <div class="header-controls">
-      <label class="language-switcher">
-        <span>{t("app.language")}</span>
-        <select value={$language} onchange={handleLanguageChange}>
-          {#each languages as availableLanguage}
-            <option value={availableLanguage}>
-              {t(`languages.${availableLanguage}`)}
-            </option>
-          {/each}
-        </select>
-      </label>
-      <div class="sync-chip" aria-label={t("sync.offlineReady")}>{t("sync.offlineReady")}</div>
+    <div class="titlebar-actions">
+      <div class="language-toggle" role="group" aria-label={t("app.language")}>
+        <button
+          type="button"
+          aria-pressed={$language === "en"}
+          class:active={$language === "en"}
+          onclick={() => selectLanguage("en")}
+        >
+          EN
+        </button>
+        <button
+          type="button"
+          aria-pressed={$language === "ar"}
+          class:active={$language === "ar"}
+          onclick={() => selectLanguage("ar")}
+        >
+          AR
+        </button>
+      </div>
+      <div class="window-controls" role="group" aria-label={t("app.title")}>
+        <button
+          type="button"
+          class="window-control"
+          aria-label={t("window.minimize")}
+          onclick={() => void minimizeWindow()}
+        >
+          <span class="window-icon minimize" aria-hidden="true"></span>
+        </button>
+        <button
+          type="button"
+          class="window-control"
+          aria-label={t("window.maximize")}
+          onclick={() => void toggleMaximizeWindow()}
+        >
+          <span class="window-icon maximize" aria-hidden="true"></span>
+        </button>
+        <button
+          type="button"
+          class="window-control close"
+          aria-label={t("window.close")}
+          onclick={() => void closeWindow()}
+        >
+          <span class="window-icon close" aria-hidden="true"></span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -160,13 +205,10 @@
     border-bottom: 1px solid #d9e2df;
   }
 
-  .eyebrow {
-    margin: 0 0 6px;
-    color: #5e6d73;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    text-transform: uppercase;
+  .title-drag-region {
+    flex: 1;
+    min-width: 0;
+    user-select: none;
   }
 
   h1,
@@ -180,40 +222,105 @@
     line-height: 1.2;
   }
 
-  .header-controls {
+  .titlebar-actions {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
   }
 
-  .language-switcher {
-    display: grid;
-    gap: 4px;
-    color: #415159;
+  .language-toggle {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border: 1px solid #cdd9d6;
+    border-radius: 6px;
+    background: #ffffff;
+    padding: 2px;
+  }
+
+  .language-toggle button {
+    min-width: 44px;
+    border: 0;
+    border-radius: 4px;
+    padding: 7px 10px;
+    color: #506168;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
     font-size: 0.82rem;
     font-weight: 700;
   }
 
-  .language-switcher select {
-    min-width: 124px;
-    border: 1px solid #cdd9d6;
-    border-radius: 6px;
-    padding: 7px 10px;
+  .language-toggle button:hover {
     color: #18202f;
-    background: #ffffff;
-    font: inherit;
+    background: #eef4f2;
   }
 
-  .sync-chip {
-    min-width: 112px;
-    border: 1px solid #b7d0c8;
+  .language-toggle button.active {
+    color: #ffffff;
+    background: #1f6f62;
+  }
+
+  .window-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .window-control {
+    position: relative;
+    display: inline-grid;
+    width: 34px;
+    height: 32px;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    color: #42535a;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .window-control:hover {
+    color: #17212f;
+    background: #eef4f2;
+  }
+
+  .window-control.close:hover {
+    color: #ffffff;
+    background: #b42318;
+  }
+
+  .window-icon {
+    display: block;
+    width: 12px;
+    height: 12px;
+    position: relative;
+  }
+
+  .window-icon.minimize::before,
+  .window-icon.close::before,
+  .window-icon.close::after {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    top: 50%;
+    height: 2px;
     border-radius: 999px;
-    padding: 8px 12px;
-    color: #27554b;
-    background: #e8f4ef;
-    font-size: 0.88rem;
-    font-weight: 700;
-    text-align: center;
+    background: currentColor;
+    content: "";
+  }
+
+  .window-icon.maximize {
+    border: 2px solid currentColor;
+    border-radius: 2px;
+  }
+
+  .window-icon.close::before {
+    transform: rotate(45deg);
+  }
+
+  .window-icon.close::after {
+    transform: rotate(-45deg);
   }
 
   .tabs {
@@ -287,10 +394,17 @@
       padding: 22px 18px 18px;
     }
 
-    .header-controls {
-      align-items: stretch;
-      flex-direction: column;
+    .title-drag-region,
+    .titlebar-actions {
       width: 100%;
+    }
+
+    .titlebar-actions {
+      justify-content: space-between;
+    }
+
+    .language-toggle {
+      width: fit-content;
     }
 
     .tabs {
