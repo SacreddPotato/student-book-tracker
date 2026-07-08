@@ -175,7 +175,21 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run build`
   - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
 
+### Segment 8: Logs Tab And Reversals
+
+- Status: completed on `pre-release`.
+- Added `LogsTab.svelte`, `LogGroup.svelte`, and `ReverseTransactionDialog.svelte` under `apps/desktop/src/lib/ui/logs`.
+- The Logs tab now renders inventory history from local SQLite.
+- Shipment increase logs are grouped by book name and student issue logs are grouped by student name.
+- Each log shows all transaction items, Cairo-formatted date/time, quantity deltas, and post-transaction quantity.
+- Reversible logs expose a Reverse action with confirmation.
+- Reversed originals and reversal transactions are marked as already reversed and cannot be reversed again.
+- Confirming reversal calls `reverseTransaction`, refreshes logs, restores stock, and marks issued student books reversed for student issue transactions.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/ui/logs/logs-tab.test.ts`
+  - `npm run test -w @app/desktop`
+
 ## Next Segment Starting Point
 
-- Segment 8 should build Logs tab inventory history and reversal UI.
-- Start with tests for shipment logs grouped by book, student issue logs grouped by student, Cairo time display, reversal stock restore, and already-reversed transaction state.
+- Segment 9 should build the Students tab Excel export.
+- Start with tests for English headers, Arabic RTL worksheet mode, disabled export while grade group is `all`, selected-grade-only rows, and selected-grade stage book columns.

@@ -101,10 +101,18 @@ export const ar = {
     rejected: "مرفوض",
   },
   logs: {
+    inventoryHistory: "سجل المخزون",
     shipmentIncrease: "زيادة شحنة",
     studentIssue: "تسليم لطالب",
     reversal: "عكس العملية",
     noLogs: "لا توجد سجلات بعد",
+    loading: "جاري تحميل السجلات",
+    reverseTransaction: "عكس العملية",
+    reverseWarning: "هل تريد عكس {title}؟ سيتم إنشاء عملية عكسية مع إبقاء السجل الأصلي في التاريخ.",
+    alreadyReversed: "تم عكسها بالفعل",
+    quantityAfter: "بعد: {count}",
+    unknownBook: "كتاب غير معروف",
+    unknownStudent: "طالب غير معروف",
   },
   export: {
     alGharbia: "الغربية",
@@ -116,6 +124,7 @@ export const ar = {
   errors: {
     studentsLoadFailed: "تعذر تحميل الطلاب.",
     booksLoadFailed: "تعذر تحميل الكتب.",
+    logsLoadFailed: "تعذر تحميل السجلات.",
     insufficientStock: "المخزون غير كاف",
     unknownStudent: "طالب غير معروف",
     unknownBook: "كتاب غير معروف",

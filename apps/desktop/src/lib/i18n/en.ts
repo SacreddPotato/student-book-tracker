@@ -99,10 +99,18 @@ export const en = {
     rejected: "Rejected",
   },
   logs: {
+    inventoryHistory: "Inventory history",
     shipmentIncrease: "Shipment increase",
     studentIssue: "Student issue",
     reversal: "Reversal",
     noLogs: "No logs yet",
+    loading: "Loading logs",
+    reverseTransaction: "Reverse transaction",
+    reverseWarning: "Reverse {title}? This creates an inverse transaction and keeps the original log in history.",
+    alreadyReversed: "Already reversed",
+    quantityAfter: "After: {count}",
+    unknownBook: "Unknown book",
+    unknownStudent: "Unknown student",
   },
   export: {
     alGharbia: "Al-Gharbia",
@@ -114,6 +122,7 @@ export const en = {
   errors: {
     studentsLoadFailed: "Could not load students.",
     booksLoadFailed: "Could not load books.",
+    logsLoadFailed: "Could not load logs.",
     insufficientStock: "Insufficient stock",
     unknownStudent: "Unknown student",
     unknownBook: "Unknown book",

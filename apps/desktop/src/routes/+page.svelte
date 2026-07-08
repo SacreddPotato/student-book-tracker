@@ -8,6 +8,7 @@
   } from "$lib/i18n";
   import { appTabs, type AppTabId } from "$lib/ui/app-tabs";
   import BooksTab from "$lib/ui/books/BooksTab.svelte";
+  import LogsTab from "$lib/ui/logs/LogsTab.svelte";
   import StudentsTab from "$lib/ui/students/StudentsTab.svelte";
   import UnsavedBookSelectionDialog from "$lib/ui/students/UnsavedBookSelectionDialog.svelte";
 
@@ -111,6 +112,8 @@
       <StudentsTab onDraftSelectionChange={(hasDraft) => (studentsHaveDraftSelections = hasDraft)} />
     {:else if activeTab === "books"}
       <BooksTab />
+    {:else if activeTab === "logs"}
+      <LogsTab />
     {:else}
       <div class="empty-state">{t(emptyStateKeys[activeTab])}</div>
     {/if}
