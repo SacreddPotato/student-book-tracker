@@ -113,11 +113,13 @@ export const en = {
     unknownStudent: "Unknown student",
   },
   export: {
+    name: "name",
     alGharbia: "Al-Gharbia",
     eastTantaAdministrativeLearning: "East Tanta Administrative Learning",
     alRafiiSchools: "Al-Rafii Schools",
     educationalYear: "for the educational year:",
     studentSignature: "student signature",
+    chooseGradeGroup: "Choose a grade group before exporting.",
   },
   errors: {
     studentsLoadFailed: "Could not load students.",

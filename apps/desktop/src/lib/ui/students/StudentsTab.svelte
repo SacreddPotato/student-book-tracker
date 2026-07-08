@@ -12,6 +12,7 @@
   import { listStudents, upsertStudent, type StudentRow } from "$lib/db/repositories/students";
   import { listActiveStudentBookRows } from "$lib/db/repositories/transactions";
   import { getTranslation, language, type TranslationKey } from "$lib/i18n";
+  import type { StudentsWorkbook } from "$lib/services/excel-export";
   import { issueBooksToStudent } from "$lib/services/inventory-service";
   import StudentBookPanel from "./StudentBookPanel.svelte";
   import StudentForm, { type StudentFormValue } from "./StudentForm.svelte";
@@ -25,6 +26,7 @@
     now?: () => string;
     deviceId?: string;
     onDraftSelectionChange?: (hasDraft: boolean) => void;
+    onWorkbookExport?: (workbook: StudentsWorkbook) => void | Promise<void>;
   };
 
   const {
@@ -33,6 +35,7 @@
     now = () => new Date().toISOString(),
     deviceId = "local-device",
     onDraftSelectionChange,
+    onWorkbookExport,
   }: Props = $props();
 
   let activeDatabase = $state<SqlDatabase | null>(null);
@@ -50,6 +53,7 @@
   let errorKey = $state<TranslationKey | null>(null);
 
   const hasDraftSelections = $derived(selectedBookIds.length > 0);
+  const canExport = $derived(selectedGrade !== "all");
   const stageGradeOptions = $derived(
     selectedStage === "all"
       ? Object.values(gradeLevelsByStage).flat()
@@ -227,6 +231,34 @@
     await refreshStudentsAndBooks();
   }
 
+  async function exportSelectedGrade(): Promise<void> {
+    if (selectedGrade === "all") {
+      return;
+    }
+
+    const db = await getDatabase();
+    const gradeStudents = students.filter((student) => student.gradeLevel === selectedGrade);
+    const issuedEntries = await Promise.all(
+      gradeStudents.map(async (student) => [
+        student.id,
+        (await listActiveStudentBookRows(db, student.id)).map(({ bookId }) => bookId),
+      ] as const),
+    );
+    const { downloadStudentsWorkbook, exportStudentsWorkbook } = await import(
+      "$lib/services/excel-export"
+    );
+    const workbook = exportStudentsWorkbook({
+      students: gradeStudents,
+      books,
+      selectedStage,
+      selectedGradeLevel: selectedGrade,
+      language: $language,
+      issuedBookIdsByStudentId: Object.fromEntries(issuedEntries),
+    });
+
+    await (onWorkbookExport ?? downloadStudentsWorkbook)(workbook);
+  }
+
   function cancelForm(): void {
     showCreateForm = false;
     editingStudent = null;
@@ -257,15 +289,26 @@
       </label>
     </div>
 
-    <button
-      type="button"
-      onclick={() => {
-        editingStudent = null;
-        showCreateForm = true;
-      }}
-    >
-      {t("students.addStudent")}
-    </button>
+    <div class="toolbar-actions">
+      <div class="export-action">
+        <button type="button" class="secondary" disabled={!canExport} onclick={() => void exportSelectedGrade()}>
+          {t("buttons.export")}
+        </button>
+        {#if !canExport}
+          <p>{t("export.chooseGradeGroup")}</p>
+        {/if}
+      </div>
+
+      <button
+        type="button"
+        onclick={() => {
+          editingStudent = null;
+          showCreateForm = true;
+        }}
+      >
+        {t("students.addStudent")}
+      </button>
+    </div>
   </div>
 
   {#if errorKey}
@@ -386,6 +429,28 @@
     flex-wrap: wrap;
   }
 
+  .toolbar-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .export-action {
+    display: grid;
+    justify-items: end;
+    gap: 5px;
+  }
+
+  .export-action p {
+    max-width: 220px;
+    margin: 0;
+    color: #637178;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: end;
+  }
+
   label {
     display: grid;
     gap: 6px;
@@ -421,6 +486,11 @@
     color: #42535a;
     background: #ffffff;
     border-color: #cbd8d5;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
   }
 
   .students-layout {
@@ -506,6 +576,19 @@
 
     .group-controls {
       flex-direction: column;
+    }
+
+    .toolbar-actions {
+      flex-direction: column;
+    }
+
+    .export-action {
+      justify-items: stretch;
+    }
+
+    .export-action p {
+      max-width: none;
+      text-align: start;
     }
 
     label {

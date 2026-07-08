@@ -2,9 +2,9 @@
 import "@testing-library/jest-dom/vitest";
 
 import { DatabaseSync } from "node:sqlite";
-import { render, screen, within } from "@testing-library/svelte";
+import { render, screen, waitFor, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { EducationStage, GradeLevel } from "@app/shared";
 
@@ -13,6 +13,7 @@ import { runMigrations } from "../../db/migrations";
 import { listBooks, upsertBook } from "../../db/repositories/books";
 import { listPendingOutboxRows } from "../../db/repositories/outbox";
 import { upsertStudent } from "../../db/repositories/students";
+import type { StudentsWorkbook } from "../../services/excel-export";
 import StudentsTab from "./StudentsTab.svelte";
 
 class TestSqliteDatabase implements SqlDatabase {
@@ -93,6 +94,32 @@ async function listIssuedBooks(database: SqlDatabase): Promise<Array<{ studentId
   );
 }
 
+async function seedIssuedBook(
+  database: SqlDatabase,
+  issuedBook: { id: string; studentId: string; bookId: string; issuedTransactionId: string },
+): Promise<void> {
+  await database.execute(
+    `INSERT INTO student_books (
+      id,
+      scope_id,
+      student_id,
+      book_id,
+      issued_transaction_id,
+      created_at,
+      reversed_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      issuedBook.id,
+      "global",
+      issuedBook.studentId,
+      issuedBook.bookId,
+      issuedBook.issuedTransactionId,
+      fixedNow,
+      null,
+    ],
+  );
+}
+
 describe("StudentsTab", () => {
   let database: TestSqliteDatabase;
 
@@ -125,6 +152,80 @@ describe("StudentsTab", () => {
 
     expect(await screen.findByRole("row", { name: /Mona Ahmed/i })).toBeInTheDocument();
     expect(screen.getByText("Select a student to issue books")).toBeInTheDocument();
+  });
+
+  it("disables student export until a concrete grade group is selected", async () => {
+    const user = userEvent.setup();
+    await seedStudent(database, {
+      id: "student-1",
+      name: "Mona Ahmed",
+      governmentId: "29801011234567",
+      educationStage: "primary",
+      gradeLevel: "primary1",
+    });
+
+    render(StudentsTab, { props: { database } });
+
+    expect(await screen.findByRole("row", { name: /Mona Ahmed/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export" })).toBeDisabled();
+    expect(screen.getByText("Choose a grade group before exporting.")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Grade group"), "primary1");
+
+    expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
+    expect(screen.queryByText("Choose a grade group before exporting.")).not.toBeInTheDocument();
+  });
+
+  it("exports a workbook for the selected grade with issued book markers", async () => {
+    const user = userEvent.setup();
+    const exportedWorkbooks: StudentsWorkbook[] = [];
+    const onWorkbookExport = vi.fn((workbook: StudentsWorkbook) => {
+      exportedWorkbooks.push(workbook);
+    });
+    await seedStudent(database, {
+      id: "student-1",
+      name: "Mona Ahmed",
+      governmentId: "29801011234567",
+      educationStage: "primary",
+      gradeLevel: "primary1",
+    });
+    await seedStudent(database, {
+      id: "student-2",
+      name: "Omar Adel",
+      governmentId: "29901011234567",
+      educationStage: "primary",
+      gradeLevel: "primary2",
+    });
+    await seedBook(database, {
+      id: "book-math",
+      name: "Primary Math",
+      educationStage: "primary",
+      quantity: 2,
+    });
+    await seedBook(database, {
+      id: "book-science",
+      name: "Primary Science",
+      educationStage: "primary",
+      quantity: 2,
+    });
+    await seedIssuedBook(database, {
+      id: "student-book-1",
+      studentId: "student-1",
+      bookId: "book-math",
+      issuedTransactionId: "issue-transaction",
+    });
+
+    render(StudentsTab, { props: { database, onWorkbookExport } });
+
+    await screen.findByRole("row", { name: /Mona Ahmed/i });
+    await user.selectOptions(screen.getByLabelText("Grade group"), "primary1");
+    await user.click(screen.getByRole("button", { name: "Export" }));
+
+    await waitFor(() => expect(onWorkbookExport).toHaveBeenCalledTimes(1));
+    const worksheet = exportedWorkbooks[0]?.getWorksheet("Students");
+    expect(worksheet?.getCell("A6").value).toBe("Mona Ahmed");
+    expect(worksheet?.getCell("B6").value).toBe("Issued");
+    expect(worksheet?.getCell("A7").value).toBeNull();
   });
 
   it("uses a student-specific load error instead of the generic validation message", async () => {

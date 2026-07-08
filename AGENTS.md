@@ -189,7 +189,26 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop -- src/lib/ui/logs/logs-tab.test.ts`
   - `npm run test -w @app/desktop`
 
+### Segment 9: Excel Export
+
+- Status: completed on `pre-release`.
+- Added `exceljs` to the desktop workspace for XLSX workbook generation.
+- Added `apps/desktop/src/lib/services/excel-export.ts`.
+- Student exports create a `Students` worksheet with translated left header lines, selected stage/grade center header, reserved logo area, body columns for name, selected-stage books, and student signature.
+- Arabic export mode sets worksheet RTL and uses Arabic labels.
+- Export rows are restricted to the selected grade group.
+- Export book columns use the selected grade's education stage, so mixed-grade sheets are prevented.
+- Issued books are marked in their book columns.
+- The Students tab now shows an Export button and disables it while the grade group is `all`.
+- The disabled export helper says `Choose a grade group before exporting.`
+- The Excel service is lazy-loaded from the Export click path so the XLSX writer stays out of the initial page chunk.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/services/excel-export.test.ts`
+  - `npm run test -w @app/desktop -- src/lib/ui/students/students-tab.test.ts`
+  - `npm run test -w @app/desktop`
+  - `npm run build -w @app/desktop`
+
 ## Next Segment Starting Point
 
-- Segment 9 should build the Students tab Excel export.
-- Start with tests for English headers, Arabic RTL worksheet mode, disabled export while grade group is `all`, selected-grade-only rows, and selected-grade stage book columns.
+- Segment 10 should build the Sync API schema and migrations.
+- Start with Drizzle/Neon schema tests that prove the remote tables match the canonical local/shared tables, without committing real database URLs or secrets.

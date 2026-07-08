@@ -115,11 +115,13 @@ export const ar = {
     unknownStudent: "طالب غير معروف",
   },
   export: {
+    name: "الاسم",
     alGharbia: "الغربية",
     eastTantaAdministrativeLearning: "إدارة شرق طنطا التعليمية",
     alRafiiSchools: "مدارس الرافعي",
     educationalYear: "للعام الدراسي:",
     studentSignature: "توقيع الطالب",
+    chooseGradeGroup: "اختر مجموعة صف قبل التصدير.",
   },
   errors: {
     studentsLoadFailed: "تعذر تحميل الطلاب.",
