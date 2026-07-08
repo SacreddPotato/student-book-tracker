@@ -17,6 +17,14 @@ Update this file at the end of every completed implementation segment. Keep the 
 
 - Segment work is happening on `pre-release`.
 
+## Future Segment Reminders
+
+- Segment 14 desktop updater verification must use ordered pre-release tags for updater smoke testing:
+  - Build and install a previous Windows EXE/MSI version that already has updater support.
+  - Tag and publish a newer pre-release version, even if it contains no functional changes beyond the version bump needed for the updater feed.
+  - Launch the installed previous version, trigger/check for updates, apply the update, and verify the installed app reports the newer version.
+  - Keep Neon credentials and GitHub tokens out of the packaged desktop app while testing updater metadata.
+
 ## Segment Status
 
 ### Segment 1: Workspace Skeleton
@@ -37,7 +45,23 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run dev:desktop` with `%USERPROFILE%\.cargo\bin` prepended to PATH
 - Environment note: Rust exists at `%USERPROFILE%\.cargo\bin`, but the current shell PATH may need that directory prepended before running Tauri commands.
 
+### Segment 2: Shared Domain Package
+
+- Status: completed on `pre-release`.
+- Added shared education stage and grade-level contracts.
+- Added `isGradeAllowedForStage(stage, gradeLevel)`.
+- Added stage-based book/student issuance matching.
+- Added Cairo date/time formatting with `Africa/Cairo`.
+- Added exact sync command and sync command result TypeScript contracts.
+- Added shared Vitest tests for education, inventory matching, Cairo formatting, and sync command type contracts.
+- Verification completed:
+  - `npm run test -w @app/shared`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- Segment 2 should add shared domain contracts in `packages/shared`.
-- Start with tests for education stages, inventory matching, and Cairo time formatting before implementation.
+- Segment 3 should add the desktop i18n foundation.
+- Start with dictionary parity tests for English and Arabic before wiring shell strings to translation keys.
