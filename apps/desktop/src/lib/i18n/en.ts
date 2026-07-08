@@ -51,11 +51,6 @@ export const en = {
     export: "Export",
     addStock: "Add stock",
   },
-  window: {
-    minimize: "Minimize window",
-    maximize: "Maximize window",
-    close: "Close window",
-  },
   books: {
     inventory: "Book inventory",
     addBook: "Add book",

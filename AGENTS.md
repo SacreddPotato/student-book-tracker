@@ -160,7 +160,7 @@ Update this file at the end of every completed implementation segment. Keep the 
 ### Frontend Cleanup: Shell Chrome, Copy, And Export Guard
 
 - Status: completed on `pre-release` after Segment 7.
-- Disabled native Tauri window decorations and added custom shell window controls for minimize, maximize, and close.
+- Native Tauri window decorations are restored; the shell does not render custom window action buttons.
 - Replaced the shell language dropdown with a compact EN/AR toggle.
 - Removed confusing offline-only shell copy: `Offline desktop workspace` and `Offline ready`.
 - Students empty state now shows only `No students yet` when no students exist; the issue-books prompt appears only after at least one student exists and no student is selected.

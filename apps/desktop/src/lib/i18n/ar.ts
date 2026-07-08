@@ -53,11 +53,6 @@ export const ar = {
     export: "تصدير",
     addStock: "إضافة مخزون",
   },
-  window: {
-    minimize: "تصغير النافذة",
-    maximize: "تكبير النافذة",
-    close: "إغلاق النافذة",
-  },
   books: {
     inventory: "مخزون الكتب",
     addBook: "إضافة كتاب",

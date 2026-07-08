@@ -14,8 +14,7 @@
       {
         "title": "Student Book Tracker",
         "width": 1100,
-        "height": 720,
-        "decorations": false
+        "height": 720
       }
     ],
     "security": {

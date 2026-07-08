@@ -10,12 +10,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTranslation, language } from "$lib/i18n";
 import Page from "./+page.svelte";
 
-const windowControls = vi.hoisted(() => ({
-  minimize: vi.fn(async () => undefined),
-  toggleMaximize: vi.fn(async () => undefined),
-  close: vi.fn(async () => undefined),
-}));
-
 vi.mock("$lib/db/local-db", () => ({
   initializeLocalDatabase: vi.fn(async () => ({
     execute: vi.fn(async () => undefined),
@@ -23,24 +17,17 @@ vi.mock("$lib/db/local-db", () => ({
   })),
 }));
 
-vi.mock("@tauri-apps/api/window", () => ({
-  getCurrentWindow: () => windowControls,
-}));
-
 describe("app shell", () => {
   beforeEach(() => {
     language.set("en");
-    windowControls.minimize.mockClear();
-    windowControls.toggleMaximize.mockClear();
-    windowControls.close.mockClear();
   });
 
-  it("configures the main Tauri window without native decorations", () => {
+  it("keeps the main Tauri window on native decorations", () => {
     const config = JSON.parse(
       readFileSync(resolve(process.cwd(), "src-tauri/tauri.conf.json"), "utf8"),
     ) as { app: { windows: Array<{ decorations?: boolean }> } };
 
-    expect(config.app.windows[0]?.decorations).toBe(false);
+    expect(config.app.windows[0]?.decorations).not.toBe(false);
   });
 
   it("uses a compact EN/AR language toggle without offline status copy", async () => {
@@ -68,16 +55,11 @@ describe("app shell", () => {
     expect(screen.getByRole("button", { name: "Students" })).toBeInTheDocument();
   });
 
-  it("renders custom window action buttons wired to the Tauri window API", async () => {
-    const user = userEvent.setup();
+  it("does not render custom window action buttons", () => {
     render(Page);
 
-    await user.click(screen.getByRole("button", { name: "Minimize window" }));
-    await user.click(screen.getByRole("button", { name: "Maximize window" }));
-    await user.click(screen.getByRole("button", { name: "Close window" }));
-
-    expect(windowControls.minimize).toHaveBeenCalledTimes(1);
-    expect(windowControls.toggleMaximize).toHaveBeenCalledTimes(1);
-    expect(windowControls.close).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Minimize window" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Maximize window" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Close window" })).not.toBeInTheDocument();
   });
 });

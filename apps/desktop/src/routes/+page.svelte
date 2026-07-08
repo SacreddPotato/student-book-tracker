@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { getCurrentWindow } from "@tauri-apps/api/window";
-
   import {
     getTranslation,
     language,
@@ -37,18 +35,6 @@
     setLanguage(nextLanguage);
   }
 
-  async function minimizeWindow(): Promise<void> {
-    await getCurrentWindow().minimize();
-  }
-
-  async function toggleMaximizeWindow(): Promise<void> {
-    await getCurrentWindow().toggleMaximize();
-  }
-
-  async function closeWindow(): Promise<void> {
-    await getCurrentWindow().close();
-  }
-
   function requestTabChange(nextTab: AppTabId): void {
     if (activeTab === "students" && nextTab !== "students" && studentsHaveDraftSelections) {
       pendingTab = nextTab;
@@ -79,54 +65,26 @@
 
 <main class="app-shell">
   <header class="top-bar">
-    <div class="title-drag-region" data-tauri-drag-region>
+    <div>
       <h1>{t("app.title")}</h1>
     </div>
-    <div class="titlebar-actions">
-      <div class="language-toggle" role="group" aria-label={t("app.language")}>
-        <button
-          type="button"
-          aria-pressed={$language === "en"}
-          class:active={$language === "en"}
-          onclick={() => selectLanguage("en")}
-        >
-          EN
-        </button>
-        <button
-          type="button"
-          aria-pressed={$language === "ar"}
-          class:active={$language === "ar"}
-          onclick={() => selectLanguage("ar")}
-        >
-          AR
-        </button>
-      </div>
-      <div class="window-controls" role="group" aria-label={t("app.title")}>
-        <button
-          type="button"
-          class="window-control"
-          aria-label={t("window.minimize")}
-          onclick={() => void minimizeWindow()}
-        >
-          <span class="window-icon minimize" aria-hidden="true"></span>
-        </button>
-        <button
-          type="button"
-          class="window-control"
-          aria-label={t("window.maximize")}
-          onclick={() => void toggleMaximizeWindow()}
-        >
-          <span class="window-icon maximize" aria-hidden="true"></span>
-        </button>
-        <button
-          type="button"
-          class="window-control close"
-          aria-label={t("window.close")}
-          onclick={() => void closeWindow()}
-        >
-          <span class="window-icon close" aria-hidden="true"></span>
-        </button>
-      </div>
+    <div class="language-toggle" role="group" aria-label={t("app.language")}>
+      <button
+        type="button"
+        aria-pressed={$language === "en"}
+        class:active={$language === "en"}
+        onclick={() => selectLanguage("en")}
+      >
+        EN
+      </button>
+      <button
+        type="button"
+        aria-pressed={$language === "ar"}
+        class:active={$language === "ar"}
+        onclick={() => selectLanguage("ar")}
+      >
+        AR
+      </button>
     </div>
   </header>
 
@@ -205,12 +163,6 @@
     border-bottom: 1px solid #d9e2df;
   }
 
-  .title-drag-region {
-    flex: 1;
-    min-width: 0;
-    user-select: none;
-  }
-
   h1,
   h2 {
     margin: 0;
@@ -220,12 +172,6 @@
   h1 {
     font-size: 1.9rem;
     line-height: 1.2;
-  }
-
-  .titlebar-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
   }
 
   .language-toggle {
@@ -259,68 +205,6 @@
   .language-toggle button.active {
     color: #ffffff;
     background: #1f6f62;
-  }
-
-  .window-controls {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .window-control {
-    position: relative;
-    display: inline-grid;
-    width: 34px;
-    height: 32px;
-    place-items: center;
-    border: 0;
-    border-radius: 4px;
-    color: #42535a;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .window-control:hover {
-    color: #17212f;
-    background: #eef4f2;
-  }
-
-  .window-control.close:hover {
-    color: #ffffff;
-    background: #b42318;
-  }
-
-  .window-icon {
-    display: block;
-    width: 12px;
-    height: 12px;
-    position: relative;
-  }
-
-  .window-icon.minimize::before,
-  .window-icon.close::before,
-  .window-icon.close::after {
-    position: absolute;
-    left: 1px;
-    right: 1px;
-    top: 50%;
-    height: 2px;
-    border-radius: 999px;
-    background: currentColor;
-    content: "";
-  }
-
-  .window-icon.maximize {
-    border: 2px solid currentColor;
-    border-radius: 2px;
-  }
-
-  .window-icon.close::before {
-    transform: rotate(45deg);
-  }
-
-  .window-icon.close::after {
-    transform: rotate(-45deg);
   }
 
   .tabs {
@@ -394,16 +278,8 @@
       padding: 22px 18px 18px;
     }
 
-    .title-drag-region,
-    .titlebar-actions {
-      width: 100%;
-    }
-
-    .titlebar-actions {
-      justify-content: space-between;
-    }
-
     .language-toggle {
+      align-self: stretch;
       width: fit-content;
     }
 
