@@ -134,7 +134,30 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
 - Environment note: plain Vite browser smoke can render the shell and Books tab route, but local DB behavior still requires Tauri or injected test DB because Tauri SQL is unavailable in a normal browser.
 
+### Segment 7: Students Tab
+
+- Status: completed on `pre-release`.
+- Added `StudentsTab.svelte`, `StudentForm.svelte`, `StudentBookPanel.svelte`, and `UnsavedBookSelectionDialog.svelte` under `apps/desktop/src/lib/ui/students`.
+- The Students tab lists local SQLite students and supports stage and grade grouping controls.
+- Added create and edit flows for student name, government ID, education stage, and grade level.
+- Student forms restrict grade-level options to the selected education stage.
+- Selecting a student opens a stage-filtered book checklist.
+- Book checklist selections remain draft-only until Confirm is clicked; Confirm calls `issueBooksToStudent`, persists `student_books`, decrements stock, and refreshes issued state.
+- Zero-stock books are disabled and clearly marked with the translated zero-stock warning.
+- Switching students or leaving the Students tab with draft selections now shows the unsaved-selection warning dialog.
+- Added a `beforeunload` guard for browser/page leave while draft selections exist.
+- Added DOM tests covering student create/edit/grouping, draft-only checks, confirmed issuance/decrement, and unsaved-selection warning behavior.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/ui/students/students-tab.test.ts`
+  - `npm run test -w @app/desktop`
+  - `npm run typecheck -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
+
 ## Next Segment Starting Point
 
-- Segment 7 should build the Students tab UI and book issuance flow.
-- Start with tests for draft book selections, Confirm issuing books through `issueBooksToStudent`, zero-stock disabled states, and unsaved-selection warnings.
+- Segment 8 should build Logs tab inventory history and reversal UI.
+- Start with tests for shipment logs grouped by book, student issue logs grouped by student, Cairo time display, reversal stock restore, and already-reversed transaction state.

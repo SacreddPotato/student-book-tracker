@@ -9,8 +9,12 @@
   } from "$lib/i18n";
   import { appTabs, type AppTabId } from "$lib/ui/app-tabs";
   import BooksTab from "$lib/ui/books/BooksTab.svelte";
+  import StudentsTab from "$lib/ui/students/StudentsTab.svelte";
+  import UnsavedBookSelectionDialog from "$lib/ui/students/UnsavedBookSelectionDialog.svelte";
 
   let activeTab = $state<AppTabId>("students");
+  let studentsHaveDraftSelections = $state(false);
+  let pendingTab = $state<AppTabId | null>(null);
 
   const panelTitleKeys: Record<AppTabId, TranslationKey> = {
     students: "tabs.students",
@@ -30,6 +34,29 @@
 
   function handleLanguageChange(event: Event): void {
     setLanguage((event.currentTarget as HTMLSelectElement).value as Language);
+  }
+
+  function requestTabChange(nextTab: AppTabId): void {
+    if (activeTab === "students" && nextTab !== "students" && studentsHaveDraftSelections) {
+      pendingTab = nextTab;
+      return;
+    }
+
+    activeTab = nextTab;
+  }
+
+  function cancelTabChange(): void {
+    pendingTab = null;
+  }
+
+  function discardSelectionAndChangeTab(): void {
+    if (!pendingTab) {
+      return;
+    }
+
+    studentsHaveDraftSelections = false;
+    activeTab = pendingTab;
+    pendingTab = null;
   }
 </script>
 
@@ -64,7 +91,7 @@
         type="button"
         class:active={activeTab === tab.id}
         aria-pressed={activeTab === tab.id}
-        onclick={() => (activeTab = tab.id)}
+        onclick={() => requestTabChange(tab.id)}
       >
         {t(tab.labelKey)}
       </button>
@@ -77,12 +104,21 @@
       <span>{t("app.recordsCount")}</span>
     </div>
 
-    {#if activeTab === "books"}
+    {#if activeTab === "students"}
+      <StudentsTab onDraftSelectionChange={(hasDraft) => (studentsHaveDraftSelections = hasDraft)} />
+    {:else if activeTab === "books"}
       <BooksTab />
     {:else}
       <div class="empty-state">{t(emptyStateKeys[activeTab])}</div>
     {/if}
   </section>
+
+  {#if pendingTab}
+    <UnsavedBookSelectionDialog
+      onCancel={cancelTabChange}
+      onDiscard={discardSelectionAndChangeTab}
+    />
+  {/if}
 </main>
 
 <style>

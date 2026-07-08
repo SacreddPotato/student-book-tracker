@@ -203,3 +203,24 @@ export async function markInventoryTransactionReversed(
     [reversedByTransactionId, transactionId],
   );
 }
+
+export async function listActiveStudentBookRows(
+  database: SqlDatabase,
+  studentId: string,
+): Promise<StudentBookRow[]> {
+  return database.select<StudentBookRow>(
+    `SELECT
+      id,
+      scope_id AS scopeId,
+      student_id AS studentId,
+      book_id AS bookId,
+      issued_transaction_id AS issuedTransactionId,
+      created_at AS createdAt,
+      reversed_at AS reversedAt
+    FROM student_books
+    WHERE student_id = $1
+      AND reversed_at IS NULL
+    ORDER BY created_at, id`,
+    [studentId],
+  );
+}
