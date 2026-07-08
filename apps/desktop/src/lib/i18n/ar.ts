@@ -1,0 +1,93 @@
+import type { TranslationDictionary } from "./en";
+
+export const ar = {
+  app: {
+    title: "متتبع كتب الطلاب",
+    eyebrow: "مساحة عمل مكتبية بلا اتصال",
+    language: "اللغة",
+    primarySections: "الأقسام الرئيسية",
+    recordsCount: "٠ سجلات",
+  },
+  languages: {
+    en: "الإنجليزية",
+    ar: "العربية",
+  },
+  tabs: {
+    students: "الطلاب",
+    books: "الكتب",
+    logs: "السجلات",
+  },
+  stages: {
+    kg: "رياض الأطفال",
+    primary: "الابتدائي",
+    preparatory: "الإعدادي",
+  },
+  grades: {
+    kg1: "كي جي 1",
+    kg2: "كي جي 2",
+    primary1: "الأول الابتدائي",
+    primary2: "الثاني الابتدائي",
+    primary3: "الثالث الابتدائي",
+    primary4: "الرابع الابتدائي",
+    primary5: "الخامس الابتدائي",
+    primary6: "السادس الابتدائي",
+    preparatory1: "الأول الإعدادي",
+    preparatory2: "الثاني الإعدادي",
+    preparatory3: "الثالث الإعدادي",
+  },
+  forms: {
+    studentName: "اسم الطالب",
+    governmentId: "الرقم القومي",
+    educationStage: "المرحلة التعليمية",
+    gradeLevel: "الصف الدراسي",
+    bookName: "اسم الكتاب",
+    quantity: "الكمية",
+  },
+  buttons: {
+    add: "إضافة",
+    edit: "تعديل",
+    save: "حفظ",
+    cancel: "إلغاء",
+    confirm: "تأكيد",
+    reverse: "عكس",
+    export: "تصدير",
+    addStock: "إضافة مخزون",
+  },
+  warnings: {
+    unsavedBookSelection: "لديك اختيارات كتب غير مؤكدة.",
+    zeroStock: "نفد المخزون",
+    rejectedSyncCommand: "تم رفض أمر مزامنة.",
+  },
+  sync: {
+    offlineReady: "جاهز بلا اتصال",
+    synced: "تمت المزامنة",
+    syncing: "جار المزامنة",
+    offline: "غير متصل",
+    rejected: "مرفوض",
+  },
+  logs: {
+    shipmentIncrease: "زيادة شحنة",
+    studentIssue: "تسليم لطالب",
+    reversal: "عكس العملية",
+    noLogs: "لا توجد سجلات بعد",
+  },
+  export: {
+    alGharbia: "الغربية",
+    eastTantaAdministrativeLearning: "إدارة شرق طنطا التعليمية",
+    alRafiiSchools: "مدارس الرافعي",
+    educationalYear: "للعام الدراسي:",
+    studentSignature: "توقيع الطالب",
+  },
+  errors: {
+    validationFailed: "فشل التحقق",
+    insufficientStock: "المخزون غير كاف",
+    unknownStudent: "طالب غير معروف",
+    unknownBook: "كتاب غير معروف",
+    transactionAlreadyReversed: "تم عكس العملية من قبل",
+  },
+  emptyStates: {
+    students: "لا يوجد طلاب بعد",
+    books: "لا توجد كتب بعد",
+    logs: "لا توجد سجلات بعد",
+  },
+} as const satisfies TranslationDictionary;

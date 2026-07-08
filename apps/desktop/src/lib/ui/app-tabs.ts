@@ -1,12 +1,14 @@
+import type { TranslationKey } from "$lib/i18n";
+
 export type AppTabId = "students" | "books" | "logs";
 
 export type AppTab = {
   id: AppTabId;
-  label: string;
+  labelKey: TranslationKey;
 };
 
 export const appTabs: AppTab[] = [
-  { id: "students", label: "Students" },
-  { id: "books", label: "Books" },
-  { id: "logs", label: "Logs" },
+  { id: "students", labelKey: "tabs.students" },
+  { id: "books", labelKey: "tabs.books" },
+  { id: "logs", labelKey: "tabs.logs" },
 ];

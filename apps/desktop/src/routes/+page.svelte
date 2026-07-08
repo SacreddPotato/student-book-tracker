@@ -1,29 +1,63 @@
 <script lang="ts">
+  import {
+    getTranslation,
+    language,
+    languages,
+    setLanguage,
+    type Language,
+    type TranslationKey,
+  } from "$lib/i18n";
   import { appTabs, type AppTabId } from "$lib/ui/app-tabs";
 
   let activeTab = $state<AppTabId>("students");
 
-  const panelTitles: Record<AppTabId, string> = {
-    students: "Students",
-    books: "Books",
-    logs: "Logs",
+  const panelTitleKeys: Record<AppTabId, TranslationKey> = {
+    students: "tabs.students",
+    books: "tabs.books",
+    logs: "tabs.logs",
   };
+
+  const emptyStateKeys: Record<AppTabId, TranslationKey> = {
+    students: "emptyStates.students",
+    books: "emptyStates.books",
+    logs: "emptyStates.logs",
+  };
+
+  function t(key: TranslationKey): string {
+    return getTranslation($language, key);
+  }
+
+  function handleLanguageChange(event: Event): void {
+    setLanguage((event.currentTarget as HTMLSelectElement).value as Language);
+  }
 </script>
 
 <svelte:head>
-  <title>Student Book Tracker</title>
+  <title>{t("app.title")}</title>
 </svelte:head>
 
 <main class="app-shell">
   <header class="top-bar">
     <div>
-      <p class="eyebrow">Offline desktop workspace</p>
-      <h1>Student Book Tracker</h1>
+      <p class="eyebrow">{t("app.eyebrow")}</p>
+      <h1>{t("app.title")}</h1>
     </div>
-    <div class="sync-chip" aria-label="Sync status">Offline ready</div>
+    <div class="header-controls">
+      <label class="language-switcher">
+        <span>{t("app.language")}</span>
+        <select value={$language} onchange={handleLanguageChange}>
+          {#each languages as availableLanguage}
+            <option value={availableLanguage}>
+              {t(`languages.${availableLanguage}`)}
+            </option>
+          {/each}
+        </select>
+      </label>
+      <div class="sync-chip" aria-label={t("sync.offlineReady")}>{t("sync.offlineReady")}</div>
+    </div>
   </header>
 
-  <nav class="tabs" aria-label="Primary sections">
+  <nav class="tabs" aria-label={t("app.primarySections")}>
     {#each appTabs as tab}
       <button
         type="button"
@@ -31,24 +65,18 @@
         aria-pressed={activeTab === tab.id}
         onclick={() => (activeTab = tab.id)}
       >
-        {tab.label}
+        {t(tab.labelKey)}
       </button>
     {/each}
   </nav>
 
   <section class="workspace" aria-labelledby="active-tab-heading">
     <div class="panel-heading">
-      <h2 id="active-tab-heading">{panelTitles[activeTab]}</h2>
-      <span>0 records</span>
+      <h2 id="active-tab-heading">{t(panelTitleKeys[activeTab])}</h2>
+      <span>{t("app.recordsCount")}</span>
     </div>
 
-    {#if activeTab === "students"}
-      <div class="empty-state">No students yet</div>
-    {:else if activeTab === "books"}
-      <div class="empty-state">No books yet</div>
-    {:else}
-      <div class="empty-state">No logs yet</div>
-    {/if}
+    <div class="empty-state">{t(emptyStateKeys[activeTab])}</div>
   </section>
 </main>
 
@@ -109,6 +137,30 @@
   h1 {
     font-size: 1.9rem;
     line-height: 1.2;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .language-switcher {
+    display: grid;
+    gap: 4px;
+    color: #415159;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .language-switcher select {
+    min-width: 124px;
+    border: 1px solid #cdd9d6;
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: #18202f;
+    background: #ffffff;
+    font: inherit;
   }
 
   .sync-chip {
@@ -192,6 +244,12 @@
       align-items: flex-start;
       flex-direction: column;
       padding: 22px 18px 18px;
+    }
+
+    .header-controls {
+      align-items: stretch;
+      flex-direction: column;
+      width: 100%;
     }
 
     .tabs {

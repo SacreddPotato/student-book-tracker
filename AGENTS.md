@@ -61,7 +61,24 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### Segment 3: i18n Foundation
+
+- Status: completed on `pre-release`.
+- Added English and Arabic dictionaries under `apps/desktop/src/lib/i18n`.
+- Added dictionary keys for tabs, stages, grade levels, form labels, buttons, warnings, sync states, logs, export labels, error messages, and current shell empty states.
+- Added the `language` store, `setLanguage`, `getTranslation`, and flattened `translationKeys`.
+- Added a language switcher in the desktop shell.
+- Replaced visible shell copy with translation keys in `apps/desktop/src/routes/+page.svelte`.
+- Added a localized layout wrapper that applies `lang` and `dir` for English/Arabic.
+- Added tests for dictionary key parity, required key coverage, translation lookup, and tab translation keys.
+- Verification completed:
+  - `npm run test -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- Segment 3 should add the desktop i18n foundation.
-- Start with dictionary parity tests for English and Arabic before wiring shell strings to translation keys.
+- Segment 4 should add local SQLite persistence.
+- Start by adding schema/migration tests for the required shared and local-only tables and indexes.

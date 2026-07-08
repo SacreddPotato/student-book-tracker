@@ -1,0 +1,97 @@
+export const en = {
+  app: {
+    title: "Student Book Tracker",
+    eyebrow: "Offline desktop workspace",
+    language: "Language",
+    primarySections: "Primary sections",
+    recordsCount: "0 records",
+  },
+  languages: {
+    en: "English",
+    ar: "Arabic",
+  },
+  tabs: {
+    students: "Students",
+    books: "Books",
+    logs: "Logs",
+  },
+  stages: {
+    kg: "KG (Kindergarten)",
+    primary: "Primary",
+    preparatory: "Preparatory",
+  },
+  grades: {
+    kg1: "KG 1",
+    kg2: "KG 2",
+    primary1: "1st Primary",
+    primary2: "2nd Primary",
+    primary3: "3rd Primary",
+    primary4: "4th Primary",
+    primary5: "5th Primary",
+    primary6: "6th Primary",
+    preparatory1: "1st Preparatory",
+    preparatory2: "2nd Preparatory",
+    preparatory3: "3rd Preparatory",
+  },
+  forms: {
+    studentName: "Student name",
+    governmentId: "Government ID",
+    educationStage: "Education stage",
+    gradeLevel: "Grade level",
+    bookName: "Book name",
+    quantity: "Quantity",
+  },
+  buttons: {
+    add: "Add",
+    edit: "Edit",
+    save: "Save",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    reverse: "Reverse",
+    export: "Export",
+    addStock: "Add stock",
+  },
+  warnings: {
+    unsavedBookSelection: "You have unconfirmed book selections.",
+    zeroStock: "Out of stock",
+    rejectedSyncCommand: "A sync command was rejected.",
+  },
+  sync: {
+    offlineReady: "Offline ready",
+    synced: "Synced",
+    syncing: "Syncing",
+    offline: "Offline",
+    rejected: "Rejected",
+  },
+  logs: {
+    shipmentIncrease: "Shipment increase",
+    studentIssue: "Student issue",
+    reversal: "Reversal",
+    noLogs: "No logs yet",
+  },
+  export: {
+    alGharbia: "Al-Gharbia",
+    eastTantaAdministrativeLearning: "East Tanta Administrative Learning",
+    alRafiiSchools: "Al-Rafii Schools",
+    educationalYear: "for the educational year:",
+    studentSignature: "student signature",
+  },
+  errors: {
+    validationFailed: "Validation failed",
+    insufficientStock: "Insufficient stock",
+    unknownStudent: "Unknown student",
+    unknownBook: "Unknown book",
+    transactionAlreadyReversed: "Transaction already reversed",
+  },
+  emptyStates: {
+    students: "No students yet",
+    books: "No books yet",
+    logs: "No logs yet",
+  },
+} as const;
+
+type WidenStrings<T> = {
+  readonly [Key in keyof T]: T[Key] extends string ? string : WidenStrings<T[Key]>;
+};
+
+export type TranslationDictionary = WidenStrings<typeof en>;
