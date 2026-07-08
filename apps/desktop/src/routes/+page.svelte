@@ -8,6 +8,7 @@
     type TranslationKey,
   } from "$lib/i18n";
   import { appTabs, type AppTabId } from "$lib/ui/app-tabs";
+  import BooksTab from "$lib/ui/books/BooksTab.svelte";
 
   let activeTab = $state<AppTabId>("students");
 
@@ -76,7 +77,11 @@
       <span>{t("app.recordsCount")}</span>
     </div>
 
-    <div class="empty-state">{t(emptyStateKeys[activeTab])}</div>
+    {#if activeTab === "books"}
+      <BooksTab />
+    {:else}
+      <div class="empty-state">{t(emptyStateKeys[activeTab])}</div>
+    {/if}
   </section>
 </main>
 

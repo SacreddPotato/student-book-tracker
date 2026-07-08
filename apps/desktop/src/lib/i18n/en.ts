@@ -43,6 +43,7 @@ export const en = {
   },
   buttons: {
     add: "Add",
+    addBook: "Add book",
     edit: "Edit",
     save: "Save",
     cancel: "Cancel",
@@ -50,6 +51,19 @@ export const en = {
     reverse: "Reverse",
     export: "Export",
     addStock: "Add stock",
+  },
+  books: {
+    inventory: "Book inventory",
+    addBook: "Add book",
+    editBook: "Edit",
+    addStockTo: "Add stock to",
+    stageFilter: "Stage filter",
+    allStages: "All stages",
+    status: "Status",
+    actions: "Actions",
+    inStock: "In stock",
+    loading: "Loading books",
+    noMatchingStage: "No books match this stage",
   },
   warnings: {
     unsavedBookSelection: "You have unconfirmed book selections.",

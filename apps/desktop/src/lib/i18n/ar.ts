@@ -45,6 +45,7 @@ export const ar = {
   },
   buttons: {
     add: "إضافة",
+    addBook: "إضافة كتاب",
     edit: "تعديل",
     save: "حفظ",
     cancel: "إلغاء",
@@ -52,6 +53,19 @@ export const ar = {
     reverse: "عكس",
     export: "تصدير",
     addStock: "إضافة مخزون",
+  },
+  books: {
+    inventory: "مخزون الكتب",
+    addBook: "إضافة كتاب",
+    editBook: "تعديل",
+    addStockTo: "إضافة مخزون إلى",
+    stageFilter: "تصفية المرحلة",
+    allStages: "كل المراحل",
+    status: "الحالة",
+    actions: "الإجراءات",
+    inStock: "متوفر",
+    loading: "جاري تحميل الكتب",
+    noMatchingStage: "لا توجد كتب مطابقة لهذه المرحلة",
   },
   warnings: {
     unsavedBookSelection: "لديك اختيارات كتب غير مؤكدة.",

@@ -113,7 +113,28 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### Segment 6: Books Tab
+
+- Status: completed on `pre-release`.
+- Added `BooksTab.svelte`, `BookForm.svelte`, and `AddStockDialog.svelte` under `apps/desktop/src/lib/ui/books`.
+- The Books tab lists local SQLite books, supports stage filtering, and displays zero-stock books with a translated warning label and highlighted row state.
+- Added create and edit flows for book name and education stage.
+- Added an Add Stock flow that calls the local `addBookStock` inventory service and refreshes the visible quantity.
+- Added DOM component tests with `@testing-library/svelte`, `@testing-library/jest-dom`, `@testing-library/user-event`, and `jsdom`.
+- Configured the Svelte testing plugin in `apps/desktop/vite.config.js` so component tests use Svelte's browser runtime.
+- Updated English and Arabic dictionaries with Books tab labels.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/ui/books/books-tab.test.ts`
+  - `npm run test -w @app/desktop`
+  - `npm run typecheck -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run tauri -w @app/desktop -- dev` with `%USERPROFILE%\.cargo\bin` prepended to PATH
+- Environment note: plain Vite browser smoke can render the shell and Books tab route, but local DB behavior still requires Tauri or injected test DB because Tauri SQL is unavailable in a normal browser.
+
 ## Next Segment Starting Point
 
-- Segment 6 should build the Books tab UI.
-- Start by wiring book list/form tests against the local DB/repository layer and the `addBookStock` service.
+- Segment 7 should build the Students tab UI and book issuance flow.
+- Start with tests for draft book selections, Confirm issuing books through `issueBooksToStudent`, zero-stock disabled states, and unsaved-selection warnings.
