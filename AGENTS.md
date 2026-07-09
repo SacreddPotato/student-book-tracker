@@ -277,7 +277,28 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### Segment 12: Desktop Sync Engine
+
+- Status: completed on `pre-release` after the Segment 11 publication checkpoint.
+- Added desktop build-time sync configuration through `VITE_SYNC_API_BASE_URL` and optional `VITE_SYNC_API_SHARED_SECRET`; development defaults to `http://127.0.0.1:8787`, while production requires its deployed API URL to be injected during packaging.
+- Added a fetch-based API client that sends `x-sync-api-key`, pushes commands to `/sync/push`, and pulls entity snapshots from `/sync/pull` using the last cursor.
+- Added the sync engine to desktop startup and browser `online` events. It leaves the local queue pending on network failure, marks accepted/duplicate rows synced, and records rejected rows with their server reason.
+- Added local `sync_state` repository helpers. The engine persists the latest pull cursor, last successful sync time, and last error.
+- Applied pulled student, book, transaction, item, and student-book snapshots to local SQLite, preserving local transaction IDs where a command had already been created locally. Local reversal commands are translated to the original command ID before they are sent to the remote API.
+- Student and book create/edit flows now enqueue `UPSERT_STUDENT` and `UPSERT_BOOK` commands, so the sync engine covers all shared local writes rather than inventory commands only.
+- Added a compact visible sync indicator for syncing, synced, offline/error, and rejected states; rejected command counts remain visible for later Segment 13 conflict-detail work.
+- Enabled the sync API CORS policy for the desktop webview and the custom `X-Sync-Api-Key` header.
+- Added runtime-config and sync-engine tests for offline queue preservation, accepted result handling, rejected stock conflict preservation, reversal target translation, and pull snapshot application.
+- Verification completed:
+  - `npm run test -w @app/desktop`
+  - `npm run typecheck -w @app/desktop`
+  - `npm run build -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- Segment 12 should implement the desktop sync engine.
-- Start with the desktop API client configured to send `x-sync-api-key`, push pending outbox commands to `/sync/push`, then apply `/sync/pull` entity snapshots using `nextCursor` and `sync_changes.sequence`.
+- Segment 13 should implement conflict visibility and recovery.
+- Start with a dedicated rejected-command panel that retains the audit rows and, for insufficient-stock rejections, resolves the relevant local student and book names from the saved command payload.

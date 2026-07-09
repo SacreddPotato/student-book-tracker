@@ -76,10 +76,29 @@ export async function listPendingOutboxRows(database: SqlDatabase): Promise<Outb
 
 export async function updateOutboxStatus(
   database: SqlDatabase,
-  update: Pick<OutboxRow, "id" | "status" | "lastError" | "updatedAt">,
+  update: Pick<OutboxRow, "id" | "status" | "lastError" | "updatedAt"> & {
+    attempts?: number;
+  },
 ): Promise<void> {
   await database.execute(
-    "UPDATE sync_outbox SET status = $1, last_error = $2, updated_at = $3 WHERE id = $4",
-    [update.status, update.lastError, update.updatedAt, update.id],
+    `UPDATE sync_outbox
+    SET status = $1,
+      last_error = $2,
+      updated_at = $3,
+      attempts = COALESCE($4, attempts)
+    WHERE id = $5`,
+    [update.status, update.lastError, update.updatedAt, update.attempts ?? null, update.id],
   );
+}
+
+export async function countOutboxRowsByStatus(
+  database: SqlDatabase,
+  status: OutboxStatus,
+): Promise<number> {
+  const rows = await database.select<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM sync_outbox WHERE status = $1",
+    [status],
+  );
+
+  return Number(rows[0]?.count ?? 0);
 }

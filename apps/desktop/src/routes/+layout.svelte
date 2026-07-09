@@ -3,18 +3,39 @@
 
   import { initializeLocalDatabase } from "$lib/db/local-db";
   import { language } from "$lib/i18n";
+  import { SyncEngine } from "$lib/sync/sync-engine";
+  import SyncStatus from "$lib/ui/sync/SyncStatus.svelte";
 
   let { children } = $props();
 
   onMount(() => {
-    void initializeLocalDatabase().catch((error: unknown) => {
-      console.error("Failed to initialize local database", error);
-    });
+    let disposed = false;
+
+    async function initializeAndSync(): Promise<void> {
+      try {
+        const database = await initializeLocalDatabase();
+        if (!disposed) {
+          await new SyncEngine({ database }).sync();
+        }
+      } catch (error) {
+        console.error("Failed to initialize local database", error);
+      }
+    }
+
+    const syncWhenOnline = () => void initializeAndSync();
+    void initializeAndSync();
+    window.addEventListener("online", syncWhenOnline);
+
+    return () => {
+      disposed = true;
+      window.removeEventListener("online", syncWhenOnline);
+    };
   });
 </script>
 
 <div class="localized-shell" lang={$language} dir={$language === "ar" ? "rtl" : "ltr"}>
   {@render children()}
+  <SyncStatus />
 </div>
 
 <style>

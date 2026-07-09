@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import { createDbClient } from "./db/client";
 import { readSyncApiEnv } from "./env";
@@ -12,6 +13,13 @@ const env = readSyncApiEnv();
 const database = createDbClient(env);
 const app = new Hono();
 
+app.use(
+  "/*",
+  cors({
+    allowHeaders: ["Content-Type", "X-Sync-Api-Key"],
+    allowMethods: ["GET", "POST", "OPTIONS"],
+  }),
+);
 app.route("/", createHealthRoutes());
 app.route(
   "/sync",

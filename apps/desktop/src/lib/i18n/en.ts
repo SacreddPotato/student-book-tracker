@@ -97,6 +97,9 @@ export const en = {
     syncing: "Syncing",
     offline: "Offline",
     rejected: "Rejected",
+    error: "Sync needs attention",
+    pendingCount: "{count} pending",
+    rejectedCount: "{count} rejected",
   },
   logs: {
     inventoryHistory: "Inventory history",

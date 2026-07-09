@@ -9,6 +9,7 @@
 
   import { initializeLocalDatabase, type SqlDatabase } from "$lib/db/local-db";
   import { listBooks, type BookRow } from "$lib/db/repositories/books";
+  import { enqueueSyncCommand } from "$lib/db/repositories/outbox";
   import { listStudents, upsertStudent, type StudentRow } from "$lib/db/repositories/students";
   import { listActiveStudentBookRows } from "$lib/db/repositories/transactions";
   import { getTranslation, language, type TranslationKey } from "$lib/i18n";
@@ -154,9 +155,10 @@
     const db = await getDatabase();
     const timestamp = now();
     const currentStudent = editingStudent;
+    const studentId = currentStudent?.id ?? createId();
 
     await upsertStudent(db, {
-      id: currentStudent?.id ?? createId(),
+      id: studentId,
       scopeId: currentStudent?.scopeId ?? "global",
       name: value.name,
       governmentId: value.governmentId,
@@ -166,6 +168,23 @@
       updatedAt: timestamp,
       deletedAt: null,
     });
+    await enqueueSyncCommand(
+      db,
+      {
+        id: crypto.randomUUID(),
+        type: "UPSERT_STUDENT",
+        deviceId,
+        occurredAt: timestamp,
+        student: {
+          id: studentId,
+          name: value.name,
+          governmentId: value.governmentId,
+          educationStage: value.educationStage,
+          gradeLevel: value.gradeLevel,
+        },
+      },
+      timestamp,
+    );
 
     showCreateForm = false;
     editingStudent = null;

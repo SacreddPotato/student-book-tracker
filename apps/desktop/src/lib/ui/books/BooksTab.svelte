@@ -4,6 +4,7 @@
 
   import { initializeLocalDatabase, type SqlDatabase } from "$lib/db/local-db";
   import { listBooks, upsertBook, type BookRow } from "$lib/db/repositories/books";
+  import { enqueueSyncCommand } from "$lib/db/repositories/outbox";
   import { getTranslation, language, type TranslationKey } from "$lib/i18n";
   import { addBookStock } from "$lib/services/inventory-service";
   import AddStockDialog from "./AddStockDialog.svelte";
@@ -79,9 +80,10 @@
     const db = await getDatabase();
     const timestamp = now();
     const currentBook = editingBook;
+    const bookId = currentBook?.id ?? createId();
 
     await upsertBook(db, {
-      id: currentBook?.id ?? createId(),
+      id: bookId,
       scopeId: currentBook?.scopeId ?? "global",
       name: value.name,
       educationStage: value.educationStage,
@@ -90,6 +92,21 @@
       updatedAt: timestamp,
       deletedAt: null,
     });
+    await enqueueSyncCommand(
+      db,
+      {
+        id: crypto.randomUUID(),
+        type: "UPSERT_BOOK",
+        deviceId,
+        occurredAt: timestamp,
+        book: {
+          id: bookId,
+          name: value.name,
+          educationStage: value.educationStage,
+        },
+      },
+      timestamp,
+    );
 
     showCreateForm = false;
     editingBook = null;

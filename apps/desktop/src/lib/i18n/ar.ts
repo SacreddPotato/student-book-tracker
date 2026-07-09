@@ -99,6 +99,9 @@ export const ar = {
     syncing: "جار المزامنة",
     offline: "غير متصل",
     rejected: "مرفوض",
+    error: "تحتاج المزامنة إلى مراجعة",
+    pendingCount: "{count} قيد الانتظار",
+    rejectedCount: "{count} مرفوض",
   },
   logs: {
     inventoryHistory: "سجل المخزون",
