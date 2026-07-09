@@ -74,6 +74,23 @@ export async function listPendingOutboxRows(database: SqlDatabase): Promise<Outb
   );
 }
 
+export async function listRejectedOutboxRows(database: SqlDatabase): Promise<OutboxRow[]> {
+  return database.select<OutboxRow>(
+    `SELECT
+      id,
+      command_type AS commandType,
+      payload_json AS payloadJson,
+      status,
+      attempts,
+      last_error AS lastError,
+      created_at AS createdAt,
+      updated_at AS updatedAt
+    FROM sync_outbox
+    WHERE status = 'rejected'
+    ORDER BY updated_at DESC, created_at DESC`,
+  );
+}
+
 export async function updateOutboxStatus(
   database: SqlDatabase,
   update: Pick<OutboxRow, "id" | "status" | "lastError" | "updatedAt"> & {

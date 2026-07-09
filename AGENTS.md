@@ -298,7 +298,24 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### Segment 13: Conflict Visibility And Recovery
+
+- Status: completed on `pre-release`.
+- Added a dedicated `SyncConflictsPanel` that appears only for unacknowledged rejected commands.
+- Insufficient-stock issue conflicts now resolve and show the affected local student name and requested book names from the persisted command payload.
+- Acknowledging a conflict stores only its ID in `app_settings`; the original `sync_outbox` row remains rejected and available for audit.
+- Rejected rows are still excluded from the sync engine's pending queue, so acknowledgement never retries a rejected command.
+- The compact sync indicator now distinguishes the count of unacknowledged rejections and hides the rejected warning once every currently rejected command has been reviewed.
+- Added component tests covering visible rejected issue context and acknowledgement without deleting the audit row.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/ui/sync/sync-conflicts.test.ts`
+  - `npm run typecheck -w @app/desktop`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- Segment 13 should implement conflict visibility and recovery.
-- Start with a dedicated rejected-command panel that retains the audit rows and, for insufficient-stock rejections, resolves the relevant local student and book names from the saved command payload.
+- Segment 14 should implement the desktop updater flow.
+- Start with Tauri updater configuration, keeping updater checks disabled in local development and leaving production checks/manual actions to the settings UI.

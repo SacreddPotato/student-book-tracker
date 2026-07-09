@@ -15,7 +15,7 @@
   }
 </script>
 
-{#if $syncStatus.phase !== "idle"}
+{#if $syncStatus.phase !== "idle" && !($syncStatus.phase === "rejected" && $syncStatus.unacknowledgedRejectedCount === 0)}
   <aside class="sync-status" data-phase={$syncStatus.phase} aria-live="polite">
     <span class="status-dot" aria-hidden="true"></span>
     <span>{t(labelKeyByPhase[$syncStatus.phase])}</span>
@@ -24,9 +24,12 @@
         {t("sync.pendingCount").replace("{count}", String($syncStatus.pendingCount))}
       </span>
     {/if}
-    {#if $syncStatus.rejectedCount > 0}
+    {#if $syncStatus.unacknowledgedRejectedCount > 0}
       <span class="detail">
-        {t("sync.rejectedCount").replace("{count}", String($syncStatus.rejectedCount))}
+        {t("sync.rejectedCount").replace(
+          "{count}",
+          String($syncStatus.unacknowledgedRejectedCount),
+        )}
       </span>
     {/if}
   </aside>

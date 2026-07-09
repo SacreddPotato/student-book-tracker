@@ -102,6 +102,12 @@ export const ar = {
     error: "تحتاج المزامنة إلى مراجعة",
     pendingCount: "{count} قيد الانتظار",
     rejectedCount: "{count} مرفوض",
+    conflicts: "تعارضات المزامنة",
+    conflictCount: "{count} تحتاج إلى مراجعة",
+    insufficientStockConflict: "المخزون غير كافٍ",
+    student: "الطالب",
+    books: "الكتب",
+    acknowledge: "تأكيد المراجعة",
   },
   logs: {
     inventoryHistory: "سجل المخزون",

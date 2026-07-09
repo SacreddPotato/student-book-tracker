@@ -100,6 +100,12 @@ export const en = {
     error: "Sync needs attention",
     pendingCount: "{count} pending",
     rejectedCount: "{count} rejected",
+    conflicts: "Sync conflicts",
+    conflictCount: "{count} need attention",
+    insufficientStockConflict: "Insufficient stock",
+    student: "Student",
+    books: "Books",
+    acknowledge: "Acknowledge",
   },
   logs: {
     inventoryHistory: "Inventory history",
