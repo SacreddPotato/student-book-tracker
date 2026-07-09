@@ -11,6 +11,16 @@ export default defineConfig(async () => ({
   build: {
     chunkSizeWarningLimit: 1000,
   },
+  // Component tests use Vitest's client environment, while their in-memory
+  // repository fixtures use Node's built-in SQLite module. Keep that module
+  // external so Linux CI does not try to browser-bundle it.
+  environments: {
+    client: {
+      resolve: {
+        external: ["node:sqlite"],
+      },
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
