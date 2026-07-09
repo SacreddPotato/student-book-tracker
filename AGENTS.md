@@ -237,6 +237,11 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 - Environment note: put the Neon dev/testing branch URL in untracked `apps/sync-api/.env` as `DATABASE_URL`; put the production Neon branch URL in GitHub environment secrets or the production hosting provider env vars as `DATABASE_URL`. Store `SYNC_API_SHARED_SECRET` beside the matching URL in the same local file or secret store.
+- Live Neon migration status:
+  - On 2026-07-09, the configured Neon connection in `apps/sync-api/.env` was verified with a safe `select 1` query.
+  - `npm run db:migrate -w @app/sync-api` was run successfully against the configured Neon database.
+  - The remote database was verified to contain all Segment 10 public tables plus Drizzle migration history.
+- Ongoing migration rule: whenever the sync API Drizzle schema changes during development, generate/commit the migration and run `npm run db:migrate -w @app/sync-api` against the configured Neon dev/testing branch before considering the iteration complete.
 
 ## Next Segment Starting Point
 
