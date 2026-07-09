@@ -3,6 +3,7 @@
 
   import { initializeLocalDatabase } from "$lib/db/local-db";
   import { language } from "$lib/i18n";
+  import { runStartupUpdateCheck } from "$lib/services/updater";
   import { SyncEngine } from "$lib/sync/sync-engine";
   import SyncConflictsPanel from "$lib/ui/sync/SyncConflictsPanel.svelte";
   import SyncStatus from "$lib/ui/sync/SyncStatus.svelte";
@@ -25,6 +26,7 @@
 
     const syncWhenOnline = () => void initializeAndSync();
     void initializeAndSync();
+    void runStartupUpdateCheck();
     window.addEventListener("online", syncWhenOnline);
 
     return () => {

@@ -62,4 +62,16 @@ describe("app shell", () => {
     expect(screen.queryByRole("button", { name: "Maximize window" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close window" })).not.toBeInTheDocument();
   });
+
+  it("keeps updater actions in the Settings screen instead of the primary workflow", async () => {
+    const user = userEvent.setup();
+    render(Page);
+
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "App updates" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check for updates" })).toBeInTheDocument();
+    expect(screen.getByText("Version 0.1.0")).toBeInTheDocument();
+  });
 });

@@ -9,23 +9,21 @@
   import { appTabs, type AppTabId } from "$lib/ui/app-tabs";
   import BooksTab from "$lib/ui/books/BooksTab.svelte";
   import LogsTab from "$lib/ui/logs/LogsTab.svelte";
+  import SettingsTab from "$lib/ui/settings/SettingsTab.svelte";
   import StudentsTab from "$lib/ui/students/StudentsTab.svelte";
   import UnsavedBookSelectionDialog from "$lib/ui/students/UnsavedBookSelectionDialog.svelte";
 
-  let activeTab = $state<AppTabId>("students");
-  let studentsHaveDraftSelections = $state(false);
-  let pendingTab = $state<AppTabId | null>(null);
+  type ScreenId = AppTabId | "settings";
 
-  const panelTitleKeys: Record<AppTabId, TranslationKey> = {
+  let activeTab = $state<ScreenId>("students");
+  let studentsHaveDraftSelections = $state(false);
+  let pendingTab = $state<ScreenId | null>(null);
+
+  const panelTitleKeys: Record<ScreenId, TranslationKey> = {
     students: "tabs.students",
     books: "tabs.books",
     logs: "tabs.logs",
-  };
-
-  const emptyStateKeys: Record<AppTabId, TranslationKey> = {
-    students: "emptyStates.students",
-    books: "emptyStates.books",
-    logs: "emptyStates.logs",
+    settings: "tabs.settings",
   };
 
   function t(key: TranslationKey): string {
@@ -36,7 +34,7 @@
     setLanguage(nextLanguage);
   }
 
-  function requestTabChange(nextTab: AppTabId): void {
+  function requestTabChange(nextTab: ScreenId): void {
     if (activeTab === "students" && nextTab !== "students" && studentsHaveDraftSelections) {
       pendingTab = nextTab;
       return;
@@ -85,23 +83,36 @@
       {/each}
     </nav>
 
-    <div class="language-toggle" role="group" aria-label={t("app.language")}>
+    <div class="sidebar-bottom">
       <button
+        type="button"
+        data-tab="settings"
+        class="sidebar-link"
+        class:active={activeTab === "settings"}
+        aria-pressed={activeTab === "settings"}
+        onclick={() => requestTabChange("settings")}
+      >
+        {t("tabs.settings")}
+      </button>
+
+      <div class="language-toggle" role="group" aria-label={t("app.language")}>
+        <button
         type="button"
         aria-pressed={$language === "en"}
         class:active={$language === "en"}
         onclick={() => selectLanguage("en")}
       >
         EN
-      </button>
-      <button
+        </button>
+        <button
         type="button"
         aria-pressed={$language === "ar"}
         class:active={$language === "ar"}
         onclick={() => selectLanguage("ar")}
       >
         AR
-      </button>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -120,7 +131,7 @@
     {:else if activeTab === "logs"}
       <LogsTab />
     {:else}
-      <div class="empty-state">{t(emptyStateKeys[activeTab])}</div>
+      <SettingsTab />
     {/if}
   </section>
 
@@ -262,11 +273,40 @@
     background: #99e5cf;
   }
 
+  .sidebar-bottom {
+    display: grid;
+    gap: 14px;
+    margin-top: auto;
+    padding: 0 12px;
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #aebdca;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-align: start;
+  }
+
+  .sidebar-link:hover,
+  .sidebar-link.active {
+    color: #ffffff;
+    background: rgb(255 255 255 / 0.08);
+  }
+
   .language-toggle {
     display: flex;
     width: fit-content;
     gap: 3px;
-    margin: auto 12px 0;
+    margin: 0;
     padding: 3px;
     border: 1px solid rgb(255 255 255 / 0.12);
     border-radius: 9px;
@@ -322,21 +362,13 @@
     text-transform: uppercase;
   }
 
-  .empty-state {
-    display: grid;
-    min-height: 320px;
-    place-items: center;
-    color: #6d7d90;
-    font-weight: 700;
-  }
-
   :global(.app-shell button),
   :global(.app-shell input),
   :global(.app-shell select) {
     font-family: inherit;
   }
 
-  :global(.app-shell button:not(.tabs button):not(.language-toggle button)) {
+  :global(.app-shell button:not(.tabs button):not(.sidebar-link):not(.language-toggle button)) {
     min-height: 40px;
     border: 1px solid #173447;
     border-radius: 9px;
@@ -348,7 +380,7 @@
     transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
   }
 
-  :global(.app-shell button:not(.tabs button):not(.language-toggle button):hover:not(:disabled)) {
+  :global(.app-shell button:not(.tabs button):not(.sidebar-link):not(.language-toggle button):hover:not(:disabled)) {
     background: #285065;
     box-shadow: 0 5px 12px rgb(23 52 71 / 0.16);
     transform: translateY(-1px);
@@ -554,8 +586,20 @@
       padding: 9px;
     }
 
+    .sidebar-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding: 0 6px;
+    }
+
+    .sidebar-link {
+      width: auto;
+    }
+
     .language-toggle {
-      margin: 16px 6px 0;
+      margin: 0;
     }
 
     .workspace {

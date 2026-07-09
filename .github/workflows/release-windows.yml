@@ -1,0 +1,167 @@
+name: Release Windows desktop app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SemVer version already committed in apps/desktop/package.json (without the v prefix)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release-${{ github.event.inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release source
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve and validate the release version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release version is not valid SemVer: $version" >&2
+            exit 1
+          fi
+
+          source_version="$(node -p "require('./apps/desktop/package.json').version")"
+          config_version="$(node -p "JSON.parse(require('fs').readFileSync('apps/desktop/src-tauri/tauri.conf.json', 'utf8')).version")"
+
+          if [ "$source_version" != "$version" ]; then
+            echo "apps/desktop/package.json is $source_version, expected $version" >&2
+            exit 1
+          fi
+
+          if [ "$config_version" != "../package.json" ]; then
+            echo "tauri.conf.json must resolve its version from ../package.json" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run release quality gates
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+
+  create-tag:
+    name: Create version tag
+    needs: validate
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag the validated commit
+        id: tag
+        env:
+          TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Build and publish signed Windows installer
+    needs: [validate, create-tag]
+    if: needs.validate.result == 'success' && (github.event_name != 'workflow_dispatch' || needs.create-tag.result == 'success')
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.tag || github.ref }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build signed updater artifacts into a draft release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_SYNC_API_BASE_URL: ${{ vars.SYNC_API_BASE_URL }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: npm run tauri
+          tagName: ${{ needs.validate.outputs.tag }}
+          releaseName: Student Book Tracker v${{ needs.validate.outputs.version }}
+          releaseBody: Signed Windows installer and updater metadata for v${{ needs.validate.outputs.version }}.
+          releaseDraft: true
+          prerelease: false
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          updaterJsonPreferNsis: true
+
+      - name: Verify installer, signature, and updater metadata
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          $assets = gh release view $env:TAG --json assets --jq '.assets[].name'
+          if ($assets -notcontains 'latest.json') {
+            throw 'The release is missing latest.json.'
+          }
+          if (-not ($assets | Where-Object { $_ -match '\.exe$' })) {
+            throw 'The release is missing a Windows installer.'
+          }
+          if (-not ($assets | Where-Object { $_ -match '\.exe\.sig$' })) {
+            throw 'The release is missing the signed updater artifact.'
+          }
+
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate.outputs.tag }}
+        run: gh release edit "$env:TAG" --draft=false --prerelease=false

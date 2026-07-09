@@ -20,3 +20,7 @@ npm run test
 ```
 
 Desktop builds use SvelteKit static output so Tauri can package the frontend from `apps/desktop/build`.
+
+## Windows releases
+
+Signed Windows installers and the desktop auto-updater are built through GitHub Actions. See [the release runbook](docs/runbooks/release.md) for the release gate, signing boundary, and updater smoke-test procedure.
