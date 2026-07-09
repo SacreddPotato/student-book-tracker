@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getTranslation, language } from "$lib/i18n";
+import { desktopVersion } from "$lib/services/updater";
 import Page from "./+page.svelte";
 
 vi.mock("$lib/db/local-db", () => ({
@@ -72,6 +73,6 @@ describe("app shell", () => {
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "App updates" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Check for updates" })).toBeInTheDocument();
-    expect(screen.getByText("Version 0.1.0")).toBeInTheDocument();
+    expect(screen.getByText(`Version ${desktopVersion}`)).toBeInTheDocument();
   });
 });
