@@ -107,7 +107,7 @@ jobs:
   release:
     name: Build and publish signed Windows installer
     needs: [validate, create-tag]
-    if: needs.validate.result == 'success' && (github.event_name != 'workflow_dispatch' || needs.create-tag.result == 'success')
+    if: ${{ always() && needs.validate.result == 'success' && (github.event_name != 'workflow_dispatch' || needs.create-tag.result == 'success') }}
     runs-on: windows-latest
 
     steps:
