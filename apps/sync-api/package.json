@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@app/shared": "0.1.0",
     "@hono/node-server": "^1.19.6",
+    "@neondatabase/serverless": "^1.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.10.7",

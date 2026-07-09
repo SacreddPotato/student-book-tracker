@@ -208,7 +208,38 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop`
   - `npm run build -w @app/desktop`
 
+### Segment 10: Sync API Schema And Migrations
+
+- Status: completed on `pre-release`.
+- Added Drizzle configuration for the sync API Postgres schema.
+- Added Neon serverless database client plumbing in `apps/sync-api/src/db/client.ts`.
+- Added `apps/sync-api/src/env.ts` with explicit guidance for where local testing and production Neon URLs belong.
+- Added a remote Postgres schema equivalent to the canonical local tables:
+  - `students`
+  - `books`
+  - `student_books`
+  - `inventory_transactions`
+  - `inventory_transaction_items`
+  - `sync_outbox`
+  - `sync_state`
+  - `app_settings`
+- Added remote-only `sync_changes` metadata with a monotonically increasing sequence cursor for future pull sync.
+- Generated the initial Drizzle migration under `apps/sync-api/drizzle`.
+- Updated `apps/sync-api/.env.example` without committing real URLs or secrets.
+- Added schema/env tests proving required tables, matching column names, and env placement guidance.
+- Verification completed:
+  - `npm run test -w @app/sync-api`
+  - `npm run typecheck -w @app/sync-api`
+  - `npm run db:generate -w @app/sync-api`
+  - `npm run db:migrate -w @app/sync-api` failed as expected because no Neon URL or sync secret is configured in this environment.
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+- Environment note: put the Neon dev/testing branch URL in untracked `apps/sync-api/.env` as `DATABASE_URL`; put the production Neon branch URL in GitHub environment secrets or the production hosting provider env vars as `DATABASE_URL`. Store `SYNC_API_SHARED_SECRET` beside the matching URL in the same local file or secret store.
+
 ## Next Segment Starting Point
 
-- Segment 10 should build the Sync API schema and migrations.
-- Start with Drizzle/Neon schema tests that prove the remote tables match the canonical local/shared tables, without committing real database URLs or secrets.
+- Segment 11 should implement sync API command application.
+- Start with `GET /health`, `POST /sync/push`, and `GET /sync/pull?since=<cursor>` route tests using the Segment 10 Drizzle schema.
+- Use `sync_changes.sequence` as the pull cursor source when implementing remote change reads.
