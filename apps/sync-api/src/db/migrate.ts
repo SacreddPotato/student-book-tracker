@@ -1,9 +1,15 @@
-import { migrate } from "drizzle-orm/neon-http/migrator";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { createDbClient } from "./client";
 
-await migrate(createDbClient(), {
-  migrationsFolder: "drizzle",
-});
+const database = createDbClient();
 
-console.log("Sync API database migrations applied.");
+try {
+  await migrate(database, {
+    migrationsFolder: "drizzle",
+  });
+
+  console.log("Sync API database migrations applied.");
+} finally {
+  await database.$client.end({ timeout: 5 });
+}

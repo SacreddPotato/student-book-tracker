@@ -1,11 +1,11 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 import { readSyncApiEnv, type SyncApiEnv } from "../env";
 import * as schema from "./schema";
 
 export function createDbClient(env: SyncApiEnv = readSyncApiEnv()) {
-  const sql = neon(env.DATABASE_URL);
+  const sql = postgres(env.DATABASE_URL, { max: 10 });
 
   return drizzle(sql, { schema });
 }

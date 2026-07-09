@@ -243,8 +243,41 @@ Update this file at the end of every completed implementation segment. Keep the 
   - The remote database was verified to contain all Segment 10 public tables plus Drizzle migration history.
 - Ongoing migration rule: whenever the sync API Drizzle schema changes during development, generate/commit the migration and run `npm run db:migrate -w @app/sync-api` against the configured Neon dev/testing branch before considering the iteration complete.
 
+### Frontend Redesign: Flexible Minimal Desktop Workspace
+
+- Status: completed on `pre-release` while Segment 11 is deferred.
+- Rebuilt the desktop shell as a responsive workspace with a compact dark navigation rail, persistent language toggle, and clearer active-section hierarchy.
+- Replaced the rigid full-width chrome with a restrained visual system: soft workspace background, elevated control cards, grouped data surfaces, consistent input/button states, and calmer empty/error states.
+- Applied the same system to Students, Books, Logs, forms, checklists, tables, status badges, and confirmation dialogs without changing local-first behavior or translation contracts.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/routes/page-shell.test.ts src/lib/ui/students/students-tab.test.ts src/lib/ui/books/books-tab.test.ts src/lib/ui/logs/logs-tab.test.ts`
+  - `npm run typecheck -w @app/desktop`
+  - `npm run build -w @app/desktop`
+  - Browser preview at `http://127.0.0.1:1420` for Students, Books, and Logs layouts.
+- Environment note: browser-only preview displays the tab-specific load-error placeholders because the Tauri SQLite plugin is unavailable outside the desktop shell; use `npm run tauri -w @app/desktop -- dev` for local database behavior.
+
+### Segment 11: Sync API Command Application
+
+- Status: completed on `pre-release`.
+- Added `GET /health`, protected `POST /sync/push`, and protected `GET /sync/pull?since=<cursor>`.
+- Sync transport protection uses the `x-sync-api-key` header and `SYNC_API_SHARED_SECRET`; it is a shared transport guard, not user identity or authorization.
+- Added runtime validation for every shared command type and push payloads.
+- Added transactional application for `UPSERT_STUDENT`, `UPSERT_BOOK`, `ADD_BOOK_STOCK`, `ISSUE_BOOKS_TO_STUDENT`, and `REVERSE_TRANSACTION`.
+- Command IDs are idempotent through `sync_changes`; accepted mutations write ordered entity snapshots to `sync_changes` for cursor-based pull sync.
+- Issuing locks the involved book rows in a database transaction before verifying stock; mixed-stage issues, missing records, duplicate book IDs, and insufficient stock are rejected without partial writes.
+- Reversals create an inverse transaction, restore quantities, mark the original transaction and issued student-book rows as reversed, and reject a second reversal.
+- Replaced the sync API's Neon HTTP database driver with the installed Postgres driver because the HTTP driver does not support Drizzle transactions. The migration command now closes its database client so it exits normally.
+- Added in-memory command-application and Hono route tests covering valid shipment, issue, reversal, duplicate command behavior, insufficient-stock rejection, transport token enforcement, malformed requests, and ordered pulls.
+- Verification completed:
+  - `npm run test -w @app/sync-api`
+  - `npm run typecheck -w @app/sync-api`
+  - `npm run db:migrate -w @app/sync-api` against the configured Neon dev/testing branch
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- Segment 11 should implement sync API command application.
-- Start with `GET /health`, `POST /sync/push`, and `GET /sync/pull?since=<cursor>` route tests using the Segment 10 Drizzle schema.
-- Use `sync_changes.sequence` as the pull cursor source when implementing remote change reads.
+- Segment 12 should implement the desktop sync engine.
+- Start with the desktop API client configured to send `x-sync-api-key`, push pending outbox commands to `/sync/push`, then apply `/sync/pull` entity snapshots using `nextCursor` and `sync_changes.sequence`.
