@@ -20,7 +20,7 @@ concurrency:
 jobs:
   validate:
     name: Validate release source
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
@@ -82,7 +82,7 @@ jobs:
     name: Create version tag
     needs: validate
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
 
@@ -94,6 +94,7 @@ jobs:
 
       - name: Tag the validated commit
         id: tag
+        shell: bash
         env:
           TAG: ${{ needs.validate.outputs.tag }}
         run: |
