@@ -404,6 +404,19 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `cargo check --manifest-path apps/desktop-react/src-tauri/Cargo.toml`
 - Environment note: first-time npm/Cargo commands can exceed short tool timeouts while producing buffered output. Check surviving processes and generated artifacts before retrying to avoid duplicate Cargo builds.
 
+### React Frontend Revamp Segment 2: React Persistence And Inventory Core
+
+- Status: completed on `pre-release`.
+- Ported the canonical eight-table SQLite schema, migration ledger, student/book/outbox/transaction/sync-state/settings repositories, and Tauri SQL database adapter into framework-neutral React workspace modules.
+- Ported the serialized local transaction coordinator; Tauri batches include the profile-selected allowlisted database filename.
+- Added atomic student/book save services that enqueue `UPSERT_STUDENT` and `UPSERT_BOOK` commands while preserving book quantity and record creation timestamps on edits.
+- Added stock increase, student issuance, and reversal services with deterministic dependency injection for tests.
+- Strengthened issuance validation to reject duplicate book IDs, missing records, zero stock, and books outside the student's education stage before any mutation.
+- Added a reusable Node `node:sqlite` in-memory harness for React core integration tests.
+- Verification completed:
+  - `npm run test -w @app/desktop-react -- src/core/db/persistence.test.ts src/core/services/inventory-service.test.ts src/core/services/entity-service.test.ts`
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- React workspace/profile scaffolding is complete. Start React Frontend Revamp Segment 2 by porting the SQLite schema, repositories, transaction coordinator, entity saves, and inventory workflows with Node SQLite contract tests.
+- React persistence and inventory parity are complete. Start React Frontend Revamp Segment 3 by porting sync push/pull, conflict acknowledgement, updater state, Excel export, external stores, and the production/fixture backend contracts.
