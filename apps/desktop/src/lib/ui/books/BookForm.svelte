@@ -13,9 +13,10 @@
     book?: BookRow | null;
     onCancel: () => void;
     onSave: (value: BookFormValue) => void | Promise<void>;
+    saving?: boolean;
   };
 
-  const { book = null, onCancel, onSave }: Props = $props();
+  const { book = null, onCancel, onSave, saving = false }: Props = $props();
 
   let initializedFor = $state<string | null>(null);
   let name = $state("");
@@ -45,7 +46,7 @@
     event.preventDefault();
     const trimmedName = name.trim();
 
-    if (!trimmedName) {
+    if (saving || !trimmedName) {
       return;
     }
 
@@ -59,12 +60,12 @@
 <form class="book-form" aria-label={book ? t("books.editBook") : t("books.addBook")} onsubmit={handleSubmit}>
   <label>
     <span>{t("forms.bookName")}</span>
-    <input bind:value={name} required autocomplete="off" />
+    <input bind:value={name} required autocomplete="off" disabled={saving} />
   </label>
 
   <label>
     <span>{t("forms.educationStage")}</span>
-    <select bind:value={educationStage}>
+    <select bind:value={educationStage} disabled={saving}>
       {#each educationStages as stage}
         <option value={stage}>{stageLabel(stage)}</option>
       {/each}
@@ -72,8 +73,8 @@
   </label>
 
   <div class="form-actions">
-    <button type="button" class="secondary" onclick={onCancel}>{t("buttons.cancel")}</button>
-    <button type="submit" disabled={!name.trim()}>{t("buttons.save")}</button>
+    <button type="button" class="secondary" onclick={onCancel} disabled={saving}>{t("buttons.cancel")}</button>
+    <button type="submit" disabled={saving || !name.trim()}>{t("buttons.save")}</button>
   </div>
 </form>
 

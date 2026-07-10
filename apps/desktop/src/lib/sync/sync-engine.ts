@@ -2,6 +2,7 @@ import type { SyncCommand, SyncCommandResult } from "@app/shared";
 
 import type { SqlDatabase } from "$lib/db/local-db";
 import { initializeLocalDatabase } from "$lib/db/local-db";
+import { runLocalTransaction } from "$lib/db/local-transaction";
 import { upsertBook, type BookRow } from "$lib/db/repositories/books";
 import {
   countOutboxRowsByStatus,
@@ -77,7 +78,9 @@ export class SyncEngine {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sync failed.";
       const state = await getSyncState(database);
-      await saveSyncState(database, { ...state, lastError: message });
+      await runLocalTransaction(database, async (transaction) => {
+        await saveSyncState(transaction, { ...state, lastError: message });
+      });
       await this.refreshStatus(database, isOfflineError(error) ? "offline" : "error", message);
     }
   }
@@ -98,12 +101,14 @@ export class SyncEngine {
         const command = JSON.parse(row.payloadJson) as SyncCommand;
         commands.push(await normaliseCommandForRemote(database, command));
       } catch (error) {
-        await updateOutboxStatus(database, {
-          id: row.id,
-          status: "rejected",
-          lastError: error instanceof Error ? error.message : "Invalid sync command.",
-          updatedAt: this.now(),
-          attempts: row.attempts + 1,
+        await runLocalTransaction(database, async (transaction) => {
+          await updateOutboxStatus(transaction, {
+            id: row.id,
+            status: "rejected",
+            lastError: error instanceof Error ? error.message : "Invalid sync command.",
+            updatedAt: this.now(),
+            attempts: row.attempts + 1,
+          });
         });
       }
     }
@@ -119,21 +124,23 @@ export class SyncEngine {
     const rowsById = new Map(pendingRows.map((row) => [row.id, row]));
     const resultIds = new Set(results.map((result) => result.commandId));
 
-    for (const result of results) {
-      const row = rowsById.get(result.commandId);
-      if (!row) {
-        throw new Error(`Sync API returned an unknown command result: ${result.commandId}`);
-      }
+    await runLocalTransaction(database, async (transaction) => {
+      for (const result of results) {
+        const row = rowsById.get(result.commandId);
+        if (!row) {
+          throw new Error(`Sync API returned an unknown command result: ${result.commandId}`);
+        }
 
-      const accepted = result.status === "accepted" || result.status === "duplicate";
-      await updateOutboxStatus(database, {
-        id: row.id,
-        status: accepted ? "synced" : "rejected",
-        lastError: accepted ? null : formatRejectedResult(result),
-        updatedAt: this.now(),
-        attempts: row.attempts + 1,
-      });
-    }
+        const accepted = result.status === "accepted" || result.status === "duplicate";
+        await updateOutboxStatus(transaction, {
+          id: row.id,
+          status: accepted ? "synced" : "rejected",
+          lastError: accepted ? null : formatRejectedResult(result),
+          updatedAt: this.now(),
+          attempts: row.attempts + 1,
+        });
+      }
+    });
 
     const missingResult = pendingRows.find(
       (row) => !resultIds.has(row.id) && isValidCommandJson(row.payloadJson),
@@ -149,9 +156,9 @@ export class SyncEngine {
 
     while (true) {
       const response = await client.pull(cursor);
-      await runInLocalTransaction(database, async () => {
-        await applyPulledChanges(database, response.changes);
-        await saveSyncState(database, {
+      await runLocalTransaction(database, async (transaction) => {
+        await applyPulledChanges(transaction, response.changes);
+        await saveSyncState(transaction, {
           id: state.id,
           pullCursor: response.nextCursor,
           lastSyncedAt: this.now(),
@@ -353,21 +360,7 @@ function isValidCommandJson(payloadJson: string): boolean {
 }
 
 function isOfflineError(error: unknown): boolean {
-  return error instanceof TypeError || (error instanceof Error && /network|fetch/i.test(error.message));
-}
-
-async function runInLocalTransaction<T>(
-  database: SqlDatabase,
-  operation: () => Promise<T>,
-): Promise<T> {
-  await database.execute("BEGIN");
-
-  try {
-    const result = await operation();
-    await database.execute("COMMIT");
-    return result;
-  } catch (error) {
-    await database.execute("ROLLBACK").catch(() => undefined);
-    throw error;
-  }
+  return (
+    error instanceof TypeError && !/database|transaction|sqlite|locked/i.test(error.message)
+  ) || (error instanceof Error && /network|fetch/i.test(error.message));
 }

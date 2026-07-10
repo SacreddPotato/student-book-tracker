@@ -13,6 +13,7 @@
   } from "$lib/db/repositories/transactions";
   import { getTranslation, language, type TranslationKey } from "$lib/i18n";
   import { reverseTransaction } from "$lib/services/inventory-service";
+  import { requestDesktopSync } from "$lib/sync/sync-runner";
   import LogGroup, { type LogEntryView } from "./LogGroup.svelte";
   import ReverseTransactionDialog from "./ReverseTransactionDialog.svelte";
 
@@ -35,6 +36,7 @@
   let pendingReverseEntry = $state<LogEntryView | null>(null);
   let loading = $state(true);
   let errorKey = $state<TranslationKey | null>(null);
+  let reversing = $state(false);
 
   function t(key: TranslationKey): string {
     return getTranslation($language, key);
@@ -163,20 +165,31 @@
       return;
     }
 
-    const db = await getDatabase();
-    const transactionId = pendingReverseEntry.id;
-    pendingReverseEntry = null;
-
-    await reverseTransaction(
-      { transactionId },
-      {
-        database: db,
-        createId,
-        now,
-        deviceId,
-      },
-    );
-    await refreshLogs();
+    if (reversing) return;
+    reversing = true;
+    try {
+      const db = await getDatabase();
+      const transactionId = pendingReverseEntry.id;
+      await reverseTransaction(
+        { transactionId },
+        {
+          database: db,
+          createId,
+          now,
+          deviceId,
+        },
+      );
+      pendingReverseEntry = null;
+      await refreshLogs();
+      if (!database) {
+        void requestDesktopSync(db);
+      }
+      errorKey = null;
+    } catch {
+      errorKey = "errors.saveFailed";
+    } finally {
+      reversing = false;
+    }
   }
 </script>
 
@@ -202,6 +215,7 @@
       title={pendingReverseEntry.title}
       onCancel={() => (pendingReverseEntry = null)}
       onConfirm={confirmReverse}
+      saving={reversing}
     />
   {/if}
 </section>

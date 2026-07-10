@@ -4,7 +4,7 @@
   import { initializeLocalDatabase } from "$lib/db/local-db";
   import { language } from "$lib/i18n";
   import { runStartupUpdateCheck } from "$lib/services/updater";
-  import { SyncEngine } from "$lib/sync/sync-engine";
+  import { requestDesktopSync } from "$lib/sync/sync-runner";
   import UpdateAvailableToast from "$lib/ui/settings/UpdateAvailableToast.svelte";
   import SyncConflictsPanel from "$lib/ui/sync/SyncConflictsPanel.svelte";
   import SyncStatus from "$lib/ui/sync/SyncStatus.svelte";
@@ -18,7 +18,7 @@
       try {
         const database = await initializeLocalDatabase();
         if (!disposed) {
-          await new SyncEngine({ database }).sync();
+          await requestDesktopSync(database);
         }
       } catch (error) {
         console.error("Failed to initialize local database", error);

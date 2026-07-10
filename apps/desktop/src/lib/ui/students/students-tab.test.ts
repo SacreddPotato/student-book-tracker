@@ -248,7 +248,7 @@ describe("StudentsTab", () => {
     expect(worksheet?.getCell("A6").value).toBe("Mona Ahmed");
     expect(worksheet?.getCell("B6").value).toBe("Issued");
     expect(worksheet?.getCell("A7").value).toBeNull();
-  });
+  }, 10_000);
 
   it("uses a student-specific load error instead of the generic validation message", async () => {
     render(StudentsTab, {

@@ -136,6 +136,25 @@ describe("inventory service", () => {
     });
   });
 
+  it("serializes simultaneous stock increases and calculates each quantity from committed stock", async () => {
+    await seedBook(database, "book-1", 2);
+
+    await Promise.all([
+      addBookStock(
+        { bookId: "book-1", quantity: 1 },
+        createContext(database, ["command-1", "transaction-1", "item-1"]),
+      ),
+      addBookStock(
+        { bookId: "book-1", quantity: 1 },
+        createContext(database, ["command-2", "transaction-2", "item-2"]),
+      ),
+    ]);
+
+    expect(await listBooks(database)).toEqual([expect.objectContaining({ id: "book-1", quantity: 4 })]);
+    expect(await listInventoryTransactions(database)).toHaveLength(2);
+    expect(await listPendingOutboxRows(database)).toHaveLength(2);
+  });
+
   it("issues books to a student, decrements quantities, records issued books, and enqueues sync", async () => {
     await seedStudent(database);
     await seedBook(database, "book-1", 2);

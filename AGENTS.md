@@ -40,6 +40,7 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run typecheck`
   - `npm run lint`
   - `npm run build`
+  - `cargo check` in `apps/desktop/src-tauri` with `%USERPROFILE%\.cargo\bin` prepended to `PATH`
   - `npm run dev:desktop` with `%USERPROFILE%\.cargo\bin` prepended to PATH
 - Environment note: Rust exists at `%USERPROFILE%\.cargo\bin`, but the current shell PATH may need that directory prepended before running Tauri commands.
 
@@ -369,6 +370,22 @@ Update this file at the end of every completed implementation segment. Keep the 
   - CI run `29091031496` for `0.1.0-demo.5`: success.
   - Release run `29091032788` for `v0.1.0-demo.5`: success; published the signed NSIS installer, `.sig`, and `latest.json` with both Windows updater targets.
 
+### Maintenance: Local SQLite Transaction Coordination And Reliable Sync
+
+- Status: completed on `pre-release`.
+- Diagnosed desktop `cannot start a transaction within a transaction` and `database is locked` errors as competing local `BEGIN` calls from inventory writes and sync pull application on the shared Tauri SQLite connection; this was not a Neon connectivity issue.
+- Added a shared local transaction coordinator that serializes multi-step mutations, owns commit/rollback, and is used by inventory workflows, student/book saves, sync push status updates, sync-state errors, and pulled snapshot application.
+- Inventory reads and validation now run inside the serialized transaction, so concurrent stock changes calculate from committed quantities rather than stale pre-transaction reads.
+- Added a single coalescing desktop sync runner for startup, reconnect, and post-mutation requests. Local student/book/inventory changes now request sync immediately; unavailable sync transport leaves outbox rows pending and reports Offline, while SQLite failures remain Sync errors.
+- Prevented duplicate submissions and uncaught promise failures: stock, book, student, issue, and reversal actions disable controls while saving; stock and other save failures remain visible without losing the pending dialog/form state.
+- Added coverage for competing SQLite transactions, concurrent stock increases, sync-runner coalescing, and duplicate Add Stock submission.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/db/local-transaction.test.ts src/lib/sync/sync-runner.test.ts src/lib/services/inventory-service.test.ts src/lib/ui/books/books-tab.test.ts src/lib/sync/sync-engine.test.ts`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+
 ## Next Segment Starting Point
 
-- MVP quality control is complete. Continue with maintenance, user feedback, or a separately scoped post-MVP segment.
+- SQLite transaction coordination and immediate, coalesced sync maintenance are complete. Continue with user feedback or a separately scoped post-MVP segment.

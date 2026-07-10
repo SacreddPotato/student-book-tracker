@@ -10,9 +10,10 @@
     issuedBookIds: string[];
     onToggle: (bookId: string, checked: boolean) => void;
     onConfirm: () => void | Promise<void>;
+    saving?: boolean;
   };
 
-  const { student, books, selectedBookIds, issuedBookIds, onToggle, onConfirm }: Props = $props();
+  const { student, books, selectedBookIds, issuedBookIds, onToggle, onConfirm, saving = false }: Props = $props();
 
   const stageBooks = $derived(
     books.filter((book) => book.educationStage === student.educationStage),
@@ -26,7 +27,7 @@
   }
 
   async function handleConfirm(): Promise<void> {
-    if (!canConfirm) {
+    if (saving || !canConfirm) {
       return;
     }
 
@@ -57,7 +58,7 @@
               type="checkbox"
               aria-label={book.name}
               checked={selectedSet.has(book.id) || issuedSet.has(book.id)}
-              disabled={book.quantity === 0 || issuedSet.has(book.id)}
+              disabled={saving || book.quantity === 0 || issuedSet.has(book.id)}
               onchange={(event) =>
                 onToggle(book.id, (event.currentTarget as HTMLInputElement).checked)}
             />
@@ -77,7 +78,7 @@
     </fieldset>
 
     <div class="panel-actions">
-      <button type="button" disabled={!canConfirm} onclick={handleConfirm}>{t("buttons.confirm")}</button>
+      <button type="button" disabled={saving || !canConfirm} onclick={handleConfirm}>{t("buttons.confirm")}</button>
     </div>
   {/if}
 </aside>

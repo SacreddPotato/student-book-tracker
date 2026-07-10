@@ -6,9 +6,11 @@
     book: BookRow;
     onCancel: () => void;
     onConfirm: (quantity: number) => void | Promise<void>;
+    saving?: boolean;
+    errorKey?: TranslationKey | null;
   };
 
-  const { book, onCancel, onConfirm }: Props = $props();
+  const { book, onCancel, onConfirm, saving = false, errorKey = null }: Props = $props();
 
   let quantity = $state(1);
 
@@ -19,7 +21,7 @@
   async function handleSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
 
-    if (quantity <= 0) {
+    if (saving || quantity <= 0) {
       return;
     }
 
@@ -36,12 +38,16 @@
 
     <label>
       <span>{t("forms.quantity")}</span>
-      <input type="number" min="1" step="1" bind:value={quantity} />
+      <input type="number" min="1" step="1" bind:value={quantity} disabled={saving} />
     </label>
 
+    {#if errorKey}
+      <p class="error" role="alert">{t(errorKey)}</p>
+    {/if}
+
     <div class="dialog-actions">
-      <button type="button" class="secondary" onclick={onCancel}>{t("buttons.cancel")}</button>
-      <button type="submit" disabled={quantity <= 0}>{t("buttons.confirm")}</button>
+      <button type="button" class="secondary" onclick={onCancel} disabled={saving}>{t("buttons.cancel")}</button>
+      <button type="submit" disabled={saving || quantity <= 0}>{t("buttons.confirm")}</button>
     </div>
   </form>
 </div>
@@ -106,6 +112,13 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+  }
+
+  .error {
+    margin: 0;
+    color: #a33722;
+    font-size: 0.88rem;
+    font-weight: 700;
   }
 
   button {

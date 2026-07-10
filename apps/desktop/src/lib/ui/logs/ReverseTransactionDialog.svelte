@@ -5,9 +5,16 @@
     title: string;
     onCancel: () => void;
     onConfirm: () => void | Promise<void>;
+    saving?: boolean;
   };
 
-  const { title, onCancel, onConfirm }: Props = $props();
+  const { title, onCancel, onConfirm, saving = false }: Props = $props();
+
+  async function confirm(): Promise<void> {
+    if (!saving) {
+      await onConfirm();
+    }
+  }
 
   function t(key: TranslationKey): string {
     return getTranslation($language, key);
@@ -24,8 +31,8 @@
     <p>{t("logs.reverseWarning").replace("{title}", title)}</p>
 
     <div class="dialog-actions">
-      <button type="button" class="secondary" onclick={onCancel}>{t("buttons.cancel")}</button>
-      <button type="button" onclick={() => void onConfirm()}>{t("buttons.confirm")}</button>
+      <button type="button" class="secondary" onclick={onCancel} disabled={saving}>{t("buttons.cancel")}</button>
+      <button type="button" onclick={confirm} disabled={saving}>{t("buttons.confirm")}</button>
     </div>
   </div>
 </div>

@@ -29,7 +29,7 @@ type FetchLike = typeof fetch;
 export function getSyncRuntimeConfig(
   environment: Record<string, string | boolean | undefined> = import.meta.env,
 ): SyncRuntimeConfig {
-  const configuredUrl = readString(environment.VITE_SYNC_API_BASE_URL);
+  const configuredUrl = readHttpUrl(environment.VITE_SYNC_API_BASE_URL);
   const development = environment.DEV === true;
 
   return {
@@ -101,6 +101,26 @@ export class FetchSyncApiClient implements SyncApiClient {
 
 function readString(value: string | boolean | undefined): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function readHttpUrl(value: string | boolean | undefined): string | null {
+  const configured = readString(value);
+  if (!configured) {
+    return null;
+  }
+
+  try {
+    const url = new URL(configured);
+    if ((url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password) {
+      return configured;
+    }
+  } catch {
+    // The stable configuration error below intentionally omits the supplied value.
+  }
+
+  throw new Error(
+    "VITE_SYNC_API_BASE_URL must be an HTTP(S) API URL without embedded credentials.",
+  );
 }
 
 async function parseResponse(response: Response): Promise<unknown> {

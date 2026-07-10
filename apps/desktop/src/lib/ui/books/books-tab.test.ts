@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { DatabaseSync } from "node:sqlite";
-import { render, screen, within } from "@testing-library/svelte";
+import { render, screen, waitFor, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -10,6 +10,7 @@ import type { SqlDatabase, SqlValue } from "../../db/local-db";
 import { runMigrations } from "../../db/migrations";
 import { listBooks, upsertBook } from "../../db/repositories/books";
 import { listPendingOutboxRows } from "../../db/repositories/outbox";
+import { listInventoryTransactions } from "../../db/repositories/transactions";
 import BooksTab from "./BooksTab.svelte";
 
 class TestSqliteDatabase implements SqlDatabase {
@@ -144,6 +145,34 @@ describe("BooksTab", () => {
         quantity: 5,
       }),
     );
+  });
+
+  it("accepts only one add-stock submission while saving", async () => {
+    const user = userEvent.setup();
+    await seedBook(database, {
+      id: "book-1",
+      name: "Primary Math",
+      educationStage: "primary",
+      quantity: 2,
+    });
+
+    render(BooksTab, {
+      props: {
+        database,
+        createId: createIdSequence(["stock-command", "stock-transaction", "stock-item"]),
+        now: () => fixedNow,
+      },
+    });
+
+    const row = await screen.findByRole("row", { name: /Primary Math/i });
+    await user.click(within(row).getByRole("button", { name: /Add stock to Primary Math/i }));
+    const confirm = screen.getByRole("button", { name: "Confirm" });
+    confirm.click();
+    confirm.click();
+
+    await waitFor(() => expect(screen.getByRole("row", { name: /Primary Math/i })).toHaveTextContent("3"));
+    expect(await listInventoryTransactions(database)).toHaveLength(1);
+    expect(await listPendingOutboxRows(database)).toHaveLength(1);
   });
 
   it("displays zero-stock books with a warning label and row state", async () => {

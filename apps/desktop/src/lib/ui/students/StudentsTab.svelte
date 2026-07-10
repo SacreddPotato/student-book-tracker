@@ -8,6 +8,7 @@
   } from "@app/shared";
 
   import { initializeLocalDatabase, type SqlDatabase } from "$lib/db/local-db";
+  import { runLocalTransaction } from "$lib/db/local-transaction";
   import { listBooks, type BookRow } from "$lib/db/repositories/books";
   import { enqueueSyncCommand } from "$lib/db/repositories/outbox";
   import { listStudents, upsertStudent, type StudentRow } from "$lib/db/repositories/students";
@@ -15,6 +16,7 @@
   import { getTranslation, language, type TranslationKey } from "$lib/i18n";
   import type { StudentsWorkbook } from "$lib/services/excel-export";
   import { issueBooksToStudent } from "$lib/services/inventory-service";
+  import { requestDesktopSync } from "$lib/sync/sync-runner";
   import StudentBookPanel from "./StudentBookPanel.svelte";
   import StudentForm, { type StudentFormValue } from "./StudentForm.svelte";
   import UnsavedBookSelectionDialog from "./UnsavedBookSelectionDialog.svelte";
@@ -53,6 +55,8 @@
   let selectedGrade = $state<GroupFilter<GradeLevel>>("all");
   let errorKey = $state<TranslationKey | null>(null);
   let actionErrorKey = $state<TranslationKey | null>(null);
+  let savingStudent = $state(false);
+  let savingIssue = $state(false);
 
   const hasDraftSelections = $derived(selectedBookIds.length > 0);
   const canExport = $derived(selectedGrade !== "all");
@@ -158,46 +162,55 @@
     const currentStudent = editingStudent;
     const studentId = currentStudent?.id ?? createId();
 
-    await upsertStudent(db, {
-      id: studentId,
-      scopeId: currentStudent?.scopeId ?? "global",
-      name: value.name,
-      governmentId: value.governmentId,
-      educationStage: value.educationStage,
-      gradeLevel: value.gradeLevel,
-      createdAt: currentStudent?.createdAt ?? timestamp,
-      updatedAt: timestamp,
-      deletedAt: null,
-    });
-    await enqueueSyncCommand(
-      db,
-      {
-        id: crypto.randomUUID(),
-        type: "UPSERT_STUDENT",
-        deviceId,
-        occurredAt: timestamp,
-        student: {
-          id: studentId,
-          name: value.name,
-          governmentId: value.governmentId,
-          educationStage: value.educationStage,
-          gradeLevel: value.gradeLevel,
+    await runLocalTransaction(db, async (transaction) => {
+      await upsertStudent(transaction, {
+        id: studentId,
+        scopeId: currentStudent?.scopeId ?? "global",
+        name: value.name,
+        governmentId: value.governmentId,
+        educationStage: value.educationStage,
+        gradeLevel: value.gradeLevel,
+        createdAt: currentStudent?.createdAt ?? timestamp,
+        updatedAt: timestamp,
+        deletedAt: null,
+      });
+      await enqueueSyncCommand(
+        transaction,
+        {
+          id: crypto.randomUUID(),
+          type: "UPSERT_STUDENT",
+          deviceId,
+          occurredAt: timestamp,
+          student: {
+            id: studentId,
+            name: value.name,
+            governmentId: value.governmentId,
+            educationStage: value.educationStage,
+            gradeLevel: value.gradeLevel,
+          },
         },
-      },
-      timestamp,
-    );
+        timestamp,
+      );
+    });
 
     showCreateForm = false;
     editingStudent = null;
     await refreshStudentsAndBooks();
+    if (!database) {
+      void requestDesktopSync(db);
+    }
   }
 
   async function saveStudent(value: StudentFormValue): Promise<void> {
+    if (savingStudent) return;
+    savingStudent = true;
     try {
       await persistStudent(value);
       actionErrorKey = null;
     } catch {
       actionErrorKey = "errors.saveFailed";
+    } finally {
+      savingStudent = false;
     }
   }
 
@@ -242,22 +255,34 @@
       return;
     }
 
-    const db = await getDatabase();
-    await issueBooksToStudent(
-      {
-        studentId: selectedStudent.id,
-        bookIds: selectedBookIds,
-      },
-      {
-        database: db,
-        createId,
-        now,
-        deviceId,
-      },
-    );
+    if (savingIssue) return;
+    savingIssue = true;
+    try {
+      const db = await getDatabase();
+      await issueBooksToStudent(
+        {
+          studentId: selectedStudent.id,
+          bookIds: selectedBookIds,
+        },
+        {
+          database: db,
+          createId,
+          now,
+          deviceId,
+        },
+      );
 
-    selectedBookIds = [];
-    await refreshStudentsAndBooks();
+      selectedBookIds = [];
+      await refreshStudentsAndBooks();
+      if (!database) {
+        void requestDesktopSync(db);
+      }
+      actionErrorKey = null;
+    } catch {
+      actionErrorKey = "errors.saveFailed";
+    } finally {
+      savingIssue = false;
+    }
   }
 
   async function exportSelectedGrade(): Promise<void> {
@@ -347,12 +372,12 @@
   {/if}
 
   {#if showCreateForm}
-    <StudentForm onCancel={cancelForm} onSave={saveStudent} />
+    <StudentForm onCancel={cancelForm} onSave={saveStudent} saving={savingStudent} />
   {/if}
 
   {#if editingStudent}
     {#key editingStudent.id}
-      <StudentForm student={editingStudent} onCancel={cancelForm} onSave={saveStudent} />
+      <StudentForm student={editingStudent} onCancel={cancelForm} onSave={saveStudent} saving={savingStudent} />
     {/key}
   {/if}
 
@@ -423,6 +448,7 @@
         {issuedBookIds}
         onToggle={toggleDraftBook}
         onConfirm={confirmIssue}
+        saving={savingIssue}
       />
     {:else if students.length > 0}
       <aside class="student-book-placeholder">

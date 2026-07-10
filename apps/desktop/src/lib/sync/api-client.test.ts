@@ -29,4 +29,13 @@ describe("sync runtime configuration", () => {
       transportToken: "desktop-transport-token",
     });
   });
+
+  it("rejects database URLs before they can reach browser fetch or error storage", () => {
+    expect(() =>
+      getSyncRuntimeConfig({
+        DEV: true,
+        VITE_SYNC_API_BASE_URL: "postgresql://database.example.test/app",
+      }),
+    ).toThrow("must be an HTTP(S) API URL without embedded credentials");
+  });
 });

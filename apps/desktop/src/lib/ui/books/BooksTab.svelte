@@ -3,10 +3,12 @@
   import { educationStages, type EducationStage } from "@app/shared";
 
   import { initializeLocalDatabase, type SqlDatabase } from "$lib/db/local-db";
+  import { runLocalTransaction } from "$lib/db/local-transaction";
   import { listBooks, upsertBook, type BookRow } from "$lib/db/repositories/books";
   import { enqueueSyncCommand } from "$lib/db/repositories/outbox";
   import { getTranslation, language, type TranslationKey } from "$lib/i18n";
   import { addBookStock } from "$lib/services/inventory-service";
+  import { requestDesktopSync } from "$lib/sync/sync-runner";
   import AddStockDialog from "./AddStockDialog.svelte";
   import BookForm, { type BookFormValue } from "./BookForm.svelte";
 
@@ -35,6 +37,9 @@
   let selectedStage = $state<StageFilter>("all");
   let errorKey = $state<TranslationKey | null>(null);
   let actionErrorKey = $state<TranslationKey | null>(null);
+  let stockErrorKey = $state<TranslationKey | null>(null);
+  let savingBook = $state(false);
+  let savingStock = $state(false);
 
   const visibleBooks = $derived(
     selectedStage === "all"
@@ -83,43 +88,52 @@
     const currentBook = editingBook;
     const bookId = currentBook?.id ?? createId();
 
-    await upsertBook(db, {
-      id: bookId,
-      scopeId: currentBook?.scopeId ?? "global",
-      name: value.name,
-      educationStage: value.educationStage,
-      quantity: currentBook?.quantity ?? 0,
-      createdAt: currentBook?.createdAt ?? timestamp,
-      updatedAt: timestamp,
-      deletedAt: null,
-    });
-    await enqueueSyncCommand(
-      db,
-      {
-        id: crypto.randomUUID(),
-        type: "UPSERT_BOOK",
-        deviceId,
-        occurredAt: timestamp,
-        book: {
-          id: bookId,
-          name: value.name,
-          educationStage: value.educationStage,
+    await runLocalTransaction(db, async (transaction) => {
+      await upsertBook(transaction, {
+        id: bookId,
+        scopeId: currentBook?.scopeId ?? "global",
+        name: value.name,
+        educationStage: value.educationStage,
+        quantity: currentBook?.quantity ?? 0,
+        createdAt: currentBook?.createdAt ?? timestamp,
+        updatedAt: timestamp,
+        deletedAt: null,
+      });
+      await enqueueSyncCommand(
+        transaction,
+        {
+          id: crypto.randomUUID(),
+          type: "UPSERT_BOOK",
+          deviceId,
+          occurredAt: timestamp,
+          book: {
+            id: bookId,
+            name: value.name,
+            educationStage: value.educationStage,
+          },
         },
-      },
-      timestamp,
-    );
+        timestamp,
+      );
+    });
 
     showCreateForm = false;
     editingBook = null;
     await refreshBooks();
+    if (!database) {
+      void requestDesktopSync(db);
+    }
   }
 
   async function saveBook(value: BookFormValue): Promise<void> {
+    if (savingBook) return;
+    savingBook = true;
     try {
       await persistBook(value);
       actionErrorKey = null;
     } catch {
       actionErrorKey = "errors.saveFailed";
+    } finally {
+      savingBook = false;
     }
   }
 
@@ -128,22 +142,34 @@
       return;
     }
 
-    const db = await getDatabase();
-    await addBookStock(
-      {
-        bookId: stockBook.id,
-        quantity,
-      },
-      {
-        database: db,
-        createId,
-        now,
-        deviceId,
-      },
-    );
+    if (savingStock) return;
+    savingStock = true;
+    stockErrorKey = null;
+    try {
+      const db = await getDatabase();
+      await addBookStock(
+        {
+          bookId: stockBook.id,
+          quantity,
+        },
+        {
+          database: db,
+          createId,
+          now,
+          deviceId,
+        },
+      );
 
-    stockBook = null;
-    await refreshBooks();
+      stockBook = null;
+      await refreshBooks();
+      if (!database) {
+        void requestDesktopSync(db);
+      }
+    } catch {
+      stockErrorKey = "errors.saveFailed";
+    } finally {
+      savingStock = false;
+    }
   }
 
   function cancelForm(): void {
@@ -182,12 +208,12 @@
   {/if}
 
   {#if showCreateForm}
-    <BookForm onCancel={cancelForm} onSave={saveBook} />
+    <BookForm onCancel={cancelForm} onSave={saveBook} saving={savingBook} />
   {/if}
 
   {#if editingBook}
     {#key editingBook.id}
-      <BookForm book={editingBook} onCancel={cancelForm} onSave={saveBook} />
+      <BookForm book={editingBook} onCancel={cancelForm} onSave={saveBook} saving={savingBook} />
     {/key}
   {/if}
 
@@ -256,8 +282,13 @@
   {#if stockBook}
     <AddStockDialog
       book={stockBook}
-      onCancel={() => (stockBook = null)}
+      onCancel={() => {
+        stockBook = null;
+        stockErrorKey = null;
+      }}
       onConfirm={confirmAddStock}
+      saving={savingStock}
+      errorKey={stockErrorKey}
     />
   {/if}
 </section>

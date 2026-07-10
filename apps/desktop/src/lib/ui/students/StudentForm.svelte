@@ -21,9 +21,10 @@
     student?: StudentRow | null;
     onCancel: () => void;
     onSave: (value: StudentFormValue) => void | Promise<void>;
+    saving?: boolean;
   };
 
-  const { student = null, onCancel, onSave }: Props = $props();
+  const { student = null, onCancel, onSave, saving = false }: Props = $props();
 
   let initializedFor = $state<string | null>(null);
   let name = $state("");
@@ -70,7 +71,7 @@
     const trimmedName = name.trim();
     const trimmedGovernmentId = governmentId.trim();
 
-    if (!trimmedName || !trimmedGovernmentId) {
+    if (saving || !trimmedName || !trimmedGovernmentId) {
       return;
     }
 
@@ -90,17 +91,17 @@
 >
   <label>
     <span>{t("forms.studentName")}</span>
-    <input bind:value={name} required autocomplete="off" />
+    <input bind:value={name} required autocomplete="off" disabled={saving} />
   </label>
 
   <label>
     <span>{t("forms.governmentId")}</span>
-    <input bind:value={governmentId} required autocomplete="off" />
+    <input bind:value={governmentId} required autocomplete="off" disabled={saving} />
   </label>
 
   <label>
     <span>{t("forms.educationStage")}</span>
-    <select bind:value={educationStage}>
+    <select bind:value={educationStage} disabled={saving}>
       {#each educationStages as stage}
         <option value={stage}>{stageLabel(stage)}</option>
       {/each}
@@ -109,7 +110,7 @@
 
   <label>
     <span>{t("forms.gradeLevel")}</span>
-    <select bind:value={gradeLevel}>
+    <select bind:value={gradeLevel} disabled={saving}>
       {#each availableGrades as grade}
         <option value={grade}>{gradeLabel(grade)}</option>
       {/each}
@@ -117,8 +118,8 @@
   </label>
 
   <div class="form-actions">
-    <button type="button" class="secondary" onclick={onCancel}>{t("buttons.cancel")}</button>
-    <button type="submit" disabled={!name.trim() || !governmentId.trim()}>{t("buttons.save")}</button>
+    <button type="button" class="secondary" onclick={onCancel} disabled={saving}>{t("buttons.cancel")}</button>
+    <button type="submit" disabled={saving || !name.trim() || !governmentId.trim()}>{t("buttons.save")}</button>
   </div>
 </form>
 
