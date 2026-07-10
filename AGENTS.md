@@ -386,6 +386,24 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### React Frontend Revamp Segment 1: Parallel Workspace And Safe Profiles
+
+- Status: completed on `pre-release`.
+- Added the approved React revamp design and implementation plan under `docs/superpowers`.
+- Added `apps/desktop-react` as an isolated React 19.2 + Vite 8 + Tauri 2 workspace while preserving `apps/desktop` unchanged.
+- Preview development uses identifier `com.studentbooktracker.reactdev`, SQLite file `student-book-tracker-react.db`, Vite ports `1430/1431`, and no updater endpoint.
+- Added a production Tauri overlay that preserves `com.studentbooktracker.app`, `student-book-tracker.db`, the existing updater public key/feed, passive NSIS behavior, and signed updater artifacts for the later cutover gate.
+- Added validated runtime configuration that rejects unknown profiles, non-HTTP sync endpoints, and missing production sync API URLs.
+- Added a Rust-side allowlist for the two approved SQLite filenames before executing serialized transaction statements.
+- Reused the existing desktop icon assets in the parallel shell.
+- Verification completed:
+  - `npm run test -w @app/desktop-react -- src/app/runtime-config.test.ts src/App.test.tsx`
+  - `npm run typecheck -w @app/desktop-react`
+  - `npm run build -w @app/desktop-react`
+  - `cargo test --manifest-path apps/desktop-react/src-tauri/Cargo.toml accepts_only_preview_and_production_database_files`
+  - `cargo check --manifest-path apps/desktop-react/src-tauri/Cargo.toml`
+- Environment note: first-time npm/Cargo commands can exceed short tool timeouts while producing buffered output. Check surviving processes and generated artifacts before retrying to avoid duplicate Cargo builds.
+
 ## Next Segment Starting Point
 
-- SQLite transaction coordination and immediate, coalesced sync maintenance are complete. Continue with user feedback or a separately scoped post-MVP segment.
+- React workspace/profile scaffolding is complete. Start React Frontend Revamp Segment 2 by porting the SQLite schema, repositories, transaction coordinator, entity saves, and inventory workflows with Node SQLite contract tests.

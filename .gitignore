@@ -2,6 +2,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!apps/desktop-react/.env.production-release
 dist/
 build/
 .svelte-kit/

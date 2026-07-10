@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Student Book Tracker",
+  "identifier": "com.studentbooktracker.app",
+  "build": {
+    "beforeBuildCommand": "npm run build:production"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Student Book Tracker",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 720,
+        "minHeight": 560
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "nsis",
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:student-book-tracker.db"]
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZCQUNCQ0MyQzYwQUQ1MTcKUldRWDFRckd3cnlzYTBpdksvUmJMWFZwNzBuaG5OUkNabXR0YlNWZ0NTUW9YZ20vTjc2N1JUMSsK",
+      "endpoints": [
+        "https://github.com/SacreddPotato/student-book-tracker/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
