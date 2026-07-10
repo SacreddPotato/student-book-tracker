@@ -34,6 +34,7 @@
   let stockBook = $state<BookRow | null>(null);
   let selectedStage = $state<StageFilter>("all");
   let errorKey = $state<TranslationKey | null>(null);
+  let actionErrorKey = $state<TranslationKey | null>(null);
 
   const visibleBooks = $derived(
     selectedStage === "all"
@@ -76,7 +77,7 @@
     });
   });
 
-  async function saveBook(value: BookFormValue): Promise<void> {
+  async function persistBook(value: BookFormValue): Promise<void> {
     const db = await getDatabase();
     const timestamp = now();
     const currentBook = editingBook;
@@ -113,6 +114,15 @@
     await refreshBooks();
   }
 
+  async function saveBook(value: BookFormValue): Promise<void> {
+    try {
+      await persistBook(value);
+      actionErrorKey = null;
+    } catch {
+      actionErrorKey = "errors.saveFailed";
+    }
+  }
+
   async function confirmAddStock(quantity: number): Promise<void> {
     if (!stockBook) {
       return;
@@ -139,6 +149,7 @@
   function cancelForm(): void {
     showCreateForm = false;
     editingBook = null;
+    actionErrorKey = null;
   }
 </script>
 
@@ -158,6 +169,7 @@
       type="button"
       onclick={() => {
         editingBook = null;
+        actionErrorKey = null;
         showCreateForm = true;
       }}
     >
@@ -165,8 +177,8 @@
     </button>
   </div>
 
-  {#if errorKey}
-    <p class="status-message">{t(errorKey)}</p>
+  {#if errorKey || actionErrorKey}
+    <p class="status-message" role="alert">{t(errorKey ?? actionErrorKey!)}</p>
   {/if}
 
   {#if showCreateForm}

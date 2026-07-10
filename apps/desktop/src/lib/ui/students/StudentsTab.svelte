@@ -52,6 +52,7 @@
   let selectedStage = $state<GroupFilter<EducationStage>>("all");
   let selectedGrade = $state<GroupFilter<GradeLevel>>("all");
   let errorKey = $state<TranslationKey | null>(null);
+  let actionErrorKey = $state<TranslationKey | null>(null);
 
   const hasDraftSelections = $derived(selectedBookIds.length > 0);
   const canExport = $derived(selectedGrade !== "all");
@@ -151,7 +152,7 @@
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   });
 
-  async function saveStudent(value: StudentFormValue): Promise<void> {
+  async function persistStudent(value: StudentFormValue): Promise<void> {
     const db = await getDatabase();
     const timestamp = now();
     const currentStudent = editingStudent;
@@ -189,6 +190,15 @@
     showCreateForm = false;
     editingStudent = null;
     await refreshStudentsAndBooks();
+  }
+
+  async function saveStudent(value: StudentFormValue): Promise<void> {
+    try {
+      await persistStudent(value);
+      actionErrorKey = null;
+    } catch {
+      actionErrorKey = "errors.saveFailed";
+    }
   }
 
   async function selectStudent(student: StudentRow): Promise<void> {
@@ -281,6 +291,7 @@
   function cancelForm(): void {
     showCreateForm = false;
     editingStudent = null;
+    actionErrorKey = null;
   }
 </script>
 
@@ -322,6 +333,7 @@
         type="button"
         onclick={() => {
           editingStudent = null;
+          actionErrorKey = null;
           showCreateForm = true;
         }}
       >
@@ -330,8 +342,8 @@
     </div>
   </div>
 
-  {#if errorKey}
-    <p class="status-message">{t(errorKey)}</p>
+  {#if errorKey || actionErrorKey}
+    <p class="status-message" role="alert">{t(errorKey ?? actionErrorKey!)}</p>
   {/if}
 
   {#if showCreateForm}
@@ -344,7 +356,7 @@
     {/key}
   {/if}
 
-  <div class="students-layout">
+  <div class="students-layout" class:empty={students.length === 0}>
     <div class="students-list">
       {#if loading}
         <p class="status-message">{t("students.loading")}</p>
@@ -517,6 +529,10 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
     gap: 20px;
     align-items: start;
+  }
+
+  .students-layout.empty {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .students-list {

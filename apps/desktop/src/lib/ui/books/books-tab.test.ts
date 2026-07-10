@@ -90,6 +90,25 @@ describe("BooksTab", () => {
     expect(screen.queryByText("Validation failed")).not.toBeInTheDocument();
   });
 
+  it("keeps the book form open and explains a failed save", async () => {
+    const user = userEvent.setup();
+    const unavailableDatabase: SqlDatabase = {
+      execute: async () => {
+        throw new Error("write unavailable");
+      },
+      select: async () => [],
+    };
+
+    render(BooksTab, { props: { database: unavailableDatabase } });
+
+    await user.click(screen.getByRole("button", { name: "Add book" }));
+    await user.type(screen.getByLabelText("Book name"), "Primary Math");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not save changes.");
+    expect(screen.getByRole("form", { name: "Add book" })).toBeInTheDocument();
+  });
+
   it("updates the visible quantity after adding stock", async () => {
     const user = userEvent.setup();
     await seedBook(database, {

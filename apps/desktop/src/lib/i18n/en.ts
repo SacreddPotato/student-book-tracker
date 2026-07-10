@@ -158,6 +158,7 @@ export const en = {
     unknownStudent: "Unknown student",
     unknownBook: "Unknown book",
     transactionAlreadyReversed: "Transaction already reversed",
+    saveFailed: "Could not save changes.",
   },
   emptyStates: {
     students: "No students yet",

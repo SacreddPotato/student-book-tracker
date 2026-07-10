@@ -12,6 +12,7 @@ export type SqlDatabase = {
 export const localDatabasePath = "sqlite:student-book-tracker.db";
 
 let localDbPromise: Promise<SqlDatabase> | undefined;
+let initializedLocalDbPromise: Promise<SqlDatabase> | undefined;
 
 export async function loadLocalDatabase(): Promise<SqlDatabase> {
   localDbPromise ??= Database.load(localDatabasePath) as Promise<SqlDatabase>;
@@ -19,7 +20,17 @@ export async function loadLocalDatabase(): Promise<SqlDatabase> {
 }
 
 export async function initializeLocalDatabase(): Promise<SqlDatabase> {
-  const database = await loadLocalDatabase();
-  await runMigrations(database);
-  return database;
+  initializedLocalDbPromise ??= initializeDatabase();
+  return initializedLocalDbPromise;
+}
+
+async function initializeDatabase(): Promise<SqlDatabase> {
+  try {
+    const database = await loadLocalDatabase();
+    await runMigrations(database);
+    return database;
+  } catch (error) {
+    initializedLocalDbPromise = undefined;
+    throw error;
+  }
 }

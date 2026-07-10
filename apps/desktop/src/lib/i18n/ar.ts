@@ -160,6 +160,7 @@ export const ar = {
     unknownStudent: "طالب غير معروف",
     unknownBook: "كتاب غير معروف",
     transactionAlreadyReversed: "تم عكس العملية من قبل",
+    saveFailed: "تعذر حفظ التغييرات.",
   },
   emptyStates: {
     students: "لا يوجد طلاب بعد",

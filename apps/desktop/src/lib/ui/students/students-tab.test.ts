@@ -135,8 +135,30 @@ describe("StudentsTab", () => {
   it("shows only the student-empty message when no students exist", async () => {
     render(StudentsTab, { props: { database } });
 
-    expect(await screen.findByText("No students yet")).toBeInTheDocument();
+    const emptyMessage = await screen.findByText("No students yet");
+    expect(emptyMessage).toBeInTheDocument();
+    expect(emptyMessage.closest(".students-layout")).toHaveClass("empty");
     expect(screen.queryByText("Select a student to issue books")).not.toBeInTheDocument();
+  });
+
+  it("keeps the student form open and explains a failed save", async () => {
+    const user = userEvent.setup();
+    const unavailableDatabase: SqlDatabase = {
+      execute: async () => {
+        throw new Error("write unavailable");
+      },
+      select: async () => [],
+    };
+
+    render(StudentsTab, { props: { database: unavailableDatabase } });
+
+    await user.click(screen.getByRole("button", { name: "Add student" }));
+    await user.type(screen.getByLabelText("Student name"), "Mona Ahmed");
+    await user.type(screen.getByLabelText("Government ID"), "29801011234567");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not save changes.");
+    expect(screen.getByRole("form", { name: "Add student" })).toBeInTheDocument();
   });
 
   it("shows the select-student prompt when students exist but none is selected", async () => {

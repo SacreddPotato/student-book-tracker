@@ -33,6 +33,16 @@ describe("app shell", () => {
     expect(config.app.windows[0]?.decorations).not.toBe(false);
   });
 
+  it("grants the desktop SQLite plugin read and write permissions", () => {
+    const capabilities = JSON.parse(
+      readFileSync(resolve(process.cwd(), "src-tauri/capabilities/default.json"), "utf8"),
+    ) as { permissions: string[] };
+
+    expect(capabilities.permissions).toEqual(
+      expect.arrayContaining(["sql:allow-select", "sql:allow-execute"]),
+    );
+  });
+
   it("uses a compact EN/AR language toggle without offline status copy", async () => {
     const user = userEvent.setup();
     render(Page);
