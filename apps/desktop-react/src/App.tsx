@@ -2,12 +2,13 @@ import type { AppBackend } from "./core/backend/types";
 import { AppProviders, useI18n, useNavigation } from "./app/AppProviders";
 import { AppShell } from "./components/shell/AppShell";
 import { StudentsScreen } from "./features/students/StudentsScreen";
+import { BooksScreen } from "./features/books/BooksScreen";
 
 function WorkspacePlaceholder() {
   const { t } = useI18n();
   const { screen } = useNavigation();
   return (
-    <AppShell>{screen === "students" ? <StudentsScreen /> : (
+    <AppShell>{screen === "students" ? <StudentsScreen /> : screen === "books" ? <BooksScreen /> : (
       <section className="workspace-placeholder"><h2>{t(`tabs.${screen}`)}</h2></section>
     )}</AppShell>
   );

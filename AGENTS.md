@@ -461,6 +461,19 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop-react` (18 files, 45 tests)
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 6: Books Workspace
+
+- Status: completed on `pre-release`.
+- Replaced the React Books placeholder with a complete inventory workspace using the shared backend and the same `books` query key consumed by Students.
+- Added a stable create/edit sheet with localized stage selection, retained errors, save locking, and post-save refresh and notices.
+- Added name search, education-stage filtering, visible total/out-of-stock metrics, responsive table spacing, and preserved controls during empty filtered results.
+- Added explicit in-stock/out-of-stock badges, softly highlighted zero-stock rows, tabular quantity values, and labelled row actions.
+- Added a focused Add Stock dialog with positive-integer browser validation, retained failure state, atomic backend mutation, and duplicate-submit prevention.
+- Verification completed:
+  - `npm run test -w @app/desktop-react -- src/features/books/BooksScreen.test.tsx`
+  - `npm run test -w @app/desktop-react` (19 files, 48 tests)
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- React Students parity is complete. Start React Frontend Revamp Segment 6 by implementing the Books workspace, stable create/edit sheet, stage/search filters, zero-stock treatment, and resilient add-stock interaction.
+- React Students and Books parity are complete. Start React Frontend Revamp Segment 7 by implementing Logs, Settings, global sync status/conflicts, and explicit updater interactions.

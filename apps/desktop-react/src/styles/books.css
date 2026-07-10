@@ -1,0 +1,12 @@
+.books-screen { display: grid; gap: var(--space-5); }
+.book-summary { padding: var(--space-4); display: grid; grid-template-columns: minmax(260px, 1fr) 210px auto; align-items: end; gap: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--surface); }
+.book-search { position: relative; }
+.book-search > svg { position: absolute; z-index: 1; inset-inline-start: 12px; inset-block-end: 13px; color: var(--text-muted); }
+.book-search input { padding-inline-start: 38px; }
+.book-metrics { min-block-size: 42px; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); color: var(--text-muted); font-size: .84rem; font-weight: 700; }
+.book-metrics [data-warning] { color: var(--warning); }
+.book-quantity { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ui-table tr[data-empty] { background: var(--warning-soft); }
+.book-editor, .add-stock-form { display: grid; gap: var(--space-4); }
+@media (max-width: 860px) { .book-summary { grid-template-columns: 1fr 190px; } .book-metrics { grid-column: 1 / -1; justify-content: flex-start; } }
+@media (max-width: 620px) { .book-summary { grid-template-columns: 1fr; } .book-metrics { grid-column: auto; } }
