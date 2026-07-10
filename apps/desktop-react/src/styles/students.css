@@ -1,0 +1,36 @@
+.students-screen { display: grid; gap: var(--space-5); }
+.workspace-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); }
+.workspace-heading h2 { margin-block-end: var(--space-1); font-size: clamp(1.35rem, 2vw, 1.75rem); }
+.workspace-heading p { margin: 0; color: var(--text-muted); }
+.workspace-heading-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.student-filters { padding: var(--space-4); display: grid; grid-template-columns: minmax(240px, 1fr) 190px 190px auto; align-items: end; gap: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--surface); }
+.student-search { position: relative; }
+.student-search > svg { position: absolute; z-index: 1; inset-inline-start: 12px; inset-block-end: 13px; color: var(--text-muted); }
+.student-search input { padding-inline-start: 38px; }
+.student-result-count { min-block-size: 42px; display: flex; align-items: center; justify-content: flex-end; color: var(--text-muted); font-size: .86rem; font-weight: 650; }
+.students-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(320px, .75fr); gap: var(--space-5); align-items: start; }
+.student-table-region { min-inline-size: 0; }
+.student-government-id { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.ui-table tr[data-selected] { background: var(--primary-soft); }
+.issuance-panel { min-block-size: 310px; position: sticky; inset-block-start: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--surface); overflow: hidden; box-shadow: var(--shadow-surface); }
+.issuance-panel-header { padding: var(--space-5); display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); border-block-end: 1px solid var(--border); }
+.issuance-panel-header h3 { margin: 4px 0; }
+.issuance-panel-header p { margin: 0; color: var(--text-muted); font-size: .86rem; line-height: 1.45; }
+.section-kicker { color: var(--primary); font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.issuance-checklist { padding: var(--space-3); display: grid; gap: var(--space-1); max-block-size: 420px; overflow: auto; }
+.issuance-panel > .ui-alert { margin: var(--space-3); }
+.issuance-panel-footer { padding: var(--space-4); border-block-start: 1px solid var(--border); display: flex; justify-content: flex-end; }
+.student-editor { display: grid; gap: var(--space-4); }
+
+@media (max-width: 1180px) {
+  .student-filters { grid-template-columns: minmax(220px, 1fr) 170px 170px; }
+  .student-result-count { grid-column: 1 / -1; min-block-size: auto; justify-content: flex-start; }
+  .students-layout { grid-template-columns: 1fr; }
+  .issuance-panel { position: static; }
+}
+@media (max-width: 720px) {
+  .workspace-heading { align-items: stretch; flex-direction: column; }
+  .workspace-heading-actions > * { flex: 1; }
+  .student-filters { grid-template-columns: 1fr; }
+  .student-result-count { grid-column: auto; }
+}

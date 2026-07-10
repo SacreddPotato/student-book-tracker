@@ -446,6 +446,21 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop-react`
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 5: Students Workspace
+
+- Status: completed on `pre-release`.
+- Replaced the React shell's initial placeholder with a complete Students workspace backed by the shared `AppBackend` contract and TanStack Query.
+- Added searchable student and government-ID filtering, stage and grade grouping controls, localized counts, responsive data-table spacing, and clear empty/loading/error states.
+- Added a stable create/edit sheet with stage-constrained grades, duplicate-submit prevention, retained validation errors, and post-save query refresh and notices.
+- Added a selected-student issuance panel with stage-matched books, issued/available status, disabled zero-stock rows, draft-only checkbox state, atomic confirmation, and duplicate-confirmation prevention.
+- Added guarded navigation and `beforeunload` protection for unconfirmed book selections, with an accessible discard confirmation dialog.
+- Added grade-scoped, lazy-loaded bilingual Excel export interaction; export remains disabled until a concrete grade is selected.
+- Added React test cleanup and the minimal jsdom pointer/scroll shims required for Radix interaction tests.
+- Verification completed:
+  - `npm run test -w @app/desktop-react -- src/features/students/StudentsScreen.test.tsx`
+  - `npm run test -w @app/desktop-react` (18 files, 45 tests)
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- React interaction primitives and shell are complete. Start React Frontend Revamp Segment 5 by implementing the Students workspace, stable editor sheet, search/group filters, issuance drafts/guards, and grade-scoped Excel interaction.
+- React Students parity is complete. Start React Frontend Revamp Segment 6 by implementing the Books workspace, stable create/edit sheet, stage/search filters, zero-stock treatment, and resilient add-stock interaction.

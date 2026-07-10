@@ -9,6 +9,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/primitives.css";
 import "./styles/shell.css";
+import "./styles/students.css";
 
 const root = document.getElementById("root");
 
