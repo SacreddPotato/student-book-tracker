@@ -1,0 +1,45 @@
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --canvas: #f4f5f3;
+  --surface: #ffffff;
+  --surface-subtle: #f8f9f7;
+  --surface-strong: #eef1ee;
+  --border: #dfe4df;
+  --border-strong: #cbd3cc;
+  --text: #17211b;
+  --text-muted: #66716a;
+  --primary: #173b57;
+  --primary-hover: #0f3049;
+  --primary-soft: #e7f0f6;
+  --success: #23734a;
+  --success-soft: #e9f5ee;
+  --warning: #9a6410;
+  --warning-soft: #fff4db;
+  --danger: #b33a3a;
+  --danger-hover: #962f2f;
+  --danger-soft: #fceaea;
+  --focus: #2f78b4;
+  --radius-control: 8px;
+  --radius-surface: 10px;
+  --radius-elevated: 14px;
+  --shadow-raised: 0 14px 40px rgb(20 35 27 / 12%);
+  --motion-fast: 160ms;
+  --motion-panel: 220ms;
+  color: var(--text);
+  font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-fast: 0ms; --motion-panel: 0ms; }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

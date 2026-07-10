@@ -431,6 +431,21 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop-react -- src/core`
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 4: React Interaction System And Shell
+
+- Status: completed on `pre-release`.
+- Added English and Arabic dictionaries with exact key parity, interpolation, Cairo-localized date/time formatting, and document-level `lang`/`dir` updates.
+- Added TanStack Query defaults tuned for local SQLite reads: no automatic retry, focus refetch, or reconnect refetch.
+- Added providers for the backend, language, guarded screen navigation, global notices, and external-store snapshots.
+- Added semantic spacing/color/radius/elevation/motion tokens and shared base styles with reduced-motion support.
+- Added accessible buttons, fields, Radix select/checkbox/dialog/sheet wrappers, badges, table shells, alerts, empty states, and loading states.
+- Added a responsive labelled navigation rail that becomes compact at medium widths and a labelled bottom bar at narrow widths; numeric-only navigation is not used.
+- Added explicit primary/secondary/quiet/destructive action intents, 40-42px controls, 44px checkbox rows, 12px/16px table cells, and 8px action gaps.
+- Added fixture-aware browser bootstrap and retained Tauri backend startup for the desktop shell.
+- Verification completed:
+  - `npm run test -w @app/desktop-react`
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- React runtime services and backend contracts are complete. Start React Frontend Revamp Segment 4 by adding bilingual dictionaries/providers, TanStack Query, guarded navigation, semantic tokens, Radix-backed primitives, responsive shell, and accessible focus behavior.
+- React interaction primitives and shell are complete. Start React Frontend Revamp Segment 5 by implementing the Students workspace, stable editor sheet, search/group filters, issuance drafts/guards, and grade-scoped Excel interaction.
