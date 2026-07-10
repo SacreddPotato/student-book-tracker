@@ -489,6 +489,20 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop-react` (23 files, 52 tests)
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 8: Rendered UX And Accessibility
+
+- Status: completed on `pre-release`.
+- Added single-worker Playwright configuration with a real Vite web server and deterministic development-only fixture scenarios; production builds still reject `runtime=fixture`.
+- Added a complete rendered journey for student creation, book creation, stock increase, draft issuance, grade export download, history, and reversal.
+- Added rendered sync-conflict acknowledgement and explicit updater check/download/install journeys.
+- Added desktop and 390px narrow RTL coverage with Axe accessibility checks and labelled navigation/status assertions.
+- Live browser inspection corrected the empty Students layout to use the full workspace, moved sync status into normal top-bar flow, preserved a compact accessible status at phone width, and prevented the update notice from obscuring Settings actions after guarded navigation.
+- Verified English desktop and Arabic narrow layouts have no horizontal overflow and that the labelled bottom navigation remains fully visible.
+- Verification completed sequentially to avoid local CPU contention between Vitest, Playwright, and Vite compilation:
+  - `npm run test -w @app/desktop-react` (23 files, 52 tests)
+  - `npm run test:e2e -w @app/desktop-react` (4 rendered journeys)
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- All React MVP feature surfaces are implemented. Start React Frontend Revamp Segment 8 with real rendered-browser Playwright journeys, accessibility checks, responsive/RTL inspection, and visual correction.
+- React feature and rendered-UX parity are complete. Start React Frontend Revamp Segment 9 with full monorepo verification, Tauri preview/production checks, release-workflow cutover to `apps/desktop-react`, rollback documentation, and final branch review.

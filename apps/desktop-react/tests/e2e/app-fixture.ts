@@ -1,0 +1,25 @@
+import { expect, type Page } from "@playwright/test";
+
+export async function openFixture(page: Page, scenario?: "conflict" | "update") {
+  const suffix = scenario ? `&scenario=${scenario}` : "";
+  await page.goto(`/?runtime=fixture${suffix}`);
+  await expect(page.getByRole("button", { name: "Students" })).toBeVisible();
+}
+
+export async function createPrimaryStudent(page: Page, name = "Mona Ahmed") {
+  await page.getByRole("button", { name: "Add student" }).click();
+  const sheet = page.getByRole("dialog", { name: "Add student" });
+  await sheet.getByLabel("Student name").fill(name);
+  await sheet.getByLabel("Government ID").fill("29801011234567");
+  await sheet.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(name)).toBeVisible();
+}
+
+export async function createPrimaryBook(page: Page, name = "Primary Math") {
+  await page.getByRole("button", { name: "Books" }).click();
+  await page.getByRole("button", { name: "Add book" }).click();
+  const sheet = page.getByRole("dialog", { name: "Add book" });
+  await sheet.getByLabel("Book name").fill(name);
+  await sheet.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(name)).toBeVisible();
+}

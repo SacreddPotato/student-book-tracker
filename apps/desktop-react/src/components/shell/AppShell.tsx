@@ -43,7 +43,6 @@ export function AppShell({ children, statusSlot }: {
             </button>
           ))}
         </nav>
-        <div className="app-rail-footer">{statusSlot}</div>
       </aside>
       <div className="app-main-column">
         <header className="app-topbar">
@@ -51,9 +50,12 @@ export function AppShell({ children, statusSlot }: {
             <span className="app-eyebrow">{t("app.workspace")}</span>
             <h1>{t(`tabs.${navigation.screen}`)}</h1>
           </div>
-          <div className="language-toggle" aria-label={t("settings.language")}>
-            <button type="button" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button>
-            <button type="button" aria-pressed={language === "ar"} onClick={() => setLanguage("ar")}>AR</button>
+          <div className="app-topbar-controls">
+            <div className="app-shell-status">{statusSlot}</div>
+            <div className="language-toggle" aria-label={t("settings.language")}>
+              <button type="button" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button>
+              <button type="button" aria-pressed={language === "ar"} onClick={() => setLanguage("ar")}>AR</button>
+            </div>
           </div>
         </header>
         <main className="app-workspace">{children}</main>

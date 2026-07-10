@@ -4,6 +4,7 @@ import { isTauri } from "@tauri-apps/api/core";
 
 import App from "./App";
 import { createFixtureBackend } from "./core/backend/fixture-backend";
+import { createBrowserFixtureBackend } from "./core/backend/browser-fixtures";
 import { createTauriBackend } from "./core/backend/tauri-backend";
 import "./styles/tokens.css";
 import "./styles/base.css";
@@ -21,12 +22,13 @@ if (!root) {
 const rootElement = root;
 
 async function bootstrap() {
-  const fixtureRequested = new URLSearchParams(window.location.search).get("runtime") === "fixture";
+  const searchParams = new URLSearchParams(window.location.search);
+  const fixtureRequested = searchParams.get("runtime") === "fixture";
   if (fixtureRequested && import.meta.env.PROD) {
     throw new Error("The fixture runtime is unavailable in production builds.");
   }
   const backend = fixtureRequested || (import.meta.env.DEV && !isTauri())
-    ? createFixtureBackend()
+    ? (fixtureRequested ? createBrowserFixtureBackend(searchParams.get("scenario")) : createFixtureBackend())
     : await createTauriBackend();
   await backend.initialize();
   createRoot(rootElement).render(

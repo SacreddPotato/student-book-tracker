@@ -15,10 +15,15 @@ export function UpdateNotice() {
   }, [backend.updater, updater.phase]);
   const version = updater.availableVersion;
   if (updater.phase !== "available" || !version || dismissedVersions.has(version)) return null;
+  async function viewUpdate() {
+    if (await navigation.requestScreen("settings")) {
+      setDismissedVersions((current) => new Set(current).add(version!));
+    }
+  }
   return (
     <aside className="update-notice" aria-label={t("updater.notificationTitle")}>
       <div><strong>{t("updater.notificationTitle")}</strong><span>{t("updater.available", { version })}</span></div>
-      <div><Button size="small" intent="primary" onClick={() => void navigation.requestScreen("settings")}>{t("updater.view")}</Button><Button size="small" intent="quiet" onClick={() => setDismissedVersions((current) => new Set(current).add(version))}>{t("updater.dismiss")}</Button></div>
+      <div><Button size="small" intent="primary" onClick={() => void viewUpdate()}>{t("updater.view")}</Button><Button size="small" intent="quiet" onClick={() => setDismissedVersions((current) => new Set(current).add(version))}>{t("updater.dismiss")}</Button></div>
     </aside>
   );
 }

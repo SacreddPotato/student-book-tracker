@@ -171,11 +171,11 @@ export function StudentsScreen() {
         <SelectField label={t("fields.gradeLevel")} value={grade} options={gradeOptions} onValueChange={(value) => setGrade(value as GradeFilter)} />
         <span className="student-result-count">{t("students.count", { count: filtered.length })}</span>
       </div>
-      {failed ? <Alert>{t("errors.studentsLoad")}</Alert> : loading ? <LoadingState label={t("common.loading")} /> : (
+      {failed ? <Alert>{t("errors.studentsLoad")}</Alert> : loading ? <LoadingState label={t("common.loading")} /> : !(studentsQuery.data?.length) ? <EmptyState title={t("students.empty")} /> : (
         <div className="students-layout">
           <div className="student-table-region">
             {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={(student) => { setEditing(student); setEditorError(null); setEditorOpen(true); }} />
-              : <EmptyState title={(studentsQuery.data?.length ?? 0) ? t("students.noResults") : t("students.empty")} />}
+              : <EmptyState title={t("students.noResults")} />}
           </div>
           <StudentIssuancePanel
             student={selected}

@@ -14,6 +14,8 @@
 .app-main-column { min-inline-size: 0; }
 .app-topbar { min-block-size: 92px; padding: var(--space-5) clamp(var(--space-5), 3vw, var(--space-8)); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); border-block-end: 1px solid var(--border); background: color-mix(in srgb, var(--canvas) 86%, white); }
 .app-topbar h1 { margin: 2px 0 0; font-size: clamp(1.35rem, 2vw, 1.75rem); }
+.app-topbar-controls { display: flex; align-items: center; gap: var(--space-3); }
+.app-shell-status { min-inline-size: 112px; }
 .app-eyebrow { color: var(--text-muted); font-size: .75rem; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; }
 .language-toggle { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .language-toggle button { min-inline-size: 38px; block-size: 32px; border: 0; border-radius: 7px; background: transparent; cursor: pointer; font-size: .78rem; font-weight: 750; color: var(--text-muted); }
@@ -37,13 +39,14 @@
   .app-shell { display: block; padding-block-end: 72px; }
   .app-rail { position: fixed; z-index: 50; inset: auto 0 0; inline-size: 100%; block-size: 68px; padding: var(--space-2); display: block; }
   .app-brand { display: none; }
-  .app-rail-footer { position: fixed; z-index: 51; inset-block-start: 18px; inset-inline-end: 118px; inline-size: 132px; margin: 0; }
   .app-navigation { block-size: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-1); }
   .app-nav-button { min-block-size: 52px; flex-direction: column; justify-content: center; gap: 2px; font-size: .68rem; }
   .app-nav-button span { display: inline; }
   .app-nav-button[data-active] { box-shadow: inset 0 -3px #f2c96d; }
   [dir="rtl"] .app-nav-button[data-active] { box-shadow: inset 0 -3px #f2c96d; }
   .app-topbar { min-block-size: 78px; padding: var(--space-3) var(--space-4); }
+  .app-topbar-controls { gap: var(--space-2); }
+  .app-shell-status { min-inline-size: 0; }
   .app-eyebrow { display: none; }
   .app-workspace { padding: var(--space-4); }
 }
