@@ -28,3 +28,5 @@ The production update endpoint is GitHub's `releases/latest/download/latest.json
 5. Relaunch the installed app and confirm Settings reports `0.1.0-demo.2`.
 
 The updater only checks for availability at startup. It never downloads, installs, or restarts the app until the user explicitly presses the corresponding Settings action.
+
+When an update is available, installed releases also show a global toast over the current workspace section. **View update** opens the Settings update controls; **Dismiss** hides that version's toast for the current session. Neither action starts a download or installation.

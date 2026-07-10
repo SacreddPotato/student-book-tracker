@@ -17,13 +17,11 @@ Update this file at the end of every completed implementation segment. Keep the 
 
 - Segment work is happening on `pre-release`.
 
-## Future Segment Reminders
+## Updater And Release Notes
 
-- Segment 14 desktop updater verification must use ordered pre-release tags for updater smoke testing:
-  - Build and install a previous Windows EXE/MSI version that already has updater support.
-  - Tag and publish a newer pre-release version, even if it contains no functional changes beyond the version bump needed for the updater feed.
-  - Launch the installed previous version, trigger/check for updates, apply the update, and verify the installed app reports the newer version.
-  - Keep Neon credentials and GitHub tokens out of the packaged desktop app while testing updater metadata.
+- The Segment 14/15 smoke test used ordered SemVer prerelease version strings published as normal GitHub releases, because the configured `releases/latest` updater endpoint ignores GitHub releases marked as prereleases.
+- Future updater smoke tests must install an older updater-enabled Windows build, publish a newer signed release, then verify the installed app detects, downloads, applies, and reports the newer version.
+- Keep Neon credentials, GitHub tokens, and `VITE_SYNC_API_SHARED_SECRET` out of the packaged desktop app. The updater private key remains only in the GitHub Actions `TAURI_SIGNING_PRIVATE_KEY` secret.
 
 ## Segment Status
 
@@ -315,7 +313,42 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run lint`
   - `npm run build`
 
+### Segment 14: Desktop Updates
+
+- Status: completed on `pre-release`.
+- Added Tauri's updater plugin, updater capability, signed updater artifacts, and a GitHub Releases `latest.json` endpoint for Windows NSIS packages.
+- Production desktop startup performs one availability check; local development/browser runs remain updater-disabled.
+- Added Settings controls for check, available, download, ready-to-install, up-to-date, and failure states. Downloading and installation always require the user's explicit action; the app never silently downloads, installs, or restarts.
+- Added an English/Arabic global `UpdateAvailableToast` mounted in the root layout. It is visible over every workspace section, can be dismissed per version, and its `View update` action navigates to Settings while preserving the unsaved-student-selection guard.
+- Added mocked updater service tests, toast component tests, and app-shell navigation coverage.
+- Verification completed:
+  - `npm run test -w @app/desktop -- src/lib/services/updater.test.ts src/lib/ui/settings/update-available-toast.test.ts`
+  - `npm run test -w @app/desktop -- src/lib/ui/settings/update-available-toast.test.ts src/routes/page-shell.test.ts`
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `cargo check` in `apps/desktop/src-tauri` with `%USERPROFILE%\.cargo\bin` prepended to `PATH`
+- Live updater smoke verification completed:
+  - Installed `0.1.0-demo.1`, then applied the signed `0.1.0-demo.2` update and confirmed Settings reported `.2`.
+  - Applied the signed `.2 -> .3` update and confirmed the permanent installed binary reported `0.1.0-demo.3`.
+  - With `.3` installed on the Students screen, the production updater surfaced the global `Update available` toast for `0.1.0-demo.4`; `View update` opened Settings, the explicit download reached ready-to-install, and the signed installer applied successfully.
+  - The relaunched app's Settings screen and permanent installed binary both reported `0.1.0-demo.4` and the latest-version state.
+
+### Segment 15: CI And Release Workflows
+
+- Status: completed on `pre-release`.
+- Added Windows CI on Node 24 for dependency installation, lint, typecheck, tests, and build.
+- Added a Windows release workflow for `v*` tags and manual SemVer-input dispatch. It validates the source/version, builds signed NSIS updater artifacts in a draft release, verifies the installer, `.sig`, and `latest.json`, and only then publishes the release.
+- Added the Windows release/updater runbook with signing-boundary guidance. `TAURI_SIGNING_PRIVATE_KEY` is the only required secret; optional sync API configuration is public build-time configuration only.
+- Verification completed:
+  - CI run `29086726893` for `0.1.0-demo.3`: success.
+  - Release run `29086758103` for `v0.1.0-demo.3`: success; published `latest.json`, the NSIS installer, and its signature.
+  - CI run `29087472451` for `0.1.0-demo.4`: success.
+  - Release run `29087483060` for `v0.1.0-demo.4`: success; draft artifact verification and publish steps both passed.
+  - The live `releases/latest/download/latest.json` feed resolved to `0.1.0-demo.4` with signed `windows-x86_64` and `windows-x86_64-nsis` targets.
+
 ## Next Segment Starting Point
 
-- Segment 14 should implement the desktop updater flow.
-- Start with Tauri updater configuration, keeping updater checks disabled in local development and leaving production checks/manual actions to the settings UI.
+- Segment 16 should add the documented end-to-end verification suite.
+- Start with `apps/desktop/tests/e2e/student-book-flow.spec.ts`, `offline-sync-flow.spec.ts`, and `excel-export.spec.ts`, then add `docs/runbooks/verification.md` with the expected local, packaged-Windows, offline-sync, and export checks.
