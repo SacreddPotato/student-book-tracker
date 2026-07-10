@@ -417,6 +417,20 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop-react -- src/core/db/persistence.test.ts src/core/services/inventory-service.test.ts src/core/services/entity-service.test.ts`
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 3: Runtime Services And Backend Contracts
+
+- Status: completed on `pre-release`.
+- Added a React-compatible external snapshot store used by sync and updater controllers.
+- Ported fetch-based sync push/pull, transport headers, accepted/duplicate/rejected handling, offline/error distinction, reversal command-ID translation, cursor persistence, and pulled student/book/transaction/item/issuance snapshots.
+- Added the coalescing sync runner and a typed global sync status contract.
+- Ported conflict resolution and acknowledgement while preserving rejected outbox audit rows.
+- Added an explicit updater controller covering disabled, checking, current, available, downloading, ready, installing, and failed phases without automatic download/install.
+- Added bilingual/RTL Excel workbook construction behind a translator callback plus browser download support.
+- Added the common `AppBackend` contract, persisted Tauri/SQLite backend, log projection, and a deterministic pure-memory fixture backend for rendered browser tests.
+- Verification completed:
+  - `npm run test -w @app/desktop-react -- src/core`
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- React persistence and inventory parity are complete. Start React Frontend Revamp Segment 3 by porting sync push/pull, conflict acknowledgement, updater state, Excel export, external stores, and the production/fixture backend contracts.
+- React runtime services and backend contracts are complete. Start React Frontend Revamp Segment 4 by adding bilingual dictionaries/providers, TanStack Query, guarded navigation, semantic tokens, Radix-backed primitives, responsive shell, and accessible focus behavior.
