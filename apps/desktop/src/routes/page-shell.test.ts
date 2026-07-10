@@ -3,12 +3,13 @@ import "@testing-library/jest-dom/vitest";
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/svelte";
+import { render, screen, waitFor } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getTranslation, language } from "$lib/i18n";
 import { desktopVersion } from "$lib/services/updater";
+import { requestAppScreen, requestedAppScreen } from "$lib/ui/app-navigation";
 import Page from "./+page.svelte";
 
 vi.mock("$lib/db/local-db", () => ({
@@ -21,6 +22,7 @@ vi.mock("$lib/db/local-db", () => ({
 describe("app shell", () => {
   beforeEach(() => {
     language.set("en");
+    requestedAppScreen.set(null);
   });
 
   it("keeps the main Tauri window on native decorations", () => {
@@ -74,5 +76,15 @@ describe("app shell", () => {
     expect(screen.getByRole("heading", { name: "App updates" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Check for updates" })).toBeInTheDocument();
     expect(screen.getByText(`Version ${desktopVersion}`)).toBeInTheDocument();
+  });
+
+  it("accepts a global request to open Settings from an update notification", async () => {
+    render(Page);
+
+    requestAppScreen("settings");
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument(),
+    );
   });
 });

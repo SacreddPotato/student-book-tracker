@@ -5,6 +5,7 @@
   import { language } from "$lib/i18n";
   import { runStartupUpdateCheck } from "$lib/services/updater";
   import { SyncEngine } from "$lib/sync/sync-engine";
+  import UpdateAvailableToast from "$lib/ui/settings/UpdateAvailableToast.svelte";
   import SyncConflictsPanel from "$lib/ui/sync/SyncConflictsPanel.svelte";
   import SyncStatus from "$lib/ui/sync/SyncStatus.svelte";
 
@@ -38,6 +39,7 @@
 
 <div class="localized-shell" lang={$language} dir={$language === "ar" ? "rtl" : "ltr"}>
   {@render children()}
+  <UpdateAvailableToast />
   <SyncConflictsPanel />
   <SyncStatus />
 </div>

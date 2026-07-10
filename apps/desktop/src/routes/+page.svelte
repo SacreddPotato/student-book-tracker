@@ -6,14 +6,15 @@
     type Language,
     type TranslationKey,
   } from "$lib/i18n";
-  import { appTabs, type AppTabId } from "$lib/ui/app-tabs";
+  import { appTabs } from "$lib/ui/app-tabs";
+  import { requestedAppScreen, type AppScreenId } from "$lib/ui/app-navigation";
   import BooksTab from "$lib/ui/books/BooksTab.svelte";
   import LogsTab from "$lib/ui/logs/LogsTab.svelte";
   import SettingsTab from "$lib/ui/settings/SettingsTab.svelte";
   import StudentsTab from "$lib/ui/students/StudentsTab.svelte";
   import UnsavedBookSelectionDialog from "$lib/ui/students/UnsavedBookSelectionDialog.svelte";
 
-  type ScreenId = AppTabId | "settings";
+  type ScreenId = AppScreenId;
 
   let activeTab = $state<ScreenId>("students");
   let studentsHaveDraftSelections = $state(false);
@@ -56,6 +57,16 @@
     activeTab = pendingTab;
     pendingTab = null;
   }
+
+  $effect(() => {
+    const requestedScreen = $requestedAppScreen;
+    if (!requestedScreen) {
+      return;
+    }
+
+    requestTabChange(requestedScreen);
+    requestedAppScreen.set(null);
+  });
 </script>
 
 <svelte:head>
