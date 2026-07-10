@@ -474,6 +474,21 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test -w @app/desktop-react` (19 files, 48 tests)
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 7: Logs, Settings, Sync, And Updates
+
+- Status: completed on `pre-release`.
+- Replaced the remaining React shell placeholders with complete Logs and Settings workspaces.
+- Added searchable/type-filtered inventory history cards with all transaction items, signed quantity deltas, post-transaction quantities, Cairo-localized timestamps, reversal linkage state, and destructive confirmation.
+- Reversals retain the confirmation on failure, prevent duplicate submission, and invalidate logs, books, students, and issuance query families after success.
+- Added language controls and the explicit updater state machine to Settings; checking, download, and installation remain separate user actions and failure state stays actionable.
+- Added a production availability check and per-version dismissible global update notice whose View Update action uses guarded app navigation.
+- Added a live, labelled sync status control inside the shell, including pending/rejected counts, manual retry, conflict detail resolution, acknowledgement without audit-row deletion, and a distinct conflict-load failure state.
+- Kept sync status reachable on the narrow bottom-navigation layout without adding a fixed overlay over content.
+- Verification completed:
+  - `npm run test -w @app/desktop-react -- src/features/logs src/features/settings src/features/sync`
+  - `npm run test -w @app/desktop-react` (23 files, 52 tests)
+  - `npm run build -w @app/desktop-react`
+
 ## Next Segment Starting Point
 
-- React Students and Books parity are complete. Start React Frontend Revamp Segment 7 by implementing Logs, Settings, global sync status/conflicts, and explicit updater interactions.
+- All React MVP feature surfaces are implemented. Start React Frontend Revamp Segment 8 with real rendered-browser Playwright journeys, accessibility checks, responsive/RTL inspection, and visual correction.

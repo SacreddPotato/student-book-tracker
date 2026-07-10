@@ -36,7 +36,8 @@
 @media (max-width: 720px) {
   .app-shell { display: block; padding-block-end: 72px; }
   .app-rail { position: fixed; z-index: 50; inset: auto 0 0; inline-size: 100%; block-size: 68px; padding: var(--space-2); display: block; }
-  .app-brand, .app-rail-footer { display: none; }
+  .app-brand { display: none; }
+  .app-rail-footer { position: fixed; z-index: 51; inset-block-start: 18px; inset-inline-end: 118px; inline-size: 132px; margin: 0; }
   .app-navigation { block-size: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-1); }
   .app-nav-button { min-block-size: 52px; flex-direction: column; justify-content: center; gap: 2px; font-size: .68rem; }
   .app-nav-button span { display: inline; }

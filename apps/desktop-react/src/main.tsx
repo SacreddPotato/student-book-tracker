@@ -11,6 +11,7 @@ import "./styles/primitives.css";
 import "./styles/shell.css";
 import "./styles/students.css";
 import "./styles/books.css";
+import "./styles/operations.css";
 
 const root = document.getElementById("root");
 
