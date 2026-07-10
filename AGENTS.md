@@ -348,7 +348,27 @@ Update this file at the end of every completed implementation segment. Keep the 
   - Release run `29087483060` for `v0.1.0-demo.4`: success; draft artifact verification and publish steps both passed.
   - The live `releases/latest/download/latest.json` feed resolved to `0.1.0-demo.4` with signed `windows-x86_64` and `windows-x86_64-nsis` targets.
 
+### Segment 16: Final MVP Quality Control
+
+- Status: completed on `pre-release`.
+- Fixed the desktop SQLite capability regression that made Students and Books show load errors: the Tauri capability now grants `sql:allow-execute` and `sql:allow-select` in addition to the SQL plugin default permission.
+- Serialized first-run local database initialization so concurrent layout, tab, and sync startup callers share one migration promise and a failed attempt can be retried.
+- Student and Book save failures are now visible in an alert while keeping the form open; the student empty state uses the full workspace width instead of leaving an unused half-column.
+- Added Playwright workflow coverage for local student/book/stock/history/outbox behavior, offline sync accepted/rejected behavior, and Arabic RTL Excel export. The workflow specs run against a Node SQLite harness because a browser-only Vite page cannot access the Tauri SQL bridge.
+- Added `docs/runbooks/verification.md` with local, packaged-Windows, offline-sync, and export verification instructions.
+- Verification completed:
+  - `npm run test`
+  - `npm run test:e2e -w @app/desktop`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `cargo check` in `apps/desktop/src-tauri` with `%USERPROFILE%\.cargo\bin` prepended to `PATH`
+  - Tauri debug smoke: confirmed migrations create all local tables and the Students/Books views load through the real SQL bridge; confirmed duplicate-save failures surface visibly.
+  - `npm run tauri -w @app/desktop -- build` produced the local NSIS package; local signing correctly stops without `TAURI_SIGNING_PRIVATE_KEY`, which remains exclusively in GitHub Actions secrets.
+  - CI run `29090880043` for the QA change set: success.
+  - CI run `29091031496` for `0.1.0-demo.5`: success.
+  - Release run `29091032788` for `v0.1.0-demo.5`: success; published the signed NSIS installer, `.sig`, and `latest.json` with both Windows updater targets.
+
 ## Next Segment Starting Point
 
-- Segment 16 should add the documented end-to-end verification suite.
-- Start with `apps/desktop/tests/e2e/student-book-flow.spec.ts`, `offline-sync-flow.spec.ts`, and `excel-export.spec.ts`, then add `docs/runbooks/verification.md` with the expected local, packaged-Windows, offline-sync, and export checks.
+- MVP quality control is complete. Continue with maintenance, user feedback, or a separately scoped post-MVP segment.
