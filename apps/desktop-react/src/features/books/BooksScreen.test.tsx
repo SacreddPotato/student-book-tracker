@@ -15,6 +15,10 @@ const empty: BookRow = { id: "book-2", scopeId: "global", name: "Primary Science
 
 function renderBooks(isEmpty = false) {
   const backend = createFixtureBackend({ academicYears: [year], ...(isEmpty ? {} : { books: [stocked, empty] }) });
+  return renderBooksWithBackend(backend);
+}
+
+function renderBooksWithBackend(backend: ReturnType<typeof createFixtureBackend>) {
   render(<AppProviders backend={backend} initialLanguage="en"><AppShell><BooksScreen /></AppShell></AppProviders>);
   return backend;
 }
@@ -55,5 +59,69 @@ describe("BooksScreen", () => {
     expect(screen.queryByText("Primary Math")).not.toBeInTheDocument();
     expect(screen.getByText("Primary Science")).toBeVisible();
     expect(screen.getByRole("button", { name: "Add book" })).toBeVisible();
+  });
+
+  it("expands the entire subject row into a cross-year receipt and issuance audit", async () => {
+    const user = userEvent.setup();
+    renderBooksWithBackend(createFixtureBackend({
+      academicYears: [
+        year,
+        { academicYear: "2024-2025", status: "archived", createdAt: now, archivedAt: now },
+      ],
+      books: [stocked],
+      students: [{
+        id: "student-1", scopeId: "global", name: "Mona Ahmed", governmentId: "1",
+        educationStage: "primary", gradeLevel: "primary1", academicYear: "2025-2026",
+        previousStudentId: null, createdAt: now, updatedAt: now, deletedAt: null,
+      }],
+      transactions: [
+        {
+          id: "issue-1", scopeId: "global", academicYear: "2025-2026",
+          type: "student_issue", studentId: "student-1", receiptNumber: null,
+          receiptDate: null, reversedTransactionId: null, reversedByTransactionId: null,
+          deviceId: "fixture", commandId: "issue-command", occurredAt: "2026-01-15T10:00:00.000Z", createdAt: "2026-01-15T10:00:00.000Z",
+        },
+        {
+          id: "stock-1", scopeId: "global", academicYear: "2024-2025",
+          type: "stock_increase", studentId: null, receiptNumber: "R-41",
+          receiptDate: "2025-01-14", reversedTransactionId: null, reversedByTransactionId: null,
+          deviceId: "fixture", commandId: "stock-command", occurredAt: "2025-01-14T10:00:00.000Z", createdAt: "2025-01-14T10:00:00.000Z",
+        },
+      ],
+      items: [
+        { id: "issue-item", transactionId: "issue-1", bookId: "book-1", semester: "second", quantityDelta: -1, quantityAfter: 1, createdAt: "2026-01-15T10:00:00.000Z" },
+        { id: "stock-item", transactionId: "stock-1", bookId: "book-1", semester: "first", quantityDelta: 3, quantityAfter: 3, createdAt: "2025-01-14T10:00:00.000Z" },
+      ],
+    }));
+    const row = await screen.findByRole("row", { name: /Primary Math/ });
+    const disclosure = within(row).getByRole("button", { name: "Expand history for Primary Math" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(row);
+
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByText("2025-2026")).toBeVisible();
+    expect(screen.getByText("2024-2025")).toBeVisible();
+    expect(screen.getByText(/Mona Ahmed/)).toBeVisible();
+    expect(screen.getByText(/R-41/)).toBeVisible();
+    expect(screen.getByText("2025-01-14")).toBeVisible();
+
+    await user.click(row);
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Mona Ahmed")).not.toBeInTheDocument();
+  });
+
+  it("uses plus icons for semester stock actions without toggling history", async () => {
+    const user = userEvent.setup();
+    renderBooks();
+    const row = await screen.findByRole("row", { name: /Primary Math/ });
+    const action = within(row).getByRole("button", { name: "Add first semester stock to Primary Math" });
+    const disclosure = within(row).getByRole("button", { name: "Expand history for Primary Math" });
+    expect(action.querySelector(".lucide-plus")).not.toBeNull();
+
+    await user.click(action);
+
+    expect(screen.getByRole("dialog", { name: "Add first semester stock to Primary Math" })).toBeVisible();
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
   });
 });

@@ -71,6 +71,10 @@ export const en = {
     inStock: "In stock", outOfStock: "Out of stock", count: "{count} books",
     zeroCount: "{count} out of stock", noResults: "No books match these filters.",
     empty: "No books yet.", stockSuccess: "Stock updated for {name}.",
+    historyExpand: "Expand history for {name}", historyCollapse: "Collapse history for {name}",
+    historyEmpty: "No inventory history for this subject.", historyError: "Could not load this subject's history.",
+    historyAdded: "Stock added", historyIssued: "Issued to student", historyReversal: "Reversal",
+    historyReversed: "Reversed", historyReceipt: "Receipt {number}", historyStudent: "Student: {name}",
   },
   logs: {
     title: "Inventory history", description: "Review stock, issuance, and reversal transactions.",

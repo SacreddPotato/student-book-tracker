@@ -58,6 +58,10 @@ export const ar = {
     count: "{count} كتب", zeroCount: "{count} نفد مخزونها",
     noResults: "لا توجد كتب مطابقة لهذه التصفية.", empty: "لا توجد كتب بعد.",
     stockSuccess: "تم تحديث مخزون {name}.",
+    historyExpand: "عرض سجل {name}", historyCollapse: "إغلاق سجل {name}",
+    historyEmpty: "لا يوجد سجل مخزون لهذه المادة.", historyError: "تعذر تحميل سجل هذه المادة.",
+    historyAdded: "إضافة مخزون", historyIssued: "تسليم لطالب", historyReversal: "عكس العملية",
+    historyReversed: "تم عكسها", historyReceipt: "إذن الاستلام {number}", historyStudent: "الطالب: {name}",
   },
   logs: {
     title: "سجل المخزون", description: "مراجعة عمليات المخزون والتسليم والعكس.",
