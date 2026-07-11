@@ -6,7 +6,8 @@ Update this file after every completed implementation segment. Keep current stat
 
 ## Product And Branch
 
-- Branch: `pre-release`.
+- Default branch: `main` (MVP release line, merged from `pre-release`).
+- `pre-release` remains the automatic ordered-demo release branch.
 - Product: Windows-first, offline-first student and school-book inventory desktop app.
 - Default UI: `apps/desktop-react` (React 19 + Vite + Tauri 2).
 - Rollback UI: `apps/desktop` (preserved SvelteKit + Tauri 2; do not delete).
@@ -63,7 +64,7 @@ Rust may require `$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"`.
 
 ## Current Implementation Status
 
-Completed and committed on `pre-release`:
+Completed, released, and merged to `main`:
 
 - Shared semester, academic-year, promotion, and sync contracts.
 - Reset-capable local SQLite schema/migration and React repositories.
@@ -87,7 +88,19 @@ npm run build             passed across all workspaces
 cargo test                passed React Tauri database allowlist test
 cargo check               passed React Tauri native compile
 npm run db:migrate -w @app/sync-api  passed idempotently against development Neon
+post-merge npm run test    passed the same 46 files / 184 tests on main
+main CI 29167478983        passed lint, typecheck, tests, 5 Chromium journeys, and build
 ```
+
+Release checkpoint (2026-07-11):
+
+- Automatic demo pipeline run `29166329410` passed and published `v0.1.0-demo.8` after validating the immutable tag source.
+- Demo EXE: `Student.Book.Tracker_0.1.0-demo.8_x64-setup.exe`, 4,414,787 bytes, SHA-256 `35fbfe042d9cea768a24ffcc3d387ea9ce65561c3fa4d78e3ca6c7647417524a`.
+- Tags `v0.1.0-demo.6` and `v0.1.0-demo.7` were validation-only tags created while hardening the workflow; neither was published as a release. `v0.1.0-demo.8` is the verified published demo.
+- Stable workflow run `29166844125` passed and published `v1.0.0` from commit `a2268c9`.
+- Stable EXE: `Student.Book.Tracker_1.0.0_x64-setup.exe`, 4,413,283 bytes, SHA-256 `2e1fe0c1783ce469fd74162a5b73e5cbe65c4444616fc1b07f8ab82cef89abe5`.
+- Stable `latest.json` SHA-256 is `e30e2f65d98c2c70f08c0a4dbc213a1abd31159b83583828cdd30b9b50be3cb1`; the global `releases/latest` feed matched it byte-for-byte and reported both Windows updater targets at `1.0.0`.
+- GitHub default branch is `main`; merge commit `9a47e78` passed CI run `29167478983`.
 
 Production Neon migration checkpoint (2026-07-11 18:52 Cairo):
 
@@ -108,6 +121,6 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Push `pre-release`, verify CI and the next automatic demo EXE release, then synchronize the CI-authored version commit.
-2. Publish and verify `v1.0.0`, merge the verified release commit into `main`, and record final evidence.
-3. Perform a final clean-tree, tag, branch, updater-feed, and artifact audit.
+1. Start post-MVP work from `main` (or a short-lived `codex/*` branch); do not rewrite the `v1.0.0` tag.
+2. Keep schema changes behind committed Drizzle migrations and apply them intentionally to both configured Neon branches.
+3. Use `pre-release` only when an ordered signed demo release is intended; CI-authored version commits must be fetched before further release work.
