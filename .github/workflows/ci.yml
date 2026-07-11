@@ -77,11 +77,16 @@ jobs:
           latest="$(git tag -l 'v0.1.0-demo.*' | sed -n 's/^v0\.1\.0-demo\.\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)"
           next=$(( ${latest:-0} + 1 ))
           version="0.1.0-demo.$next"
-          npm version 0.1.0-demo.$next -w @app/desktop-react --no-git-tag-version
+          current="$(node -p "require('./apps/desktop-react/package.json').version")"
+          if [ "$current" != "$version" ]; then
+            npm version "$version" -w @app/desktop-react --no-git-tag-version
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/desktop-react/package.json package-lock.json
-          git commit -m "chore: release v$version"
+          if ! git diff --quiet -- apps/desktop-react/package.json package-lock.json; then
+            git add apps/desktop-react/package.json package-lock.json
+            git commit -m "chore: release v$version"
+          fi
           git tag -a "v$version" -m "Release v$version"
           git push origin HEAD:pre-release "v$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"

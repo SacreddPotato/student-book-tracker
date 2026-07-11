@@ -47,7 +47,10 @@ describe("resolveRuntimeConfig", () => {
     expect(ci).toContain("github.ref == 'refs/heads/pre-release'");
     expect(ci).toContain("github.actor != 'github-actions[bot]'");
     expect(ci).toContain("contents: write");
-    expect(ci).toContain("npm version 0.1.0-demo.$next");
+    expect(ci).toContain('current="$(node -p');
+    expect(ci).toContain('if [ "$current" != "$version" ]; then');
+    expect(ci).toContain('npm version "$version"');
+    expect(ci).toContain('if ! git diff --quiet -- apps/desktop-react/package.json package-lock.json; then');
     expect(ci).toContain('git config user.name "github-actions[bot]"');
     expect(ci).toContain('git tag -a "v$version"');
     expect(ci).toContain('git push origin HEAD:pre-release "v$version"');
