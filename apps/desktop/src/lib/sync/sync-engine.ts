@@ -1,4 +1,4 @@
-import type { SyncCommand, SyncCommandResult } from "@app/shared";
+import type { SyncCommandResult } from "@app/shared";
 
 import type { SqlDatabase } from "$lib/db/local-db";
 import { initializeLocalDatabase } from "$lib/db/local-db";
@@ -30,6 +30,7 @@ import {
   type SyncApiClient,
 } from "./api-client";
 import { setSyncStatus } from "./sync-status";
+import type { LegacySyncCommand } from "./legacy-sync-command";
 
 type SyncEngineOptions = {
   database?: SqlDatabase;
@@ -93,12 +94,12 @@ export class SyncEngine {
   private async prepareCommands(
     database: SqlDatabase,
     pendingRows: OutboxRow[],
-  ): Promise<SyncCommand[]> {
-    const commands: SyncCommand[] = [];
+  ): Promise<LegacySyncCommand[]> {
+    const commands: LegacySyncCommand[] = [];
 
     for (const row of pendingRows) {
       try {
-        const command = JSON.parse(row.payloadJson) as SyncCommand;
+        const command = JSON.parse(row.payloadJson) as LegacySyncCommand;
         commands.push(await normaliseCommandForRemote(database, command));
       } catch (error) {
         await runLocalTransaction(database, async (transaction) => {
@@ -197,8 +198,8 @@ export class SyncEngine {
 
 async function normaliseCommandForRemote(
   database: SqlDatabase,
-  command: SyncCommand,
-): Promise<SyncCommand> {
+  command: LegacySyncCommand,
+): Promise<LegacySyncCommand> {
   if (command.type !== "REVERSE_TRANSACTION") {
     return command;
   }

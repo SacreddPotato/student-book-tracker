@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { get } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { SyncCommand, SyncCommandResult } from "@app/shared";
+import type { SyncCommandResult } from "@app/shared";
 
 import type { SqlDatabase, SqlValue } from "$lib/db/local-db";
 import { runMigrations } from "$lib/db/migrations";
@@ -14,6 +14,7 @@ import { createInventoryTransaction } from "$lib/db/repositories/transactions";
 import type { PullResponse, SyncApiClient } from "./api-client";
 import { SyncEngine } from "./sync-engine";
 import { initialSyncStatus, syncStatus } from "./sync-status";
+import type { LegacySyncCommand } from "./legacy-sync-command";
 
 class TestSqliteDatabase implements SqlDatabase {
   readonly db = new DatabaseSync(":memory:");
@@ -38,7 +39,7 @@ class FakeSyncApiClient implements SyncApiClient {
     private readonly pushError: Error | null = null,
   ) {}
 
-  readonly push = vi.fn(async (_commands: SyncCommand[]) => {
+  readonly push = vi.fn(async (_commands: LegacySyncCommand[]) => {
     if (this.pushError) {
       throw this.pushError;
     }
@@ -56,7 +57,7 @@ function toSqliteBindings(values: SqlValue[]): Record<string, SqlValue> {
 
 const now = "2026-07-09T12:00:00.000Z";
 
-function stockCommand(id = "stock-command"): SyncCommand {
+function stockCommand(id = "stock-command"): LegacySyncCommand {
   return {
     id,
     type: "ADD_BOOK_STOCK",

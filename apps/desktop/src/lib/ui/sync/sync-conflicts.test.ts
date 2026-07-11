@@ -6,7 +6,7 @@ import { render, screen, waitFor } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { SyncCommand } from "@app/shared";
+import type { LegacySyncCommand } from "$lib/sync/legacy-sync-command";
 
 import type { SqlDatabase, SqlValue } from "$lib/db/local-db";
 import { runMigrations } from "$lib/db/migrations";
@@ -72,7 +72,7 @@ async function seedRejectedIssue(database: SqlDatabase): Promise<void> {
     deletedAt: null,
   });
 
-  const command: SyncCommand = {
+  const command: LegacySyncCommand = {
     id: "issue-command",
     type: "ISSUE_BOOKS_TO_STUDENT",
     deviceId: "device-a",

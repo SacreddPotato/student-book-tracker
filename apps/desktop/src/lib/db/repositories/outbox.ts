@@ -1,6 +1,5 @@
-import type { SyncCommand } from "@app/shared";
-
 import type { SqlDatabase } from "../local-db";
+import type { LegacySyncCommand } from "../../sync/legacy-sync-command";
 
 export type OutboxStatus = "pending" | "syncing" | "synced" | "rejected";
 
@@ -42,7 +41,7 @@ export async function enqueueOutboxCommand(database: SqlDatabase, row: OutboxRow
 
 export async function enqueueSyncCommand(
   database: SqlDatabase,
-  command: SyncCommand,
+  command: LegacySyncCommand,
   createdAt: string,
 ): Promise<void> {
   await enqueueOutboxCommand(database, {

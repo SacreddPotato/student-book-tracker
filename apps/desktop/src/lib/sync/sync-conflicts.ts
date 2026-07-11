@@ -1,15 +1,14 @@
-import type { SyncCommand } from "@app/shared";
-
 import type { SqlDatabase } from "$lib/db/local-db";
 import { getBooksByIds } from "$lib/db/repositories/books";
 import { listRejectedOutboxRows, type OutboxRow } from "$lib/db/repositories/outbox";
 import { getStudentById } from "$lib/db/repositories/students";
+import type { LegacySyncCommand } from "./legacy-sync-command";
 
 const acknowledgedConflictSettingKey = "sync.acknowledged-conflict-ids";
 
 export type SyncConflict = {
   row: OutboxRow;
-  command: SyncCommand | null;
+  command: LegacySyncCommand | null;
   isInsufficientStock: boolean;
   studentName: string | null;
   bookNames: string[];
@@ -88,10 +87,12 @@ async function getAcknowledgedConflictIds(database: SqlDatabase): Promise<Set<st
   }
 }
 
-function parseCommand(payloadJson: string): SyncCommand | null {
+function parseCommand(payloadJson: string): LegacySyncCommand | null {
   try {
     const parsed = JSON.parse(payloadJson);
-    return parsed && typeof parsed === "object" && "type" in parsed ? (parsed as SyncCommand) : null;
+    return parsed && typeof parsed === "object" && "type" in parsed
+      ? (parsed as LegacySyncCommand)
+      : null;
   } catch {
     return null;
   }

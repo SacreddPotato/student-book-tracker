@@ -1,4 +1,6 @@
-import type { SyncCommand, SyncCommandResult } from "@app/shared";
+import type { SyncCommandResult } from "@app/shared";
+
+import type { LegacySyncCommand } from "./legacy-sync-command";
 
 export type PulledChange = {
   sequence: number;
@@ -15,7 +17,7 @@ export type PullResponse = {
 };
 
 export interface SyncApiClient {
-  push(commands: SyncCommand[]): Promise<SyncCommandResult[]>;
+  push(commands: LegacySyncCommand[]): Promise<SyncCommandResult[]>;
   pull(since: string | null): Promise<PullResponse>;
 }
 
@@ -44,7 +46,7 @@ export class FetchSyncApiClient implements SyncApiClient {
     private readonly request: FetchLike = fetch,
   ) {}
 
-  async push(commands: SyncCommand[]): Promise<SyncCommandResult[]> {
+  async push(commands: LegacySyncCommand[]): Promise<SyncCommandResult[]> {
     const response = await this.request(this.url("sync/push"), {
       method: "POST",
       headers: this.headers(true),

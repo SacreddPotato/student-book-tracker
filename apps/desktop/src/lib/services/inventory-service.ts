@@ -1,9 +1,3 @@
-import type {
-  AddBookStockCommand,
-  IssueBooksToStudentCommand,
-  ReverseTransactionCommand,
-} from "@app/shared";
-
 import { initializeLocalDatabase, type SqlDatabase } from "../db/local-db";
 import { runLocalTransaction } from "../db/local-transaction";
 import { getBookById, getBooksByIds, updateBookQuantity } from "../db/repositories/books";
@@ -20,6 +14,11 @@ import {
   type InventoryTransactionRow,
   type StudentBookRow,
 } from "../db/repositories/transactions";
+import type {
+  LegacyAddBookStockCommand,
+  LegacyIssueBooksToStudentCommand,
+  LegacyReverseTransactionCommand,
+} from "../sync/legacy-sync-command";
 
 export type InventoryServiceContext = {
   database?: SqlDatabase;
@@ -84,7 +83,7 @@ export async function addBookStock(
       quantityAfter,
       createdAt: occurredAt,
     }];
-    const command: AddBookStockCommand = {
+    const command: LegacyAddBookStockCommand = {
       id: commandId,
       type: "ADD_BOOK_STOCK",
       deviceId: resolved.deviceId,
@@ -161,7 +160,7 @@ export async function issueBooksToStudent(
       });
     }
 
-    const command: IssueBooksToStudentCommand = {
+    const command: LegacyIssueBooksToStudentCommand = {
       id: commandId,
       type: "ISSUE_BOOKS_TO_STUDENT",
       deviceId: resolved.deviceId,
@@ -250,7 +249,7 @@ async function reverseTransactionInDatabase(
     });
   }
 
-  const command: ReverseTransactionCommand = {
+  const command: LegacyReverseTransactionCommand = {
     id: commandId,
     type: "REVERSE_TRANSACTION",
     deviceId: resolved.deviceId,

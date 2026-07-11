@@ -1,12 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-import type { SyncCommand, SyncCommandResult } from "@app/shared";
+import type { SyncCommandResult } from "@app/shared";
 
 import { runMigrations } from "../../src/lib/db/migrations";
 import { enqueueSyncCommand } from "../../src/lib/db/repositories/outbox";
 import { getSyncState } from "../../src/lib/db/repositories/sync-state";
 import type { PullResponse, SyncApiClient } from "../../src/lib/sync/api-client";
 import { SyncEngine } from "../../src/lib/sync/sync-engine";
+import type { LegacySyncCommand } from "../../src/lib/sync/legacy-sync-command";
 
 import { TestSqliteDatabase } from "./test-database";
 
@@ -18,9 +19,9 @@ class ScenarioSyncClient implements SyncApiClient {
     private readonly failure: Error | null = null,
   ) {}
 
-  pushed: SyncCommand[] = [];
+  pushed: LegacySyncCommand[] = [];
 
-  async push(commands: SyncCommand[]): Promise<SyncCommandResult[]> {
+  async push(commands: LegacySyncCommand[]): Promise<SyncCommandResult[]> {
     this.pushed = commands;
     if (this.failure) {
       throw this.failure;
@@ -48,7 +49,7 @@ async function status(
 test("offline queue survives a failed sync, then accepts or preserves a stock conflict", async () => {
   const database = new TestSqliteDatabase();
   await runMigrations(database);
-  const command: SyncCommand = {
+  const command: LegacySyncCommand = {
     id: "stock-command",
     type: "ADD_BOOK_STOCK",
     deviceId: "e2e-device",
@@ -73,7 +74,7 @@ test("offline queue survives a failed sync, then accepts or preserves a stock co
   }).sync();
   expect(await status(database)).toEqual({ status: "synced", lastError: null });
 
-  const rejectedCommand = { ...command, id: "rejected-command" } as SyncCommand;
+  const rejectedCommand = { ...command, id: "rejected-command" } as LegacySyncCommand;
   await enqueueSyncCommand(database, rejectedCommand, now);
   await new SyncEngine({
     database,
