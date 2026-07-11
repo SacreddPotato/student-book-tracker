@@ -1,4 +1,4 @@
-.app-frame[data-native-window] { block-size: 100vh; overflow: hidden; border: 1px solid #0b1912; background: #13271d; }
+.app-frame[data-native-window] { block-size: 100vh; overflow: hidden; border: 1px solid #0b1912; background: #ffffffb3; }
 .native-titlebar { block-size: 38px; direction: ltr; display: flex; align-items: center; background: #13271d; color: #dce8df; border-block-end: 1px solid #294136; user-select: none; }
 .native-titlebar-title { min-inline-size: 0; flex: 1; align-self: stretch; display: flex; align-items: center; padding-inline: 13px; font-size: .74rem; font-weight: 650; color: #b9c7be; }
 .native-titlebar-actions { align-self: stretch; display: flex; }
