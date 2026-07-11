@@ -1,19 +1,26 @@
 import type { EducationStage, GradeLevel } from "../domain/education";
+import type { BookSelection, BookSemester } from "../domain/inventory";
 
 export type SyncCommand =
   | AddBookStockCommand
   | IssueBooksToStudentCommand
   | ReverseTransactionCommand
   | UpsertStudentCommand
-  | UpsertBookCommand;
+  | UpsertBookCommand
+  | InitializeAcademicYearCommand
+  | AdvanceAcademicYearCommand;
 
 export type AddBookStockCommand = {
   id: string;
   type: "ADD_BOOK_STOCK";
   deviceId: string;
   occurredAt: string;
+  academicYear: string;
   bookId: string;
+  semester: BookSemester;
   quantity: number;
+  receiptNumber: string;
+  receiptDate: string;
 };
 
 export type IssueBooksToStudentCommand = {
@@ -21,8 +28,9 @@ export type IssueBooksToStudentCommand = {
   type: "ISSUE_BOOKS_TO_STUDENT";
   deviceId: string;
   occurredAt: string;
+  academicYear: string;
   studentId: string;
-  bookIds: string[];
+  bookSelections: BookSelection[];
 };
 
 export type ReverseTransactionCommand = {
@@ -30,6 +38,7 @@ export type ReverseTransactionCommand = {
   type: "REVERSE_TRANSACTION";
   deviceId: string;
   occurredAt: string;
+  academicYear: string;
   transactionId: string;
 };
 
@@ -44,6 +53,8 @@ export type UpsertStudentCommand = {
     governmentId: string;
     educationStage: EducationStage;
     gradeLevel: GradeLevel;
+    academicYear: string;
+    previousStudentId: string | null;
   };
 };
 
@@ -59,6 +70,34 @@ export type UpsertBookCommand = {
   };
 };
 
+export type InitializeAcademicYearCommand = {
+  id: string;
+  type: "INITIALIZE_ACADEMIC_YEAR";
+  deviceId: string;
+  occurredAt: string;
+  academicYear: string;
+};
+
+export type PromotedStudentSnapshot = {
+  id: string;
+  previousStudentId: string;
+  name: string;
+  governmentId: string;
+  educationStage: EducationStage;
+  gradeLevel: GradeLevel;
+  academicYear: string;
+};
+
+export type AdvanceAcademicYearCommand = {
+  id: string;
+  type: "ADVANCE_ACADEMIC_YEAR";
+  deviceId: string;
+  occurredAt: string;
+  fromYear: string;
+  toYear: string;
+  promotedStudents: PromotedStudentSnapshot[];
+};
+
 export type SyncCommandResult = {
   commandId: string;
   status: "accepted" | "rejected" | "duplicate";
@@ -67,6 +106,10 @@ export type SyncCommandResult = {
     | "TRANSACTION_ALREADY_REVERSED"
     | "UNKNOWN_STUDENT"
     | "UNKNOWN_BOOK"
+    | "ACADEMIC_YEAR_NOT_INITIALIZED"
+    | "ACADEMIC_YEAR_ALREADY_INITIALIZED"
+    | "ACADEMIC_YEAR_MISMATCH"
+    | "ACADEMIC_YEAR_ARCHIVED"
     | "VALIDATION_FAILED";
   message?: string;
 };
