@@ -1,7 +1,7 @@
 import type { TranslationDictionary } from "./en";
 
 export const ar = {
-  app: { title: "متتبع كتب الطلاب", primarySections: "الأقسام الرئيسية", workspace: "مساحة إدارة مخزون المدرسة" },
+  app: { title: "تسليم كتب دراسية لمدرسة الرافعي", primarySections: "الأقسام الرئيسية", workspace: "مساحة إدارة مخزون المدرسة" },
   tabs: { students: "الطلاب", books: "الكتب", logs: "السجلات", settings: "الإعدادات" },
   common: {
     search: "بحث", resultCount: "{count} نتيجة", loading: "جارٍ التحميل", close: "إغلاق",
@@ -81,7 +81,7 @@ export const ar = {
   export: {
     name: "الاسم", alGharbia: "الغربية",
     eastTantaAdministrativeLearning: "إدارة شرق طنطا التعليمية",
-    alRafiiSchools: "مدارس الرافعي", educationalYear: "للعام الدراسي:",
+    alRafiiSchools: "مدرسة الرافعي الرسميىة للغات", educationalYear: "للعام الدراسي:",
     studentSignature: "توقيع الطالب",
   },
   feedback: {
