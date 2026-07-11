@@ -72,12 +72,13 @@ Completed and committed on `pre-release`:
 - React backend contract, fixture/SQLite backends, academic-year provider, sync pull, and semester conflict detail.
 - React UI for semester stock receipts, subject disclosures, mixed-semester issuance, logs, read-only archives, initial year setup, typed rollover confirmation, and exact Excel states.
 - Rendered rollover and inventory journeys.
+- Cross-year expandable Books audit history with receipt, issuance, reversal, semester, student, and year metadata; full-row activation; accessible chevrons; and plus stock actions.
 - Automatic CI version/tag/release workflow and updated operator documentation.
 
 Latest verification:
 
 ```text
-npm run test -w @app/desktop-react       28 files / 73 tests passed
+npm run test -w @app/desktop-react       28 files / 74 tests passed before audit additions
 npm run test:e2e -w @app/desktop-react   5 Chromium journeys passed
 npm run build -w @app/desktop-react      passed
 npx vitest run src/app/runtime-config.test.ts  8 tests passed
@@ -92,8 +93,16 @@ Production Neon migration checkpoint (2026-07-11 18:52 Cairo):
 - `academic_years`, books, students, transactions, items, student books, and `sync_changes` all contained zero rows after migration, as expected for placeholder-data reset.
 - Pre-mutation suites passed: shared 5 files/24 tests, React core 9 files/26 tests, sync API 3 files/15 tests, React typecheck, and sync API typecheck.
 
+Development Neon migration checkpoint (2026-07-11):
+
+- Applied the same committed migration history to the user-confirmed development Neon branch.
+- Redacted target fingerprint `7368381c29be` differs from production fingerprint `8479f751bcff`; `.env` remained ignored and no credential was printed or committed.
+- Read-only inspection confirmed three Drizzle migration rows and all academic-year, semester balance, receipt, and semester transaction/issuance columns.
+- `academic_years`, books, students, transactions, items, student books, and `sync_changes` all contained zero rows after migration.
+- The expandable audit uses the existing transaction/item schema and requires no additional database migration.
+
 ## Next Starting Point
 
-1. Stop and ask the user to replace `apps/sync-api/.env` `DATABASE_URL` with the Neon development-branch connection string while keeping the matching server-side shared secret.
-2. After the user confirms, repeat the redacted fingerprint check and verify it differs from `8479f751bcff`.
-3. Migrate the development branch, inspect the same schema facts, run the final full verification matrix and native smoke, update this handoff, and finish the branch.
+1. Run the final full verification matrix and native React/Tauri smoke.
+2. Push `pre-release`, verify CI and the next automatic demo EXE release, then synchronize the CI-authored version commit.
+3. Publish and verify `v1.0.0`, merge the verified branch into `main`, and record final evidence.
