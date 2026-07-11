@@ -22,6 +22,22 @@ test("student, stock, issuance, export, history, and reversal flow", async ({ pa
   await page.getByRole("button", { name: "Issue selected books" }).click();
   await expect(page.getByText("Books issued.")).toBeVisible();
 
+  await page.getByRole("button", { name: "Books", exact: true }).click();
+  const bookRow = page.locator("tr.book-row").filter({ hasText: "Primary Math" });
+  const disclosure = bookRow.locator(".book-history-toggle");
+  await bookRow.locator("td").first().click();
+  await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+  const history = page.locator(".book-history-panel");
+  await expect(history.getByText("2025-2026")).toBeVisible();
+  await expect(history.getByText("Receipt 00041")).toBeVisible();
+  await expect(history.getByText("2026-01-14")).toBeVisible();
+  await expect(history.getByText(/Mona Ahmed/)).toBeVisible();
+  await bookRow.getByRole("button", { name: "Add second semester stock to Primary Math" }).click();
+  await expect(page.getByRole("dialog", { name: "Add second semester stock to Primary Math" })).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
+  await page.getByRole("button", { name: "Students", exact: true }).click();
   await page.getByRole("combobox", { name: "Grade level" }).click();
   await page.getByRole("option", { name: "1st Primary" }).click();
   const download = page.waitForEvent("download");
