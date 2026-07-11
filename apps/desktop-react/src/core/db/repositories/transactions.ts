@@ -40,6 +40,17 @@ export type StudentBookRow = {
   reversedAt: string | null;
 };
 
+export type BookHistoryEventRow = InventoryTransactionItemRow & {
+  academicYear: string;
+  type: string;
+  studentName: string | null;
+  receiptNumber: string | null;
+  receiptDate: string | null;
+  reversedTransactionId: string | null;
+  reversedByTransactionId: string | null;
+  occurredAt: string;
+};
+
 export async function createInventoryTransaction(
   database: SqlDatabase,
   row: InventoryTransactionRow,
@@ -167,6 +178,30 @@ export function listInventoryTransactionItems(database: SqlDatabase, transaction
       created_at AS createdAt FROM inventory_transaction_items
       WHERE transaction_id = $1 ORDER BY created_at, id`,
     [transactionId],
+  );
+}
+
+export function listBookHistory(
+  database: SqlDatabase,
+  bookId: string,
+): Promise<BookHistoryEventRow[]> {
+  return database.select(
+    `SELECT i.id, i.transaction_id AS transactionId, i.book_id AS bookId,
+      i.semester, i.quantity_delta AS quantityDelta,
+      i.quantity_after AS quantityAfter, i.created_at AS createdAt,
+      t.academic_year AS academicYear, t.type,
+      s.name AS studentName, t.receipt_number AS receiptNumber,
+      t.receipt_date AS receiptDate,
+      t.reversed_transaction_id AS reversedTransactionId,
+      t.reversed_by_transaction_id AS reversedByTransactionId,
+      t.occurred_at AS occurredAt
+    FROM inventory_transaction_items i
+    JOIN inventory_transactions t ON t.id = i.transaction_id
+    LEFT JOIN students s ON s.id = t.student_id
+    WHERE i.book_id = $1
+    ORDER BY t.occurred_at DESC, t.created_at DESC, t.id DESC,
+      i.created_at DESC, i.id DESC`,
+    [bookId],
   );
 }
 

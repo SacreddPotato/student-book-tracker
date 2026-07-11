@@ -9,6 +9,7 @@ import { listBooks } from "../db/repositories/books";
 import { listStudents } from "../db/repositories/students";
 import {
   listActiveStudentBookRows,
+  listBookHistory,
   listInventoryTransactionItems,
   listInventoryTransactions,
 } from "../db/repositories/transactions";
@@ -80,6 +81,7 @@ export function createDatabaseBackend(options: {
       return row;
     },
     listBooks: () => listBooks(options.database),
+    listBookHistory: (bookId) => listBookHistory(options.database, bookId),
     async saveBook(input) {
       const row = await saveBook(input, mutationContext);
       queueSync();

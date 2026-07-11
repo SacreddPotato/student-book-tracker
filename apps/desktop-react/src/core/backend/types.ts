@@ -7,6 +7,7 @@ import type {
   InventoryTransactionItemRow,
   InventoryTransactionRow,
   StudentBookRow,
+  BookHistoryEventRow,
 } from "../db/repositories/transactions";
 import type { AddBookStockInput, IssueBooksToStudentInput } from "../services/inventory-service";
 import type { AcademicYearAdvanceResult } from "../services/academic-year-service";
@@ -35,6 +36,7 @@ export type LogEntry = InventoryTransactionRow & {
   studentName: string | null;
   items: LogItem[];
 };
+export type BookHistoryEvent = BookHistoryEventRow;
 
 export type AppBackend = {
   initialize(): Promise<void>;
@@ -44,6 +46,7 @@ export type AppBackend = {
   listStudents(academicYear: string): Promise<StudentRow[]>;
   saveStudent(input: StudentInput): Promise<StudentRow>;
   listBooks(): Promise<BookRow[]>;
+  listBookHistory(bookId: string): Promise<BookHistoryEvent[]>;
   saveBook(input: BookInput): Promise<BookRow>;
   listIssuedBooks(academicYear: string, studentId: string): Promise<StudentBookRow[]>;
   addStock(input: AddBookStockInput): Promise<void>;

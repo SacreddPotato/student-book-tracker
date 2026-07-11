@@ -56,4 +56,46 @@ describe("database backend", () => {
     expect(await countOutboxRowsByStatus(database, "synced")).toBe(5);
     database.close();
   });
+
+  it("queries a book's inventory history without an academic-year filter", async () => {
+    const database = createTestDatabase();
+    let id = 0;
+    const backend = createDatabaseBackend({
+      database,
+      client: {
+        push: async (commands) => commands.map(({ id: commandId }) => ({ commandId, status: "accepted" as const })),
+        pull: async () => ({ changes: [], nextCursor: "0" }),
+      },
+      updater: createUpdaterController({
+        currentVersion: "0.1.0", enabled: false,
+        loadClient: async () => ({ check: async () => null }),
+      }),
+      autoSync: false,
+      now: () => `2026-01-${String(++id).padStart(2, "0")}T10:00:00.000Z`,
+      createId: () => `id-${++id}`,
+    });
+    await backend.initialize();
+    await backend.initializeAcademicYear("2025-2026");
+    const book = await backend.saveBook({ name: "Math", educationStage: "primary" });
+    await backend.addStock({
+      academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
+      receiptNumber: "R-41", receiptDate: "2026-01-14",
+    });
+    await backend.requestSync();
+    await backend.advanceAcademicYear("2026-2027");
+    await backend.addStock({
+      academicYear: "2026-2027", bookId: book.id, semester: "second", quantity: 2,
+      receiptNumber: "R-92", receiptDate: "2026-09-01",
+    });
+
+    expect(await backend.listBookHistory(book.id)).toEqual([
+      expect.objectContaining({
+        academicYear: "2026-2027", semester: "second", receiptNumber: "R-92",
+      }),
+      expect.objectContaining({
+        academicYear: "2025-2026", semester: "first", receiptNumber: "R-41",
+      }),
+    ]);
+    database.close();
+  });
 });

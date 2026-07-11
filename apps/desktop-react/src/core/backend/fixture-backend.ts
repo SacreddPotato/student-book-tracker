@@ -152,6 +152,25 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
         .sort((a, b) => a.educationStage.localeCompare(b.educationStage)
           || a.name.localeCompare(b.name));
     },
+    async listBookHistory(bookId) {
+      return items.filter((item) => item.bookId === bookId).flatMap((item) => {
+        const transaction = transactions.find(({ id }) => id === item.transactionId);
+        if (!transaction) return [];
+        return [{
+          ...structuredClone(item),
+          academicYear: transaction.academicYear,
+          type: transaction.type,
+          studentName: students.find(({ id }) => id === transaction.studentId)?.name ?? null,
+          receiptNumber: transaction.receiptNumber,
+          receiptDate: transaction.receiptDate,
+          reversedTransactionId: transaction.reversedTransactionId,
+          reversedByTransactionId: transaction.reversedByTransactionId,
+          occurredAt: transaction.occurredAt,
+        }];
+      }).sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)
+        || right.createdAt.localeCompare(left.createdAt)
+        || right.id.localeCompare(left.id));
+    },
     async saveBook(input: BookInput) {
       if (!input.name.trim()) throw new Error("Book name is required.");
       const existing = input.id ? books.find(({ id }) => id === input.id) : undefined;
