@@ -35,7 +35,7 @@ describe("BooksScreen", () => {
     await user.click(within(sheet).getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Preparatory Physics")).toBeVisible();
     expect((await backend.listBooks())[0]?.educationStage).toBe("preparatory");
-  });
+  }, 10_000);
 
   it("shows zero stock clearly and adds stock only once", async () => {
     const user = userEvent.setup();

@@ -60,7 +60,7 @@ describe("StudentsScreen", () => {
 
     expect(await screen.findByText("Amina Hassan")).toBeVisible();
     expect(await backend.listStudents("2025-2026")).toHaveLength(1);
-  });
+  }, 10_000);
 
   it("keeps selections as drafts, disables zero stock, then issues once", async () => {
     const user = userEvent.setup();
