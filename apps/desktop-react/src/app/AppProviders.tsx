@@ -46,7 +46,7 @@ const NoticeContext = createContext<NoticeValue | null>(null);
 export function AppProviders({
   backend,
   children,
-  initialLanguage = "en",
+  initialLanguage = "ar",
 }: {
   backend: AppBackend;
   children: ReactNode;

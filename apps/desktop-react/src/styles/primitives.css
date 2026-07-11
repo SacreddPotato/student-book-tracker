@@ -36,6 +36,8 @@
 .ui-checkbox-row:hover { background: var(--surface-subtle); }
 .ui-checkbox-row[data-disabled] { opacity: .62; cursor: not-allowed; }
 .ui-checkbox { inline-size: 20px; block-size: 20px; flex: 0 0 20px; display: grid; place-items: center; border: 1.5px solid var(--border-strong); border-radius: 5px; background: var(--surface); color: white; }
+.ui-checkbox-indicator { inline-size: 100%; block-size: 100%; display: grid; place-items: center; }
+.ui-checkbox-indicator svg { display: block; }
 .ui-checkbox[data-state="checked"] { background: var(--primary); border-color: var(--primary); }
 .ui-checkbox-copy { display: grid; gap: 2px; }
 .ui-checkbox-copy small { color: var(--text-muted); }

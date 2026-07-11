@@ -17,7 +17,7 @@ describe("LogsScreen", () => {
       transactions: [{ id: "tx-1", scopeId: "global", type: "stock_increase", studentId: null, reversedTransactionId: null, reversedByTransactionId: null, deviceId: "fixture", commandId: "command-1", occurredAt: now, createdAt: now }],
       items: [{ id: "item-1", transactionId: "tx-1", bookId: "book-1", quantityDelta: 2, quantityAfter: 2, createdAt: now }],
     });
-    render(<AppProviders backend={backend}><AppShell><LogsScreen /></AppShell></AppProviders>);
+    render(<AppProviders backend={backend} initialLanguage="en"><AppShell><LogsScreen /></AppShell></AppProviders>);
     expect(await screen.findByText("Primary Math")).toBeVisible();
     expect(screen.getByText("+2")).toBeVisible();
     expect(screen.getByText("After: 2")).toBeVisible();

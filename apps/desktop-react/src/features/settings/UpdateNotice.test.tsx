@@ -12,7 +12,7 @@ describe("UpdateNotice", () => {
     const user = userEvent.setup();
     const backend = createFixtureBackend();
     backend.updater = createUpdaterController({ currentVersion: "0.1.0", enabled: true, loadClient: async () => ({ check: async () => ({ version: "0.2.0", download: async () => undefined, install: async () => undefined }) }) });
-    render(<AppProviders backend={backend}><UpdateNotice /></AppProviders>);
+    render(<AppProviders backend={backend} initialLanguage="en"><UpdateNotice /></AppProviders>);
     expect(await screen.findByLabelText("Update available")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(screen.queryByLabelText("Update available")).not.toBeInTheDocument();

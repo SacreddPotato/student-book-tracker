@@ -18,7 +18,7 @@ describe("SyncStatus", () => {
       command: null, isInsufficientStock: true, studentName: "Mona Ahmed", bookNames: ["Primary Math"], acknowledged: false,
     }] });
     backend.syncStore.update({ phase: "rejected", rejectedCount: 1, unacknowledgedRejectedCount: 1 });
-    render(<AppProviders backend={backend}><AppShell statusSlot={<SyncStatus />}><div /></AppShell></AppProviders>);
+    render(<AppProviders backend={backend} initialLanguage="en"><AppShell statusSlot={<SyncStatus />}><div /></AppShell></AppProviders>);
     await user.click(screen.getByRole("button", { name: /Needs review/ }));
     const dialog = screen.getByRole("dialog", { name: "Sync conflicts" });
     expect(within(dialog).getByText("Mona Ahmed")).toBeVisible();

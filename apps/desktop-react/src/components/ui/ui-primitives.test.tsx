@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
+import { Checkbox } from "./Checkbox";
 
 describe("UI primitives", () => {
   it("exposes explicit visual intent", () => {
@@ -34,5 +35,14 @@ describe("UI primitives", () => {
     );
     await user.keyboard("{Escape}");
     expect(trigger).toHaveFocus();
+  });
+
+  it("centers the checkbox indicator across the full control", () => {
+    render(<Checkbox checked onCheckedChange={() => undefined} label="Primary Math" />);
+    const checkbox = screen.getByRole("checkbox", { name: "Primary Math" });
+    const indicator = checkbox.querySelector(".ui-checkbox-indicator");
+
+    expect(indicator).toBeInTheDocument();
+    expect(indicator).toContainElement(checkbox.querySelector("svg"));
   });
 });

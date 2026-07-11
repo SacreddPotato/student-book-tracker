@@ -25,11 +25,11 @@ describe("AppShell", () => {
       </AppProviders>,
     );
 
-    expect(screen.getByRole("button", { name: "Students" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Books" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "AR" }));
     expect(document.documentElement).toHaveAttribute("lang", "ar");
     expect(document.documentElement).toHaveAttribute("dir", "rtl");
+    await user.click(screen.getByRole("button", { name: "EN" }));
+    expect(screen.getByRole("button", { name: "Students" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Books" })).toBeVisible();
   });
 
   it("honors an async navigation blocker", async () => {
@@ -44,7 +44,7 @@ describe("AppShell", () => {
       );
     }
     render(
-      <AppProviders backend={createFixtureBackend()}>
+      <AppProviders backend={createFixtureBackend()} initialLanguage="en">
         <BlockedHarness />
       </AppProviders>,
     );

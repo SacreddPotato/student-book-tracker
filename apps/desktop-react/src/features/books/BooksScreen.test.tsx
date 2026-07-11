@@ -14,7 +14,7 @@ const empty: BookRow = { id: "book-2", scopeId: "global", name: "Primary Science
 
 function renderBooks(isEmpty = false) {
   const backend = createFixtureBackend(isEmpty ? {} : { books: [stocked, empty] });
-  render(<AppProviders backend={backend}><AppShell><BooksScreen /></AppShell></AppProviders>);
+  render(<AppProviders backend={backend} initialLanguage="en"><AppShell><BooksScreen /></AppShell></AppProviders>);
   return backend;
 }
 

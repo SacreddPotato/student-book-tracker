@@ -19,7 +19,7 @@ describe("SettingsScreen", () => {
       enabled: true,
       loadClient: async () => ({ check: async () => ({ version: "0.2.0", download, install }) }),
     });
-    render(<AppProviders backend={backend}><AppShell><SettingsScreen /></AppShell></AppProviders>);
+    render(<AppProviders backend={backend} initialLanguage="en"><AppShell><SettingsScreen /></AppShell></AppProviders>);
     await user.click(screen.getByRole("button", { name: "Check for updates" }));
     expect(await screen.findByText("Version 0.2.0 is available.")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Download update" }));

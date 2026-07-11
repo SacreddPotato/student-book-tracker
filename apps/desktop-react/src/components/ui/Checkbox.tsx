@@ -22,7 +22,9 @@ export function Checkbox({
         disabled={disabled}
         onCheckedChange={(value) => onCheckedChange(value === true)}
       >
-        <CheckboxPrimitive.Indicator><Check size={14} /></CheckboxPrimitive.Indicator>
+        <CheckboxPrimitive.Indicator className="ui-checkbox-indicator">
+          <Check size={14} />
+        </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
       <span className="ui-checkbox-copy">
         <span>{label}</span>

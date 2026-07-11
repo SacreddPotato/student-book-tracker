@@ -3,6 +3,7 @@ import { expect, type Page } from "@playwright/test";
 export async function openFixture(page: Page, scenario?: "conflict" | "update") {
   const suffix = scenario ? `&scenario=${scenario}` : "";
   await page.goto(`/?runtime=fixture${suffix}`);
+  await page.getByRole("button", { name: "EN" }).click();
   await expect(page.getByRole("button", { name: "Students" })).toBeVisible();
 }
 

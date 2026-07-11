@@ -29,7 +29,7 @@ function renderStudents(options: { empty?: boolean } = {}) {
     students: [student], books: [availableBook, emptyBook],
   });
   render(
-    <AppProviders backend={backend}>
+    <AppProviders backend={backend} initialLanguage="en">
       <AppShell><StudentsScreen /></AppShell>
     </AppProviders>,
   );

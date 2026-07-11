@@ -8,7 +8,8 @@ describe("App", () => {
   it("renders the React desktop entry surface", () => {
     render(<App backend={createFixtureBackend()} />);
 
-    expect(screen.getByRole("button", { name: "Students" })).toBeVisible();
+    expect(document.documentElement).toHaveAttribute("lang", "ar");
+    expect(document.documentElement).toHaveAttribute("dir", "rtl");
     expect(screen.getByRole("main")).toBeInTheDocument();
   });
 
