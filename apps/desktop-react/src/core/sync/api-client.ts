@@ -27,7 +27,7 @@ export class FetchSyncApiClient implements SyncApiClient {
   ) {}
 
   async push(commands: SyncCommand[]): Promise<SyncCommandResult[]> {
-    const response = await this.request(this.url("sync/push"), {
+    const response = await this.request.call(globalThis, this.url("sync/push"), {
       method: "POST",
       headers: this.headers(true),
       body: JSON.stringify({ commands }),
@@ -41,7 +41,7 @@ export class FetchSyncApiClient implements SyncApiClient {
 
   async pull(since: string | null): Promise<PullResponse> {
     const query = since ? `?since=${encodeURIComponent(since)}` : "";
-    const response = await this.request(this.url(`sync/pull${query}`), {
+    const response = await this.request.call(globalThis, this.url(`sync/pull${query}`), {
       headers: this.headers(false),
     });
     const payload = await parseResponse(response);

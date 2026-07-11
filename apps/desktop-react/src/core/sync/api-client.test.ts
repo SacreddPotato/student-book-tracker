@@ -1,8 +1,25 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FetchSyncApiClient } from "./api-client";
 
 describe("FetchSyncApiClient", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("invokes the WebView fetch function with the window receiver", async () => {
+    vi.stubGlobal("fetch", function (this: unknown) {
+      if (this !== globalThis) throw new TypeError("Illegal invocation");
+      return Promise.resolve(new Response(JSON.stringify({
+        changes: [], nextCursor: "0",
+      }), { status: 200, headers: { "content-type": "application/json" } }));
+    });
+    const client = new FetchSyncApiClient({
+      apiBaseUrl: "http://127.0.0.1:8787",
+      transportToken: null,
+    });
+
+    await expect(client.pull(null)).resolves.toEqual({ changes: [], nextCursor: "0" });
+  });
+
   it("pushes commands with the transport header and parses results", async () => {
     const request = vi.fn(async () => new Response(JSON.stringify({
       results: [{ commandId: "command-1", status: "accepted" }],
