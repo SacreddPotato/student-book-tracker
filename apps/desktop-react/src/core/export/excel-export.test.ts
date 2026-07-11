@@ -44,7 +44,7 @@ describe("student Excel export", () => {
 
     expect(worksheet.getCell("A1").value).toBe("Al-Gharbia");
     expect(worksheet.getCell(6, 1).value).toBe("Mona Ahmed");
-    expect(worksheet.getCell(6, 2).value).toBe("Both semesters issued");
+    expect(worksheet.getCell(6, 2).value).toBe("2");
   });
 
   it("uses an RTL worksheet in Arabic", () => {
@@ -71,12 +71,12 @@ describe("student Excel export", () => {
     })).toThrow("Choose a grade group");
   });
 
-  it("writes the exact semester issuance states and leaves neither blank", () => {
+  it("writes the exact numerical semester issuance states", () => {
     const statuses = [
       { selections: [{ bookId: "book-1", semester: "first" as const }], expected: "1" },
       { selections: [{ bookId: "book-1", semester: "second" as const }], expected: "1" },
       { selections: [{ bookId: "book-1", semester: "first" as const }, { bookId: "book-1", semester: "second" as const }], expected: "2" },
-      { selections: [], expected: null },
+      { selections: [], expected: "0" },
     ];
     for (const { selections, expected } of statuses) {
       const workbook = buildStudentsWorkbook({
