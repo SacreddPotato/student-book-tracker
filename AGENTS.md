@@ -83,9 +83,17 @@ npm run build -w @app/desktop-react      passed
 npx vitest run src/app/runtime-config.test.ts  8 tests passed
 ```
 
+Production Neon migration checkpoint (2026-07-11 18:52 Cairo):
+
+- The exact Drizzle history was rehearsed successfully on disposable PostgreSQL 17 before the production mutation.
+- Applied `0001_semester_inventory_academic_years.sql` and `0002_drop_legacy_book_quantity.sql` to the user-designated production Neon target; Drizzle now reports three migration rows including the baseline.
+- Redacted target fingerprint: `8479f751bcff`. The `.env` remained ignored and no credential was printed or committed.
+- Read-only catalog inspection confirmed `academic_years`, both book semester balances, student/transaction academic year columns, receipt fields, item/issuance semester columns, nonnegative/check/unique constraints, and the semester-aware student-book uniqueness constraint.
+- `academic_years`, books, students, transactions, items, student books, and `sync_changes` all contained zero rows after migration, as expected for placeholder-data reset.
+- Pre-mutation suites passed: shared 5 files/24 tests, React core 9 files/26 tests, sync API 3 files/15 tests, React typecheck, and sync API typecheck.
+
 ## Next Starting Point
 
-1. Validate workflow YAML and run the full repository gates.
-2. With the user-designated production Neon URL currently in `apps/sync-api/.env`, run the committed migrations and inspect the resulting tables/columns without printing credentials.
-3. Stop and ask the user to switch `apps/sync-api/.env` to the development Neon branch.
-4. After the user confirms, migrate development, run the final full verification matrix, update this handoff, and finish the branch.
+1. Stop and ask the user to replace `apps/sync-api/.env` `DATABASE_URL` with the Neon development-branch connection string while keeping the matching server-side shared secret.
+2. After the user confirms, repeat the redacted fingerprint check and verify it differs from `8479f751bcff`.
+3. Migrate the development branch, inspect the same schema facts, run the final full verification matrix and native smoke, update this handoff, and finish the branch.
