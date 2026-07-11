@@ -55,7 +55,10 @@ describe("resolveRuntimeConfig", () => {
     expect(ci).toContain('git tag -a "v$version"');
     expect(ci).toContain('git push origin HEAD:pre-release "v$version"');
     expect(ci).toContain("uses: ./.github/workflows/release-windows.yml");
+    expect(ci).toContain('source_ref: v${{ needs.tag-release.outputs.version }}');
     expect(release).toContain("workflow_call:");
+    expect(release).toContain("source_ref:");
+    expect(release).toContain('ref: ${{ inputs.source_ref || github.ref }}');
     expect(release).toContain('if [ -n "${{ inputs.version }}" ]; then');
     expect(release).toContain('tags: ["v*"]');
   });

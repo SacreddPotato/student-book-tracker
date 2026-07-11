@@ -99,4 +99,5 @@ jobs:
     uses: ./.github/workflows/release-windows.yml
     with:
       version: ${{ needs.tag-release.outputs.version }}
+      source_ref: v${{ needs.tag-release.outputs.version }}
     secrets: inherit
