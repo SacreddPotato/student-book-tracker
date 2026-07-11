@@ -29,6 +29,7 @@ export type StudentDraft = {
   governmentId: string;
   educationStage: EducationStage;
   gradeLevel: GradeLevel;
+  academicYear: string;
 };
 
 export type BookDraft = {
@@ -68,6 +69,8 @@ export async function saveStudent(
       governmentId,
       educationStage: draft.educationStage,
       gradeLevel: draft.gradeLevel,
+      academicYear: draft.academicYear,
+      previousStudentId: existing?.previousStudentId ?? null,
       createdAt: existing?.createdAt ?? occurredAt,
       updatedAt: occurredAt,
       deletedAt: null,
@@ -83,6 +86,8 @@ export async function saveStudent(
         governmentId: row.governmentId,
         educationStage: row.educationStage,
         gradeLevel: row.gradeLevel,
+        academicYear: row.academicYear,
+        previousStudentId: row.previousStudentId,
       },
     };
     await upsertStudent(database, row);
@@ -107,7 +112,8 @@ export async function saveBook(
       scopeId: existing?.scopeId ?? "global",
       name,
       educationStage: draft.educationStage,
-      quantity: existing?.quantity ?? 0,
+      firstSemesterQuantity: existing?.firstSemesterQuantity ?? 0,
+      secondSemesterQuantity: existing?.secondSemesterQuantity ?? 0,
       createdAt: existing?.createdAt ?? occurredAt,
       updatedAt: occurredAt,
       deletedAt: null,
