@@ -41,7 +41,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
+          if [ -n "${{ inputs.version }}" ]; then
             version="${{ inputs.version }}"
           else
             version="${GITHUB_REF_NAME#v}"
