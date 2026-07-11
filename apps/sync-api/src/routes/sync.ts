@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 
-import type { SyncCommand } from "@app/shared";
+import { parseAcademicYear, type SyncCommand } from "@app/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 
@@ -16,22 +16,54 @@ const commandBase = {
   occurredAt: z.string().datetime({ offset: true }),
 };
 
+const academicYearSchema = z.string().refine((value) => {
+  try { parseAcademicYear(value); return true; } catch { return false; }
+}, "Academic year must use consecutive YYYY-YYYY years.");
+const semesterSchema = z.enum(["first", "second"]);
+const receiptDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
+}, "Receipt date must be a real ISO calendar date.");
+const educationStageSchema = z.enum(["kg", "primary", "preparatory"]);
+const gradeLevelSchema = z.enum([
+  "kg1", "kg2", "primary1", "primary2", "primary3", "primary4",
+  "primary5", "primary6", "preparatory1", "preparatory2", "preparatory3",
+]);
+const promotedStudentSchema = z.object({
+  id: z.string().trim().min(1),
+  previousStudentId: z.string().trim().min(1),
+  name: z.string().trim().min(1),
+  governmentId: z.string().trim().min(1),
+  educationStage: educationStageSchema,
+  gradeLevel: gradeLevelSchema,
+  academicYear: academicYearSchema,
+});
+
 const syncCommandSchema = z.discriminatedUnion("type", [
   z.object({
     ...commandBase,
     type: z.literal("ADD_BOOK_STOCK"),
+    academicYear: academicYearSchema,
     bookId: z.string().trim().min(1),
+    semester: semesterSchema,
     quantity: z.number().int().positive(),
+    receiptNumber: z.string().trim().min(1),
+    receiptDate: receiptDateSchema,
   }),
   z.object({
     ...commandBase,
     type: z.literal("ISSUE_BOOKS_TO_STUDENT"),
+    academicYear: academicYearSchema,
     studentId: z.string().trim().min(1),
-    bookIds: z.array(z.string().trim().min(1)).min(1),
+    bookSelections: z.array(z.object({
+      bookId: z.string().trim().min(1),
+      semester: semesterSchema,
+    })).min(1),
   }),
   z.object({
     ...commandBase,
     type: z.literal("REVERSE_TRANSACTION"),
+    academicYear: academicYearSchema,
     transactionId: z.string().trim().min(1),
   }),
   z.object({
@@ -41,20 +73,10 @@ const syncCommandSchema = z.discriminatedUnion("type", [
       id: z.string().trim().min(1),
       name: z.string().trim().min(1),
       governmentId: z.string().trim().min(1),
-      educationStage: z.enum(["kg", "primary", "preparatory"]),
-      gradeLevel: z.enum([
-        "kg1",
-        "kg2",
-        "primary1",
-        "primary2",
-        "primary3",
-        "primary4",
-        "primary5",
-        "primary6",
-        "preparatory1",
-        "preparatory2",
-        "preparatory3",
-      ]),
+      educationStage: educationStageSchema,
+      gradeLevel: gradeLevelSchema,
+      academicYear: academicYearSchema,
+      previousStudentId: z.string().trim().min(1).nullable(),
     }),
   }),
   z.object({
@@ -63,8 +85,20 @@ const syncCommandSchema = z.discriminatedUnion("type", [
     book: z.object({
       id: z.string().trim().min(1),
       name: z.string().trim().min(1),
-      educationStage: z.enum(["kg", "primary", "preparatory"]),
+      educationStage: educationStageSchema,
     }),
+  }),
+  z.object({
+    ...commandBase,
+    type: z.literal("INITIALIZE_ACADEMIC_YEAR"),
+    academicYear: academicYearSchema,
+  }),
+  z.object({
+    ...commandBase,
+    type: z.literal("ADVANCE_ACADEMIC_YEAR"),
+    fromYear: academicYearSchema,
+    toYear: academicYearSchema,
+    promotedStudents: z.array(promotedStudentSchema),
   }),
 ]);
 

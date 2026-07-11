@@ -93,6 +93,15 @@ describe("sync API routes", () => {
         })
       ).status,
     ).toBe(400);
+    expect((await sync.request("http://api.test/push", {
+      method: "POST",
+      headers: syncHeaders(),
+      body: JSON.stringify({ commands: [{
+        id: "bad-receipt", type: "ADD_BOOK_STOCK", deviceId: "device-a", occurredAt,
+        academicYear: "2025-2026", bookId: "book-1", semester: "first", quantity: 1,
+        receiptNumber: "1", receiptDate: "2026-02-31",
+      }] }),
+    })).status).toBe(400);
     expect(
       (await sync.request("http://api.test/pull?since=not-a-number", { headers: syncHeaders() }))
         .status,

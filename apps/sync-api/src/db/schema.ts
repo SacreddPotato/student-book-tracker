@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigserial,
+  check,
   integer,
   pgTable,
   text,
@@ -9,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const requiredRemoteTableNames = [
+  "academic_years",
   "students",
   "books",
   "student_books",
@@ -20,6 +22,22 @@ export const requiredRemoteTableNames = [
   "sync_changes",
 ] as const;
 
+export const academicYears = pgTable(
+  "academic_years",
+  {
+    academicYear: text("academic_year").primaryKey(),
+    status: text("status").notNull(),
+    createdAt: text("created_at").notNull(),
+    archivedAt: text("archived_at"),
+  },
+  (table) => [
+    check("academic_years_status_check", sql`${table.status} IN ('current', 'archived')`),
+    uniqueIndex("academic_years_single_current_unique")
+      .on(table.status)
+      .where(sql`${table.status} = 'current'`),
+  ],
+);
+
 export const students = pgTable(
   "students",
   {
@@ -29,13 +47,15 @@ export const students = pgTable(
     governmentId: text("government_id").notNull(),
     educationStage: text("education_stage").notNull(),
     gradeLevel: text("grade_level").notNull(),
+    academicYear: text("academic_year").notNull(),
+    previousStudentId: text("previous_student_id"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
     deletedAt: text("deleted_at"),
   },
   (table) => [
-    uniqueIndex("students_scope_government_id_unique")
-      .on(table.scopeId, table.governmentId)
+    uniqueIndex("students_scope_year_government_id_unique")
+      .on(table.scopeId, table.academicYear, table.governmentId)
       .where(sql`${table.deletedAt} IS NULL`),
   ],
 );
@@ -47,7 +67,8 @@ export const books = pgTable(
     scopeId: text("scope_id").notNull().default("global"),
     name: text("name").notNull(),
     educationStage: text("education_stage").notNull(),
-    quantity: integer("quantity").notNull().default(0),
+    firstSemesterQuantity: integer("first_semester_quantity").notNull().default(0),
+    secondSemesterQuantity: integer("second_semester_quantity").notNull().default(0),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
     deletedAt: text("deleted_at"),
@@ -56,6 +77,8 @@ export const books = pgTable(
     uniqueIndex("books_scope_stage_name_unique")
       .on(table.scopeId, table.educationStage, table.name)
       .where(sql`${table.deletedAt} IS NULL`),
+    check("books_first_semester_quantity_nonnegative", sql`${table.firstSemesterQuantity} >= 0`),
+    check("books_second_semester_quantity_nonnegative", sql`${table.secondSemesterQuantity} >= 0`),
   ],
 );
 
@@ -64,19 +87,24 @@ export const studentBooks = pgTable(
   {
     id: text("id").primaryKey(),
     scopeId: text("scope_id").notNull().default("global"),
+    academicYear: text("academic_year").notNull(),
     studentId: text("student_id").notNull(),
     bookId: text("book_id").notNull(),
+    semester: text("semester").notNull(),
     issuedTransactionId: text("issued_transaction_id").notNull(),
     createdAt: text("created_at").notNull(),
     reversedAt: text("reversed_at"),
   },
   (table) => [
-    unique("student_books_scope_student_book_transaction_unique").on(
+    unique("student_books_scope_year_student_book_semester_transaction_unique").on(
       table.scopeId,
+      table.academicYear,
       table.studentId,
       table.bookId,
+      table.semester,
       table.issuedTransactionId,
     ),
+    check("student_books_semester_check", sql`${table.semester} IN ('first', 'second')`),
   ],
 );
 
@@ -85,8 +113,11 @@ export const inventoryTransactions = pgTable(
   {
     id: text("id").primaryKey(),
     scopeId: text("scope_id").notNull().default("global"),
+    academicYear: text("academic_year").notNull(),
     type: text("type").notNull(),
     studentId: text("student_id"),
+    receiptNumber: text("receipt_number"),
+    receiptDate: text("receipt_date"),
     reversedTransactionId: text("reversed_transaction_id"),
     reversedByTransactionId: text("reversed_by_transaction_id"),
     deviceId: text("device_id"),
@@ -105,10 +136,15 @@ export const inventoryTransactionItems = pgTable(
     id: text("id").primaryKey(),
     transactionId: text("transaction_id").notNull(),
     bookId: text("book_id").notNull(),
+    semester: text("semester").notNull(),
     quantityDelta: integer("quantity_delta").notNull(),
     quantityAfter: integer("quantity_after").notNull(),
     createdAt: text("created_at").notNull(),
   },
+  (table) => [
+    check("inventory_transaction_items_semester_check", sql`${table.semester} IN ('first', 'second')`),
+    check("inventory_transaction_items_quantity_after_nonnegative", sql`${table.quantityAfter} >= 0`),
+  ],
 );
 
 export const syncOutbox = pgTable("sync_outbox", {

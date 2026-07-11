@@ -1,4 +1,5 @@
 import type {
+  AcademicYearRecord,
   BookRecord,
   InventoryTransactionItemRecord,
   InventoryTransactionRecord,
@@ -11,6 +12,7 @@ import type {
 import type { PulledChange, SyncChangeReader } from "../src/services/pull-changes";
 
 export class MemorySyncStore implements SyncStore, SyncStoreTransaction, SyncChangeReader {
+  readonly academicYears = new Map<string, AcademicYearRecord>();
   readonly students = new Map<string, StudentRecord>();
   readonly books = new Map<string, BookRecord>();
   readonly transactions = new Map<string, InventoryTransactionRecord>();
@@ -29,6 +31,38 @@ export class MemorySyncStore implements SyncStore, SyncStoreTransaction, SyncCha
 
   async hasAppliedCommand(commandId: string): Promise<boolean> {
     return this.changes.some((change) => change.commandId === commandId);
+  }
+
+  async getCurrentAcademicYearForUpdate(): Promise<AcademicYearRecord | null> {
+    const row = [...this.academicYears.values()].find(({ status }) => status === "current");
+    return row ? structuredClone(row) : null;
+  }
+
+  async insertAcademicYear(record: AcademicYearRecord): Promise<AcademicYearRecord> {
+    if ([...this.academicYears.values()].some(({ status }) => status === "current")
+      && record.status === "current") {
+      throw new Error("Current academic year already exists.");
+    }
+    this.academicYears.set(record.academicYear, structuredClone(record));
+    return structuredClone(record);
+  }
+
+  async archiveAcademicYear(
+    academicYear: string,
+    archivedAt: string,
+  ): Promise<AcademicYearRecord> {
+    const row = this.academicYears.get(academicYear);
+    if (!row || row.status !== "current") throw new Error("Current academic year not found.");
+    const archived = { ...row, status: "archived", archivedAt } as AcademicYearRecord;
+    this.academicYears.set(academicYear, archived);
+    return structuredClone(archived);
+  }
+
+  async listStudentsForAcademicYear(academicYear: string): Promise<StudentRecord[]> {
+    return [...this.students.values()]
+      .filter((student) => student.academicYear === academicYear && !student.deletedAt)
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map((student) => structuredClone(student));
   }
 
   async getStudent(studentId: string): Promise<StudentRecord | null> {
@@ -74,11 +108,14 @@ export class MemorySyncStore implements SyncStore, SyncStoreTransaction, SyncCha
     return student;
   }
 
-  async upsertBook(record: Omit<BookRecord, "quantity">): Promise<BookRecord> {
+  async upsertBook(
+    record: Omit<BookRecord, "firstSemesterQuantity" | "secondSemesterQuantity">,
+  ): Promise<BookRecord> {
     const existing = this.books.get(record.id);
     const book: BookRecord = {
       ...record,
-      quantity: existing?.quantity ?? 0,
+      firstSemesterQuantity: existing?.firstSemesterQuantity ?? 0,
+      secondSemesterQuantity: existing?.secondSemesterQuantity ?? 0,
       createdAt: existing?.createdAt ?? record.createdAt,
     };
     this.books.set(book.id, structuredClone(book));
@@ -163,6 +200,7 @@ export class MemorySyncStore implements SyncStore, SyncStoreTransaction, SyncCha
   }
 
   private replaceWith(source: MemorySyncStore): void {
+    replaceMap(this.academicYears, source.academicYears);
     replaceMap(this.students, source.students);
     replaceMap(this.books, source.books);
     replaceMap(this.transactions, source.transactions);
