@@ -12,7 +12,7 @@ npm run test:e2e
 npm run build
 ```
 
-`test:e2e` runs the rendered React application against a deterministic development-only backend. It covers student/book CRUD, stock and issuance, Excel download, reversal, sync-conflict acknowledgement, updater interaction, desktop/narrow layouts, Arabic RTL, and Axe accessibility. Install Chromium once on a new Windows machine with:
+`test:e2e` runs the rendered React application against a deterministic development-only backend. It covers first-run academic-year setup, promotion/read-only archives, student/book CRUD, both semester balances and receipt metadata, mixed-semester issuance, Excel download, reversal, sync-conflict acknowledgement, updater interaction, desktop/narrow layouts, Arabic RTL, and Axe accessibility. Install Chromium once on a new Windows machine with:
 
 ```sh
 npx playwright install chromium
@@ -34,12 +34,23 @@ The ordinary Vite browser preview is not a valid local-persistence acceptance te
 
 2. Confirm the preview opens maximized, in Arabic/RTL, with the dark custom title bar and creates `%APPDATA%\com.studentbooktracker.reactdev\student-book-tracker-react.db`; it must not modify the production database.
 3. Confirm sync reaches `Synced`. Exercise the custom minimize, restore/maximize, and close controls in the real Tauri window, then relaunch before continuing.
-4. On the fresh preview database, open Students and Books. Neither screen may show a load error.
-5. Create a book, add stock, create a student with a different government ID, select that student, issue the book, and open Logs. The book quantity must decrement and both inventory events must appear.
-6. Check a book without confirming it, verify the checkmark is centered, select another student, and confirm the unsaved-selection warning. A zero-stock book must be disabled.
-7. Choose a concrete grade group and export the workbook. Confirm its name, book columns, signature column, and Arabic RTL worksheet when Arabic is selected.
-8. Disconnect from the sync API, make a local write, then reconnect. Confirm pending commands sync. Verify a rejected stock conflict stays available for review.
-9. Switch Arabic/English, resize through the compact rail and labelled bottom-navigation breakpoints, and verify dialogs close with Escape and restore focus.
+4. On the fresh preview database, enter an academic year such as `2025-2026`. The workspace must remain blocked until a valid consecutive-year value is saved.
+5. Create a book. Add first- and second-semester stock separately; each stock action must require quantity, issue receipt number, and receipt date. Confirm Logs preserves the semester and receipt metadata.
+6. Create a student with a different government ID, open a subject disclosure, select one or both semester rows, and confirm issuance. Only the selected semester balances may decrement.
+7. Check a semester without confirming it, verify the checkmark is centered, select another student, and confirm the unsaved-selection warning. A zero-stock semester must be disabled.
+8. Choose a concrete grade group and export the workbook. Per subject, confirm blank, `Only the first semester issued`, `Only the 2nd semester issued`, or `Both semesters issued`; also confirm the signature column and Arabic RTL worksheet.
+9. In Settings, advance only to the exact successor after typing the target year. Confirm students are promoted, Preparatory 3 students are not copied forward, new-year issuances/logs are empty, book balances are unchanged, and the prior year remains selectable with no edit/issue/reverse actions.
+10. Disconnect from the sync API, make a local write, then reconnect. Confirm pending commands sync. Verify a rejected stock conflict identifies the subject semester and stays available for review.
+11. Switch Arabic/English, resize through the compact rail and labelled bottom-navigation breakpoints, and verify dialogs close with Escape and restore focus.
+
+## Switching the Neon branch
+
+1. Stop all local sync API and desktop processes.
+2. Confirm `apps/sync-api/.env` is untracked. Record whether its `DATABASE_URL` currently targets the development/testing or production Neon branch without printing the credential.
+3. Replace `DATABASE_URL` with the intended branch connection string and keep the server-only shared secret alongside it.
+4. Run `npm run db:migrate -w @app/sync-api`.
+5. Start `npm run dev:api`, request `http://127.0.0.1:8787/health`, and confirm the response is healthy.
+6. Run the sync API tests, then the desktop sync tests. Never point two concurrently running API processes at different branches while using the same desktop database.
 
 ## Packaged Windows smoke test
 

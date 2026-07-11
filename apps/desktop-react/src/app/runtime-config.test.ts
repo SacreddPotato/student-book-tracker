@@ -32,6 +32,30 @@ describe("resolveRuntimeConfig", () => {
     );
   });
 
+  it("tags and dispatches a release only after an eligible pre-release validation", () => {
+    const ci = readFileSync(
+      resolve(process.cwd(), "../../.github/workflows/ci.yml"),
+      "utf8",
+    );
+    const release = readFileSync(
+      resolve(process.cwd(), "../../.github/workflows/release-windows.yml"),
+      "utf8",
+    );
+
+    expect(ci).toContain("needs: validate");
+    expect(ci).toContain("github.event_name == 'push'");
+    expect(ci).toContain("github.ref == 'refs/heads/pre-release'");
+    expect(ci).toContain("github.actor != 'github-actions[bot]'");
+    expect(ci).toContain("contents: write");
+    expect(ci).toContain("npm version 0.1.0-demo.$next");
+    expect(ci).toContain('git config user.name "github-actions[bot]"');
+    expect(ci).toContain('git tag -a "v$version"');
+    expect(ci).toContain('git push origin HEAD:pre-release "v$version"');
+    expect(ci).toContain("uses: ./.github/workflows/release-windows.yml");
+    expect(release).toContain("workflow_call:");
+    expect(release).toContain('tags: ["v*"]');
+  });
+
   it("uses the custom maximized window frame in preview and production", () => {
     for (const config of [previewTauri, productionTauri]) {
       const window = config.app.windows[0];

@@ -10,12 +10,16 @@ The desktop release workflow receives only that signing key and the optional pub
 
 `apps/desktop-react/package.json` is the source of truth for the desktop version; Tauri reads that file through `apps/desktop-react/src-tauri/tauri.conf.json`. The release action builds `apps/desktop-react` with `src-tauri/tauri.production.conf.json`, which preserves the installed identifier `com.studentbooktracker.app`, database file `student-book-tracker.db`, updater key/feed, and passive NSIS behavior.
 
-1. Change the desktop package version to the intended SemVer version and commit it with the release changes.
-2. Let the `CI` workflow pass on the source commit.
-3. Once `release-windows.yml` is present on the repository default branch, use **Run workflow** and enter that exact version without a `v` prefix.
-4. The release workflow repeats the quality gates, creates `v<version>` only after they pass, builds the NSIS Windows installer, signs its updater payload, verifies the draft contains the installer, `.sig`, and `latest.json`, then publishes it.
+1. Push a non-bot source commit to `pre-release`.
+2. The `CI` workflow runs lint, typecheck, unit/component tests, rendered Chromium journeys, and the workspace build.
+3. Only after validation succeeds, the serialized tagging job finds the largest existing `v0.1.0-demo.N`, updates the React package and lockfile to the next value, commits as `github-actions[bot]`, and pushes the annotated tag with that version commit.
+4. CI calls the reusable signed release workflow for that exact tag. The release workflow validates the tagged source again, builds the NSIS installer, signs its updater payload, verifies the draft contains the installer, `.sig`, and `latest.json`, then publishes it.
 
-GitHub only exposes `workflow_dispatch` for workflow files on the default branch. Until this branch is merged into `master`, validate locally and push an annotated `v<version>` tag only after the same checks pass; the tag-triggered workflow will validate before publishing its release.
+Pull requests, failed validation, other branches, and bot-authored version commits cannot enter the automatic tagging job. The serialized job prevents two successful pushes from choosing the same suffix.
+
+`workflow_dispatch` remains an emergency fallback. The requested version must already exist in `apps/desktop-react/package.json`; the workflow validates it and creates the tag before building. Do not use manual dispatch as the normal release path.
+
+The tag trigger remains supported for intentional recovery releases. A manually pushed `v*` tag is still revalidated before anything is published.
 
 ## Updater smoke test
 

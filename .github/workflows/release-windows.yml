@@ -9,6 +9,12 @@ on:
         description: SemVer version already committed in apps/desktop-react/package.json (without the v prefix)
         required: true
         type: string
+  workflow_call:
+    inputs:
+      version:
+        description: SemVer version already tagged by the validated CI workflow
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -35,7 +41,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
             version="${{ inputs.version }}"
           else
             version="${GITHUB_REF_NAME#v}"
@@ -122,7 +128,7 @@ jobs:
       - name: Check out release source
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.create-tag.outputs.tag || github.ref }}
+          ref: ${{ needs.create-tag.outputs.tag || needs.validate.outputs.tag }}
 
       - name: Set up Node
         uses: actions/setup-node@v4

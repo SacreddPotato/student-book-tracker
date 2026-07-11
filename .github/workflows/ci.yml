@@ -44,3 +44,54 @@ jobs:
 
       - name: Build workspace
         run: npm run build
+
+  tag-release:
+    name: Tag validated pre-release
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/pre-release' && github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: pre-release-version-tag
+      cancel-in-progress: false
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Check out validated source and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Create the next ordered demo version
+        id: version
+        shell: bash
+        run: |
+          latest="$(git tag -l 'v0.1.0-demo.*' | sed -n 's/^v0\.1\.0-demo\.\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)"
+          next=$(( ${latest:-0} + 1 ))
+          version="0.1.0-demo.$next"
+          npm version 0.1.0-demo.$next -w @app/desktop-react --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/desktop-react/package.json package-lock.json
+          git commit -m "chore: release v$version"
+          git tag -a "v$version" -m "Release v$version"
+          git push origin HEAD:pre-release "v$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Publish validated Windows release
+    needs: tag-release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-windows.yml
+    with:
+      version: ${{ needs.tag-release.outputs.version }}
+    secrets: inherit
