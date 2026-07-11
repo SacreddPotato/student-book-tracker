@@ -38,7 +38,7 @@ The ordinary Vite browser preview is not a valid local-persistence acceptance te
 5. Create a book. Add first- and second-semester stock separately; each stock action must require quantity, issue receipt number, and receipt date. Confirm Logs preserves the semester and receipt metadata.
 6. Create a student with a different government ID, open a subject disclosure, select one or both semester rows, and confirm issuance. Only the selected semester balances may decrement.
 7. Check a semester without confirming it, verify the checkmark is centered, select another student, and confirm the unsaved-selection warning. A zero-stock semester must be disabled.
-8. Choose a concrete grade group and export the workbook. Per subject, confirm blank, `Only the first semester issued`, `Only the 2nd semester issued`, or `Both semesters issued`; also confirm the signature column and Arabic RTL worksheet.
+8. Choose a concrete grade group and export the workbook. Per subject, confirm `0`, `1`, or `2`; also confirm the signature column and Arabic RTL worksheet.
 9. In Settings, advance only to the exact successor after typing the target year. Confirm students are promoted, Preparatory 3 students are not copied forward, new-year issuances/logs are empty, book balances are unchanged, and the prior year remains selectable with no edit/issue/reverse actions.
 10. Disconnect from the sync API, make a local write, then reconnect. Confirm pending commands sync. Verify a rejected stock conflict identifies the subject semester and stays available for review.
 11. Switch Arabic/English, resize through the compact rail and labelled bottom-navigation breakpoints, and verify dialogs close with Escape and restore focus.

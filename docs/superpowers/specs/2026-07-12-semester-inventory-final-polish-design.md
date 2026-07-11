@@ -140,11 +140,11 @@ Every transaction item is labelled with subject and semester. Stock-increase log
 
 Conflict detail labels every requested subject semester.
 
-Excel retains one column per subject. Each student cell contains exactly one of these English values:
+Excel retains one column per subject. Each student cell contains exactly one of these Numerical values; depending on how many books the student was issued:
 
-- `Only the first semester issued`
-- `Only the 2nd semester issued`
-- `Both semesters issued`
+- `0`
+- `1`
+- `2`
 
 The cell is blank when neither semester was issued. Arabic exports use localized equivalents with the same four-state meaning. Exports always use the selected academic year; archived exports are allowed but immutable.
 

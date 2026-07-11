@@ -32,7 +32,7 @@ Update this file after every completed implementation segment. Keep current stat
 - Promotion creates linked student snapshots in the new year; Preparatory 3 has no successor and is not copied.
 - Prior years remain selectable and read-only. Books/balances remain global; new-year issuance/log history starts empty.
 - Placeholder pre-migration data may be cleared by the semester/year migration.
-- Excel subject cells use exactly: blank, `Only the first semester issued`, `Only the 2nd semester issued`, or `Both semesters issued`.
+- Excel subject cells use exactly: `0`, `1`, or  `2`, depending on how many books the student was issued per subject.
 
 ## Development Commands
 

@@ -73,9 +73,9 @@ describe("student Excel export", () => {
 
   it("writes the exact semester issuance states and leaves neither blank", () => {
     const statuses = [
-      { selections: [{ bookId: "book-1", semester: "first" as const }], expected: "Only the first semester issued" },
-      { selections: [{ bookId: "book-1", semester: "second" as const }], expected: "Only the 2nd semester issued" },
-      { selections: [{ bookId: "book-1", semester: "first" as const }, { bookId: "book-1", semester: "second" as const }], expected: "Both semesters issued" },
+      { selections: [{ bookId: "book-1", semester: "first" as const }], expected: "1" },
+      { selections: [{ bookId: "book-1", semester: "second" as const }], expected: "1" },
+      { selections: [{ bookId: "book-1", semester: "first" as const }, { bookId: "book-1", semester: "second" as const }], expected: "2" },
       { selections: [], expected: null },
     ];
     for (const { selections, expected } of statuses) {

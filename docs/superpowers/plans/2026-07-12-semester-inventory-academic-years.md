@@ -461,10 +461,10 @@ Cover two independent book quantities/actions, three required receipt inputs, re
 - [ ] **Step 2: Write failing Excel tests**
 
 ```ts
-expect(subjectCell.value).toBe("Only the first semester issued");
-expect(secondOnlyCell.value).toBe("Only the 2nd semester issued");
-expect(bothCell.value).toBe("Both semesters issued");
-expect(neitherCell.value).toBeNull();
+expect(subjectCell.value).toBe("1");
+expect(secondOnlyCell.value).toBe("1");
+expect(bothCell.value).toBe("2");
+expect(neitherCell.value).toBe("0");
 ```
 
 - [ ] **Step 3: Run focused UI/export tests and confirm RED**

@@ -74,12 +74,10 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
       const first = issued.has(`${book.id}:first`);
       const second = issued.has(`${book.id}:second`);
       worksheet.getCell(row, bookIndex + 2).value = first && second
-        ? "Both semesters issued"
-        : first
-          ? "Only the first semester issued"
-          : second
-            ? "Only the 2nd semester issued"
-            : null;
+        ? "2"
+        : first || second
+          ? "1"
+            : "0";
     });
     worksheet.getCell(row, stageBooks.length + 2).value = "";
   });
