@@ -39,6 +39,10 @@
   "plugins": {
     "sql": {
       "preload": ["sqlite:student-book-tracker-react.db"]
+    },
+    "updater": {
+      "pubkey": "",
+      "endpoints": []
     }
   }
 }

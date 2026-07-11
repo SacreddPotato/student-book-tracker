@@ -116,6 +116,20 @@ export function StudentsScreen() {
     setSelectedId(student.id);
   }
 
+  function editStudent(student: StudentRow) {
+    const openEditor = () => {
+      setEditing(student);
+      setEditorError(null);
+      setEditorOpen(true);
+    };
+    if (draft.size) {
+      setDiscardOpen(true);
+      navigationResolver.current = (allowed) => { if (allowed) openEditor(); };
+      return;
+    }
+    openEditor();
+  }
+
   function resolveDiscard(allowed: boolean) {
     if (allowed) setDraft(new Set());
     navigationResolver.current?.(allowed);
@@ -174,7 +188,7 @@ export function StudentsScreen() {
       {failed ? <Alert>{t("errors.studentsLoad")}</Alert> : loading ? <LoadingState label={t("common.loading")} /> : !(studentsQuery.data?.length) ? <EmptyState title={t("students.empty")} /> : (
         <div className="students-layout">
           <div className="student-table-region">
-            {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={(student) => { setEditing(student); setEditorError(null); setEditorOpen(true); }} />
+            {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={editStudent} />
               : <EmptyState title={t("students.noResults")} />}
           </div>
           <StudentIssuancePanel

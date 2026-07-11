@@ -7,6 +7,7 @@ import { LogsScreen } from "./features/logs/LogsScreen";
 import { SettingsScreen } from "./features/settings/SettingsScreen";
 import { SyncStatus } from "./features/sync/SyncStatus";
 import { UpdateNotice } from "./features/settings/UpdateNotice";
+import { AppLifecycle } from "./app/AppLifecycle";
 
 function WorkspacePlaceholder() {
   const { t } = useI18n();
@@ -21,6 +22,7 @@ function WorkspacePlaceholder() {
 export default function App({ backend }: { backend: AppBackend }) {
   return (
     <AppProviders backend={backend}>
+      <AppLifecycle />
       <WorkspacePlaceholder />
     </AppProviders>
   );

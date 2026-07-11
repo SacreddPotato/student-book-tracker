@@ -8,10 +8,11 @@ Update this file at the end of every completed implementation segment. Keep the 
 
 - Goal: Windows-first offline desktop app for student and book inventory tracking.
 - Monorepo workspaces:
-  - `apps/desktop`: Tauri 2 + SvelteKit desktop app.
+  - `apps/desktop-react`: primary React 19 + Vite + Tauri 2 desktop app.
+  - `apps/desktop`: preserved Tauri 2 + SvelteKit rollback desktop app.
   - `apps/sync-api`: Hono sync API.
   - `packages/shared`: shared TypeScript contracts and domain helpers.
-- Desktop frontend uses SvelteKit static output through `@sveltejs/adapter-static` for Tauri packaging.
+- The release workflow packages `apps/desktop-react` through its production Tauri overlay. SvelteKit remains buildable but is no longer the default desktop/release target.
 
 ## Current Branch
 
@@ -503,6 +504,33 @@ Update this file at the end of every completed implementation segment. Keep the 
   - `npm run test:e2e -w @app/desktop-react` (4 rendered journeys)
   - `npm run build -w @app/desktop-react`
 
+### React Frontend Revamp Segment 9: Production Cutover And Final Verification
+
+- Status: completed on `pre-release`.
+- Switched root `dev:desktop` and the Windows release workflow to `apps/desktop-react`; added explicit `dev:desktop:react` and `dev:desktop:legacy` commands.
+- The release workflow now validates `apps/desktop-react/package.json`, requires the preserved `com.studentbooktracker.app` production identifier, passes `src-tauri/tauri.production.conf.json` to Tauri Action, and runs rendered Playwright gates before publishing.
+- Bumped the React desktop release source to `0.1.0-demo.6` so the cutover does not collide with the published legacy `.5` tag/release.
+- Preserved the Svelte workspace as a buildable rollback source and documented the rule that legacy and React production-identity shells must never open the production SQLite database concurrently.
+- Added a copied-database compatibility rehearsal built from SQL extracted from the actual legacy schema source. React migrations then reopen the copy and verify students, books/quantities, transactions/items, issued rows, rejected outbox audit state, settings, and sync cursor without drift.
+- Added startup and browser-online sync requests plus query invalidation after every completed sync, so pulled database snapshots refresh open React views.
+- Sync conflict acknowledgement and subsequent sync refreshes now calculate unacknowledged rejections from persisted acknowledgement settings; reviewing the final conflict clears the global warning while retaining rejected audit rows.
+- Guarded student editing when issuance selections are still draft-only, preventing stage changes from stranding incompatible book selections.
+- Fixed the preview Tauri updater configuration found by the real native smoke test: an empty preview updater object is now present, so the registered updater plugin no longer panics while development updates remain disabled.
+- Native verification completed:
+  - `cargo check --manifest-path apps/desktop-react/src-tauri/Cargo.toml`
+  - `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml`
+  - `npm run dev:desktop` launched the real React preview, created all nine local tables under `%APPDATA%\com.studentbooktracker.reactdev\student-book-tracker-react.db`, and left the production database timestamp unchanged.
+  - With `$env:VITE_SYNC_API_BASE_URL='https://sync.example.test'`, `npm run tauri -w @app/desktop-react -- build --config src-tauri/tauri.production.conf.json --no-bundle` produced the optimized production-identity executable.
+- Automated verification completed:
+  - `npm run test` across legacy Svelte, React, sync API, and shared workspaces.
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run test -w @app/desktop-react` (24 files, 56 tests)
+  - `npm run test:e2e -w @app/desktop-react` (4 rendered journeys)
+  - `npm run build -w @app/desktop-react`; ExcelJS remains isolated in its lazy export chunk.
+- Focused final review found no Critical issue. Its Important startup-sync, query-refresh, conflict-count, real legacy-schema rehearsal, and release-version findings were resolved and reverified.
+
 ## Next Segment Starting Point
 
-- React feature and rendered-UX parity are complete. Start React Frontend Revamp Segment 9 with full monorepo verification, Tauri preview/production checks, release-workflow cutover to `apps/desktop-react`, rollback documentation, and final branch review.
+- The React frontend revamp and production cutover are complete. Continue only with release publication/signed updater smoke testing for `0.1.0-demo.6` or separately scoped post-release feedback; keep `apps/desktop` intact as the rollback source.

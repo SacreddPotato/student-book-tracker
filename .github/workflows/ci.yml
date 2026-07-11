@@ -36,5 +36,11 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Install Chromium for rendered desktop tests
+        run: npx playwright install chromium
+
+      - name: Test rendered React desktop workflows
+        run: npm run test:e2e
+
       - name: Build workspace
         run: npm run build

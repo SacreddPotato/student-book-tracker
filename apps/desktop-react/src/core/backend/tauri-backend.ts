@@ -16,7 +16,7 @@ import { saveBook, saveStudent } from "../services/entity-service";
 import { addBookStock, issueBooksToStudent, reverseTransaction } from "../services/inventory-service";
 import { createExternalStore } from "../state/external-store";
 import { FetchSyncApiClient, type SyncApiClient } from "../sync/api-client";
-import { acknowledgeSyncConflict, listSyncConflicts } from "../sync/conflicts";
+import { acknowledgeSyncConflict, countUnacknowledgedSyncConflicts, listSyncConflicts } from "../sync/conflicts";
 import { initialSyncStatus, SyncEngine } from "../sync/sync-engine";
 import { CoalescingSyncRunner } from "../sync/sync-runner";
 import {
@@ -98,8 +98,17 @@ export function createDatabaseBackend(options: {
       queueSync();
     },
     listConflicts: () => listSyncConflicts(options.database),
-    acknowledgeConflict: (commandId) =>
-      acknowledgeSyncConflict(options.database, commandId, now()),
+    async acknowledgeConflict(commandId) {
+      await acknowledgeSyncConflict(options.database, commandId, now());
+      const unacknowledgedRejectedCount = await countUnacknowledgedSyncConflicts(options.database);
+      const current = syncStore.getSnapshot();
+      syncStore.update({
+        unacknowledgedRejectedCount,
+        phase: current.phase === "rejected" && unacknowledgedRejectedCount === 0
+          ? "synced"
+          : current.phase,
+      });
+    },
     requestSync: () => runner.request(),
     syncStore,
     updater: options.updater,

@@ -200,10 +200,31 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
         acknowledged: acknowledged.has(conflict.commandId) || conflict.acknowledged,
       }));
     },
-    async acknowledgeConflict(commandId) { acknowledged.add(commandId); },
+    async acknowledgeConflict(commandId) {
+      acknowledged.add(commandId);
+      const unacknowledgedRejectedCount = conflicts.filter(
+        (conflict) => !conflict.acknowledged && !acknowledged.has(conflict.commandId),
+      ).length;
+      const current = syncStore.getSnapshot();
+      syncStore.update({
+        unacknowledgedRejectedCount,
+        phase: current.phase === "rejected" && unacknowledgedRejectedCount === 0
+          ? "synced"
+          : current.phase,
+      });
+    },
     async requestSync() {
       syncStore.update({ phase: "syncing" });
-      syncStore.update({ phase: "synced", lastSyncedAt: now(), message: null });
+      const unacknowledgedRejectedCount = conflicts.filter(
+        (conflict) => !conflict.acknowledged && !acknowledged.has(conflict.commandId),
+      ).length;
+      syncStore.update({
+        phase: unacknowledgedRejectedCount ? "rejected" : "synced",
+        rejectedCount: conflicts.length,
+        unacknowledgedRejectedCount,
+        lastSyncedAt: now(),
+        message: unacknowledgedRejectedCount ? "A sync command was rejected." : null,
+      });
     },
     syncStore,
     updater,

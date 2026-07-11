@@ -8,6 +8,15 @@ import type { SqlDatabase } from "../db/types";
 
 const acknowledgedKey = "sync.acknowledged-conflict-ids";
 
+export async function countUnacknowledgedSyncConflicts(database: SqlDatabase) {
+  const [rows, acknowledged] = await Promise.all([
+    listRejectedOutboxRows(database),
+    getSettingJson<string[]>(database, acknowledgedKey, []),
+  ]);
+  const acknowledgedIds = new Set(acknowledged);
+  return rows.filter(({ id }) => !acknowledgedIds.has(id)).length;
+}
+
 export type SyncConflict = {
   commandId: string;
   row: OutboxRow;

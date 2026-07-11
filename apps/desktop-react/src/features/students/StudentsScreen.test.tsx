@@ -83,6 +83,19 @@ describe("StudentsScreen", () => {
     expect(screen.getByRole("button", { name: "Students" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("guards student editing while a draft selection exists", async () => {
+    const user = userEvent.setup();
+    renderStudents();
+    await user.click(await screen.findByRole("button", { name: "Select student Mona Ahmed" }));
+    await user.click(await screen.findByRole("checkbox", { name: /Primary Math/ }));
+
+    await user.click(screen.getByRole("button", { name: "Edit student Mona Ahmed" }));
+    const discard = screen.getByRole("dialog", { name: "Discard book selection?" });
+    await user.click(within(discard).getByRole("button", { name: "Discard selection" }));
+
+    expect(screen.getByRole("dialog", { name: "Edit student" })).toBeVisible();
+  });
+
   it("requires a concrete grade before export", async () => {
     const user = userEvent.setup();
     renderStudents();

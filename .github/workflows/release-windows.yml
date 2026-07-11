@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: SemVer version already committed in apps/desktop/package.json (without the v prefix)
+        description: SemVer version already committed in apps/desktop-react/package.json (without the v prefix)
         required: true
         type: string
 
@@ -46,16 +46,22 @@ jobs:
             exit 1
           fi
 
-          source_version="$(node -p "require('./apps/desktop/package.json').version")"
-          config_version="$(node -p "JSON.parse(require('fs').readFileSync('apps/desktop/src-tauri/tauri.conf.json', 'utf8')).version")"
+          source_version="$(node -p "require('./apps/desktop-react/package.json').version")"
+          config_version="$(node -p "JSON.parse(require('fs').readFileSync('apps/desktop-react/src-tauri/tauri.conf.json', 'utf8')).version")"
+          production_identifier="$(node -p "JSON.parse(require('fs').readFileSync('apps/desktop-react/src-tauri/tauri.production.conf.json', 'utf8')).identifier")"
 
           if [ "$source_version" != "$version" ]; then
-            echo "apps/desktop/package.json is $source_version, expected $version" >&2
+            echo "apps/desktop-react/package.json is $source_version, expected $version" >&2
             exit 1
           fi
 
           if [ "$config_version" != "../package.json" ]; then
             echo "tauri.conf.json must resolve its version from ../package.json" >&2
+            exit 1
+          fi
+
+          if [ "$production_identifier" != "com.studentbooktracker.app" ]; then
+            echo "The React production overlay must preserve com.studentbooktracker.app" >&2
             exit 1
           fi
 
@@ -76,6 +82,8 @@ jobs:
           npm run lint
           npm run typecheck
           npm run test
+          npx playwright install chromium
+          npm run test:e2e
           npm run build
 
   create-tag:
@@ -133,8 +141,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           VITE_SYNC_API_BASE_URL: ${{ vars.SYNC_API_BASE_URL }}
         with:
-          projectPath: apps/desktop
+          projectPath: apps/desktop-react
           tauriScript: npm run tauri
+          args: --config src-tauri/tauri.production.conf.json
           tagName: ${{ needs.validate.outputs.tag }}
           releaseName: Student Book Tracker v${{ needs.validate.outputs.version }}
           releaseBody: Signed Windows installer and updater metadata for v${{ needs.validate.outputs.version }}.

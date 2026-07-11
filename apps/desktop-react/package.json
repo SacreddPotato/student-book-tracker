@@ -1,6 +1,6 @@
 {
   "name": "@app/desktop-react",
-  "version": "0.1.0-demo.5",
+  "version": "0.1.0-demo.6",
   "private": true,
   "type": "module",
   "scripts": {

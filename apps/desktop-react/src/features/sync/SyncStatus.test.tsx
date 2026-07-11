@@ -25,5 +25,9 @@ describe("SyncStatus", () => {
     expect(within(dialog).getByText("Primary Math")).toBeVisible();
     await user.click(within(dialog).getByRole("button", { name: "Acknowledge" }));
     expect(await backend.listConflicts()).toEqual([expect.objectContaining({ acknowledged: true })]);
+    expect(backend.syncStore.getSnapshot()).toEqual(expect.objectContaining({
+      phase: "synced",
+      unacknowledgedRejectedCount: 0,
+    }));
   });
 });

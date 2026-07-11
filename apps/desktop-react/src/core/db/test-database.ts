@@ -3,7 +3,11 @@ import { DatabaseSync } from "node:sqlite";
 import type { SqlDatabase, SqlValue } from "./types";
 
 export class TestSqliteDatabase implements SqlDatabase {
-  readonly db = new DatabaseSync(":memory:");
+  readonly db: DatabaseSync;
+
+  constructor(path = ":memory:") {
+    this.db = new DatabaseSync(path);
+  }
 
   async execute(sql: string, values: SqlValue[] = []): Promise<void> {
     this.db.prepare(sql).run(toSqliteBindings(values));

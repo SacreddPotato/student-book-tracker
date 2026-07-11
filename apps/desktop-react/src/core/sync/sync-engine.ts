@@ -23,6 +23,7 @@ import {
 import type { SqlDatabase } from "../db/types";
 import type { ExternalStore } from "../state/external-store";
 import type { PulledChange, SyncApiClient } from "./api-client";
+import { countUnacknowledgedSyncConflicts } from "./conflicts";
 
 export type SyncPhase = "idle" | "syncing" | "synced" | "offline" | "rejected" | "error";
 export type SyncStatus = {
@@ -142,16 +143,17 @@ export class SyncEngine {
   }
 
   private async refresh(phase: SyncPhase, message: string | null) {
-    const [pendingCount, rejectedCount, state] = await Promise.all([
+    const [pendingCount, rejectedCount, unacknowledgedRejectedCount, state] = await Promise.all([
       countOutboxRowsByStatus(this.options.database, "pending"),
       countOutboxRowsByStatus(this.options.database, "rejected"),
+      countUnacknowledgedSyncConflicts(this.options.database),
       getSyncState(this.options.database),
     ]);
     this.options.store.update({
       phase,
       pendingCount,
       rejectedCount,
-      unacknowledgedRejectedCount: rejectedCount,
+      unacknowledgedRejectedCount,
       lastSyncedAt: state.lastSyncedAt,
       message,
     });
