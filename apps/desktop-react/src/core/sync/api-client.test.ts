@@ -31,7 +31,9 @@ describe("FetchSyncApiClient", () => {
 
     const results = await client.push([{
       id: "command-1", type: "ADD_BOOK_STOCK", deviceId: "device-1",
-      occurredAt: "2026-07-08T10:00:00.000Z", bookId: "book-1", quantity: 2,
+      occurredAt: "2026-07-08T10:00:00.000Z", academicYear: "2025-2026",
+      bookId: "book-1", semester: "first", quantity: 2,
+      receiptNumber: "00041", receiptDate: "2026-01-14",
     }]);
 
     expect(results[0]?.status).toBe("accepted");

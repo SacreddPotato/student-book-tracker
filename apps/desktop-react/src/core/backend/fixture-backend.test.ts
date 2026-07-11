@@ -3,36 +3,66 @@ import { describe, expect, it } from "vitest";
 import { createFixtureBackend } from "./fixture-backend";
 
 describe("fixture backend", () => {
-  it("supports the complete local inventory lifecycle", async () => {
+  it("supports semester inventory and current-year lifecycle", async () => {
     const backend = createFixtureBackend();
     await backend.initialize();
+    await backend.initializeAcademicYear("2025-2026");
     const student = await backend.saveStudent({
       name: "Mona Ahmed", governmentId: "29801011234567",
-      educationStage: "primary", gradeLevel: "primary1",
+      educationStage: "primary", gradeLevel: "primary1", academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({
-      name: "Primary Math", educationStage: "primary",
+    const book = await backend.saveBook({ name: "Primary Math", educationStage: "primary" });
+    await backend.addStock({
+      academicYear: "2025-2026", bookId: book.id, semester: "second", quantity: 2,
+      receiptNumber: "00041", receiptDate: "2026-01-14",
     });
-    await backend.addStock({ bookId: book.id, quantity: 2 });
-    await backend.issueBooks({ studentId: student.id, bookIds: [book.id] });
+    await backend.issueBooks({
+      academicYear: "2025-2026", studentId: student.id,
+      bookSelections: [{ bookId: book.id, semester: "second" }],
+    });
 
     expect(await backend.listBooks()).toEqual([
-      expect.objectContaining({ id: book.id, quantity: 1 }),
+      expect.objectContaining({ id: book.id, firstSemesterQuantity: 0, secondSemesterQuantity: 1 }),
     ]);
-    expect(await backend.listIssuedBooks(student.id)).toHaveLength(1);
-    const issue = (await backend.listLogs()).find(({ type }) => type === "student_issue")!;
+    expect(await backend.listIssuedBooks("2025-2026", student.id)).toEqual([
+      expect.objectContaining({ semester: "second" }),
+    ]);
+    const issue = (await backend.listLogs("2025-2026"))
+      .find(({ type }) => type === "student_issue")!;
+    await backend.reverseTransaction("2025-2026", issue.id);
 
-    await backend.reverseTransaction(issue.id);
+    expect((await backend.listBooks())[0]?.secondSemesterQuantity).toBe(2);
+    expect(await backend.listIssuedBooks("2025-2026", student.id)).toEqual([]);
+  });
 
-    expect((await backend.listBooks())[0]?.quantity).toBe(2);
-    expect(await backend.listIssuedBooks(student.id)).toEqual([]);
-    expect((await backend.listLogs()).filter(({ type }) => type === "reversal")).toHaveLength(1);
+  it("advances student snapshots while preserving archived records and books", async () => {
+    const backend = createFixtureBackend();
+    await backend.initializeAcademicYear("2025-2026");
+    const student = await backend.saveStudent({
+      name: "Mona", governmentId: "1", educationStage: "kg", gradeLevel: "kg2",
+      academicYear: "2025-2026",
+    });
+    const book = await backend.saveBook({ name: "Arabic", educationStage: "primary" });
+    await backend.addStock({
+      academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
+      receiptNumber: "1", receiptDate: "2026-01-14",
+    });
+
+    await backend.advanceAcademicYear("2026-2027");
+
+    expect(await backend.listStudents("2025-2026")).toEqual([
+      expect.objectContaining({ id: student.id, gradeLevel: "kg2" }),
+    ]);
+    expect(await backend.listStudents("2026-2027")).toEqual([
+      expect.objectContaining({ previousStudentId: student.id, gradeLevel: "primary1" }),
+    ]);
+    expect((await backend.listBooks())[0]?.firstSemesterQuantity).toBe(3);
+    expect(await backend.listLogs("2026-2027")).toEqual([]);
   });
 
   it("keeps preview updater disabled and exposes sync status", async () => {
     const backend = createFixtureBackend();
     await backend.updater.check();
-
     expect(backend.updater.store.getSnapshot().phase).toBe("disabled");
     expect(backend.syncStore.getSnapshot().phase).toBe("synced");
   });

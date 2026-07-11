@@ -1,4 +1,4 @@
-import type { SyncCommand } from "@app/shared";
+import type { BookSemester, SyncCommand } from "@app/shared";
 
 import { getBooksByIds } from "../db/repositories/books";
 import { listRejectedOutboxRows, type OutboxRow } from "../db/repositories/outbox";
@@ -24,6 +24,7 @@ export type SyncConflict = {
   isInsufficientStock: boolean;
   studentName: string | null;
   bookNames: string[];
+  bookSelections?: Array<{ bookName: string; semester: BookSemester }>;
   acknowledged: boolean;
 };
 
@@ -43,7 +44,7 @@ export async function listSyncConflicts(database: SqlDatabase): Promise<SyncConf
     const [student, books] = issue
       ? await Promise.all([
           getStudentById(database, issue.studentId),
-          getBooksByIds(database, issue.bookIds),
+          getBooksByIds(database, issue.bookSelections.map(({ bookId }) => bookId)),
         ])
       : [null, []];
 
@@ -54,6 +55,10 @@ export async function listSyncConflicts(database: SqlDatabase): Promise<SyncConf
       isInsufficientStock,
       studentName: student?.name ?? null,
       bookNames: books.map(({ name }) => name),
+      bookSelections: issue?.bookSelections.map((selection) => ({
+        bookName: books.find(({ id }) => id === selection.bookId)?.name ?? "Unknown book",
+        semester: selection.semester,
+      })) ?? [],
       acknowledged: acknowledgedIds.has(row.id),
     };
   }));

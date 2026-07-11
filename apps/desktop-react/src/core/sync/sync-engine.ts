@@ -1,6 +1,10 @@
 import type { SyncCommand, SyncCommandResult } from "@app/shared";
 
 import { runLocalTransaction } from "../db/local-transaction";
+import {
+  upsertAcademicYear,
+  type AcademicYearRow,
+} from "../db/repositories/academic-years";
 import { upsertBook, type BookRow } from "../db/repositories/books";
 import {
   countOutboxRowsByStatus,
@@ -173,6 +177,9 @@ async function applyPulledChanges(database: SqlDatabase, changes: PulledChange[]
     const payload = parse(change.payloadJson);
     if (!payload) continue;
     switch (change.entityTable) {
+      case "academic_years":
+        if (isAcademicYear(payload)) await upsertAcademicYear(database, payload);
+        break;
       case "students":
         if (isStudent(payload)) await upsertStudent(database, payload);
         break;
@@ -257,20 +264,34 @@ function parse(json: string): unknown {
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
+function isAcademicYear(value: unknown): value is AcademicYearRow {
+  return record(value)
+    && typeof value.academicYear === "string"
+    && (value.status === "current" || value.status === "archived")
+    && typeof value.createdAt === "string"
+    && (value.archivedAt === null || typeof value.archivedAt === "string");
+}
 function isStudent(value: unknown): value is StudentRow {
-  return record(value) && typeof value.id === "string" && typeof value.name === "string";
+  return record(value) && typeof value.id === "string" && typeof value.name === "string"
+    && typeof value.academicYear === "string";
 }
 function isBook(value: unknown): value is BookRow {
-  return record(value) && typeof value.id === "string" && typeof value.name === "string";
+  return record(value) && typeof value.id === "string" && typeof value.name === "string"
+    && typeof value.firstSemesterQuantity === "number"
+    && typeof value.secondSemesterQuantity === "number";
 }
 function isTransaction(value: unknown): value is InventoryTransactionRow {
-  return record(value) && typeof value.id === "string" && typeof value.commandId === "string";
+  return record(value) && typeof value.id === "string" && typeof value.commandId === "string"
+    && typeof value.academicYear === "string";
 }
 function isItem(value: unknown): value is InventoryTransactionItemRow {
-  return record(value) && typeof value.id === "string" && typeof value.transactionId === "string";
+  return record(value) && typeof value.id === "string" && typeof value.transactionId === "string"
+    && (value.semester === "first" || value.semester === "second");
 }
 function isStudentBook(value: unknown): value is StudentBookRow {
-  return record(value) && typeof value.id === "string" && typeof value.issuedTransactionId === "string";
+  return record(value) && typeof value.id === "string" && typeof value.issuedTransactionId === "string"
+    && typeof value.academicYear === "string"
+    && (value.semester === "first" || value.semester === "second");
 }
 function formatRejected(result: SyncCommandResult) {
   return [result.reasonCode, result.message].filter(Boolean).join(": ")

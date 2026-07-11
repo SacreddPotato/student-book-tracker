@@ -17,6 +17,7 @@ import {
   type TranslationKey,
 } from "../core/i18n";
 import { createAppQueryClient } from "./query-client";
+import { AcademicYearProvider } from "./AcademicYearProvider";
 
 export type ScreenId = "students" | "books" | "logs" | "settings";
 export type NavigationBlocker = (target: ScreenId) => boolean | Promise<boolean>;
@@ -100,7 +101,9 @@ export function AppProviders({
       <BackendContext value={backend}>
         <I18nContext value={i18n}>
           <NavigationContext value={navigation}>
-            <NoticeContext value={noticeValue}>{children}</NoticeContext>
+            <NoticeContext value={noticeValue}>
+              <AcademicYearProvider backend={backend}>{children}</AcademicYearProvider>
+            </NoticeContext>
           </NavigationContext>
         </I18nContext>
       </BackendContext>

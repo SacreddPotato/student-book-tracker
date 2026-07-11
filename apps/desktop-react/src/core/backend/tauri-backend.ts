@@ -4,6 +4,7 @@ import desktopPackage from "../../../package.json";
 import { runtimeConfig } from "../../app/runtime-config";
 import { initializeLocalDatabase } from "../db/local-db";
 import { runMigrations } from "../db/migrations";
+import { listAcademicYears } from "../db/repositories/academic-years";
 import { listBooks } from "../db/repositories/books";
 import { listStudents } from "../db/repositories/students";
 import {
@@ -12,6 +13,10 @@ import {
   listInventoryTransactions,
 } from "../db/repositories/transactions";
 import type { SqlDatabase } from "../db/types";
+import {
+  advanceAcademicYear,
+  initializeAcademicYear,
+} from "../services/academic-year-service";
 import { saveBook, saveStudent } from "../services/entity-service";
 import { addBookStock, issueBooksToStudent, reverseTransaction } from "../services/inventory-service";
 import { createExternalStore } from "../state/external-store";
@@ -52,7 +57,23 @@ export function createDatabaseBackend(options: {
 
   return {
     async initialize() { await runMigrations(options.database); },
-    listStudents: () => listStudents(options.database),
+    listAcademicYears: () => listAcademicYears(options.database),
+    async initializeAcademicYear(academicYear) {
+      await initializeAcademicYear(academicYear, mutationContext);
+      queueSync();
+    },
+    async advanceAcademicYear(toYear) {
+      const sync = syncStore.getSnapshot();
+      const result = await advanceAcademicYear({
+        toYear,
+        synchronized: sync.phase === "synced"
+          && sync.pendingCount === 0
+          && sync.rejectedCount === 0,
+      }, mutationContext);
+      queueSync();
+      return result;
+    },
+    listStudents: (academicYear) => listStudents(options.database, academicYear),
     async saveStudent(input) {
       const row = await saveStudent(input, mutationContext);
       queueSync();
@@ -64,7 +85,8 @@ export function createDatabaseBackend(options: {
       queueSync();
       return row;
     },
-    listIssuedBooks: (studentId) => listActiveStudentBookRows(options.database, studentId),
+    listIssuedBooks: (academicYear, studentId) =>
+      listActiveStudentBookRows(options.database, academicYear, studentId),
     async addStock(input) {
       await addBookStock(input, mutationContext);
       queueSync();
@@ -73,10 +95,10 @@ export function createDatabaseBackend(options: {
       await issueBooksToStudent(input, mutationContext);
       queueSync();
     },
-    async listLogs() {
+    async listLogs(academicYear) {
       const [transactions, students, books] = await Promise.all([
-        listInventoryTransactions(options.database),
-        listStudents(options.database),
+        listInventoryTransactions(options.database, academicYear),
+        listStudents(options.database, academicYear),
         listBooks(options.database),
       ]);
       const studentNames = new Map(students.map(({ id, name }) => [id, name]));
@@ -93,8 +115,8 @@ export function createDatabaseBackend(options: {
           })),
       })));
     },
-    async reverseTransaction(transactionId) {
-      await reverseTransaction({ transactionId }, mutationContext);
+    async reverseTransaction(academicYear, transactionId) {
+      await reverseTransaction({ academicYear, transactionId }, mutationContext);
       queueSync();
     },
     listConflicts: () => listSyncConflicts(options.database),

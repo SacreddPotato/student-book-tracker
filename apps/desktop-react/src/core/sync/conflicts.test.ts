@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createTestDatabase, type TestSqliteDatabase } from "../db/test-database";
 import { runMigrations } from "../db/migrations";
+import { createInitialAcademicYear } from "../db/repositories/academic-years";
 import { upsertBook } from "../db/repositories/books";
 import {
   enqueueOutboxCommand,
@@ -18,14 +19,17 @@ describe("sync conflicts", () => {
   beforeEach(async () => {
     database = createTestDatabase();
     await runMigrations(database);
+    await createInitialAcademicYear(database, "2025-2026", now);
     await upsertStudent(database, {
       id: "student-1", scopeId: "global", name: "Mona Ahmed",
       governmentId: "29801011234567", educationStage: "primary",
-      gradeLevel: "primary1", createdAt: now, updatedAt: now, deletedAt: null,
+      gradeLevel: "primary1", academicYear: "2025-2026", previousStudentId: null,
+      createdAt: now, updatedAt: now, deletedAt: null,
     });
     await upsertBook(database, {
       id: "book-1", scopeId: "global", name: "Primary Math",
-      educationStage: "primary", quantity: 0, createdAt: now,
+      educationStage: "primary", firstSemesterQuantity: 0,
+      secondSemesterQuantity: 0, createdAt: now,
       updatedAt: now, deletedAt: null,
     });
     await enqueueOutboxCommand(database, {
@@ -33,7 +37,8 @@ describe("sync conflicts", () => {
       commandType: "ISSUE_BOOKS_TO_STUDENT",
       payloadJson: JSON.stringify({
         id: "command-1", type: "ISSUE_BOOKS_TO_STUDENT", deviceId: "device-1",
-        occurredAt: now, studentId: "student-1", bookIds: ["book-1"],
+        occurredAt: now, academicYear: "2025-2026", studentId: "student-1",
+        bookSelections: [{ bookId: "book-1", semester: "second" }],
       }),
       status: "rejected", attempts: 1,
       lastError: "INSUFFICIENT_STOCK: Not enough stock.",
@@ -49,6 +54,7 @@ describe("sync conflicts", () => {
         commandId: "command-1",
         studentName: "Mona Ahmed",
         bookNames: ["Primary Math"],
+        bookSelections: [{ bookName: "Primary Math", semester: "second" }],
         isInsufficientStock: true,
         acknowledged: false,
       }),

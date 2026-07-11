@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestDatabase, type TestSqliteDatabase } from "../db/test-database";
 import { runMigrations } from "../db/migrations";
+import { createInitialAcademicYear, listAcademicYears } from "../db/repositories/academic-years";
 import { getBookById, upsertBook } from "../db/repositories/books";
 import { countOutboxRowsByStatus } from "../db/repositories/outbox";
 import { listStudents } from "../db/repositories/students";
@@ -44,9 +45,11 @@ describe("SyncEngine", () => {
   beforeEach(async () => {
     database = createTestDatabase();
     await runMigrations(database);
+    await createInitialAcademicYear(database, "2025-2026", now);
     await upsertBook(database, {
       id: "book-1", scopeId: "global", name: "Primary Math",
-      educationStage: "primary", quantity: 2, createdAt: now,
+      educationStage: "primary", firstSemesterQuantity: 2,
+      secondSemesterQuantity: 0, createdAt: now,
       updatedAt: now, deletedAt: null,
     });
   });
@@ -55,7 +58,8 @@ describe("SyncEngine", () => {
 
   it("preserves pending commands and reports offline on transport failure", async () => {
     await addBookStock(
-      { bookId: "book-1", quantity: 1 },
+      { academicYear: "2025-2026", bookId: "book-1", semester: "first",
+        quantity: 1, receiptNumber: "1", receiptDate: "2026-01-14" },
       context(database, ["command-1", "transaction-1", "item-1"]),
     );
     const store = createExternalStore(initialSyncStatus);
@@ -74,7 +78,8 @@ describe("SyncEngine", () => {
 
   it("marks accepted and rejected commands with visible status", async () => {
     await addBookStock(
-      { bookId: "book-1", quantity: 1 },
+      { academicYear: "2025-2026", bookId: "book-1", semester: "first",
+        quantity: 1, receiptNumber: "2", receiptDate: "2026-01-14" },
       context(database, ["command-1", "transaction-1", "item-1"]),
     );
     const acceptedStore = createExternalStore(initialSyncStatus);
@@ -83,7 +88,8 @@ describe("SyncEngine", () => {
     expect(acceptedStore.getSnapshot().phase).toBe("synced");
 
     await addBookStock(
-      { bookId: "book-1", quantity: 1 },
+      { academicYear: "2025-2026", bookId: "book-1", semester: "first",
+        quantity: 1, receiptNumber: "3", receiptDate: "2026-01-14" },
       context(database, ["command-2", "transaction-2", "item-2"]),
     );
     const rejectedStore = createExternalStore(initialSyncStatus);
@@ -102,11 +108,12 @@ describe("SyncEngine", () => {
 
   it("translates a reversal target to the original command ID", async () => {
     await addBookStock(
-      { bookId: "book-1", quantity: 1 },
+      { academicYear: "2025-2026", bookId: "book-1", semester: "first",
+        quantity: 1, receiptNumber: "4", receiptDate: "2026-01-14" },
       context(database, ["stock-command", "stock-transaction", "stock-item"]),
     );
     await reverseTransaction(
-      { transactionId: "stock-transaction" },
+      { academicYear: "2025-2026", transactionId: "stock-transaction" },
       context(database, ["reverse-command", "reverse-transaction", "reverse-item"]),
     );
     const pushed: SyncCommand[][] = [];
@@ -130,34 +137,42 @@ describe("SyncEngine", () => {
       .mockResolvedValueOnce({
         nextCursor: "5",
         changes: [
-          { sequence: 1, commandId: "remote-1", entityTable: "students",
+          { sequence: 1, commandId: "remote-1", entityTable: "academic_years",
+            entityId: "2025-2026", createdAt: now, payloadJson: JSON.stringify({
+              academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null,
+            }) },
+          { sequence: 2, commandId: "remote-1", entityTable: "students",
             entityId: "student-1", createdAt: now, payloadJson: JSON.stringify({
               id: "student-1", scopeId: "global", name: "Remote Student",
               governmentId: "29901011234567", educationStage: "primary",
-              gradeLevel: "primary1", createdAt: now, updatedAt: now, deletedAt: null,
+              gradeLevel: "primary1", academicYear: "2025-2026", previousStudentId: null,
+              createdAt: now, updatedAt: now, deletedAt: null,
             }) },
-          { sequence: 2, commandId: "remote-1", entityTable: "books",
+          { sequence: 3, commandId: "remote-1", entityTable: "books",
             entityId: "book-1", createdAt: now, payloadJson: JSON.stringify({
               id: "book-1", scopeId: "global", name: "Remote Math",
-              educationStage: "primary", quantity: 9, createdAt: now,
+              educationStage: "primary", firstSemesterQuantity: 9,
+              secondSemesterQuantity: 4, createdAt: now,
               updatedAt: now, deletedAt: null,
             }) },
-          { sequence: 3, commandId: "remote-1", entityTable: "inventory_transactions",
+          { sequence: 4, commandId: "remote-1", entityTable: "inventory_transactions",
             entityId: "remote-transaction", createdAt: now, payloadJson: JSON.stringify({
-              id: "remote-transaction", scopeId: "global", type: "student_issue",
-              studentId: "student-1", reversedTransactionId: null,
+              id: "remote-transaction", scopeId: "global", academicYear: "2025-2026",
+              type: "student_issue", studentId: "student-1", receiptNumber: null,
+              receiptDate: null, reversedTransactionId: null,
               reversedByTransactionId: null, deviceId: "remote-device",
               commandId: "remote-command", occurredAt: now, createdAt: now,
             }) },
-          { sequence: 4, commandId: "remote-1", entityTable: "inventory_transaction_items",
+          { sequence: 5, commandId: "remote-1", entityTable: "inventory_transaction_items",
             entityId: "remote-item", createdAt: now, payloadJson: JSON.stringify({
               id: "remote-item", transactionId: "remote-transaction", bookId: "book-1",
-              quantityDelta: -1, quantityAfter: 9, createdAt: now,
+              semester: "first", quantityDelta: -1, quantityAfter: 9, createdAt: now,
             }) },
-          { sequence: 5, commandId: "remote-1", entityTable: "student_books",
+          { sequence: 6, commandId: "remote-1", entityTable: "student_books",
             entityId: "remote-student-book", createdAt: now, payloadJson: JSON.stringify({
-              id: "remote-student-book", scopeId: "global", studentId: "student-1",
-              bookId: "book-1", issuedTransactionId: "remote-transaction",
+              id: "remote-student-book", scopeId: "global", academicYear: "2025-2026",
+              studentId: "student-1", bookId: "book-1", semester: "first",
+              issuedTransactionId: "remote-transaction",
               createdAt: now, reversedAt: null,
             }) },
         ],
@@ -168,16 +183,20 @@ describe("SyncEngine", () => {
       store: createExternalStore(initialSyncStatus), now: () => now,
     }).sync();
 
-    expect(await listStudents(database)).toEqual([
+    expect(await listAcademicYears(database)).toEqual([
+      expect.objectContaining({ academicYear: "2025-2026", status: "current" }),
+    ]);
+    expect(await listStudents(database, "2025-2026")).toEqual([
       expect.objectContaining({ name: "Remote Student" }),
     ]);
     expect(await getBookById(database, "book-1")).toEqual(
-      expect.objectContaining({ name: "Remote Math", quantity: 9 }),
+      expect.objectContaining({ name: "Remote Math", firstSemesterQuantity: 9,
+        secondSemesterQuantity: 4 }),
     );
-    expect(await listInventoryTransactions(database)).toEqual([
+    expect(await listInventoryTransactions(database, "2025-2026")).toEqual([
       expect.objectContaining({ commandId: "remote-command" }),
     ]);
     expect(await listInventoryTransactionItems(database, "remote-transaction")).toHaveLength(1);
-    expect(await listActiveStudentBookRows(database, "student-1")).toHaveLength(1);
+    expect(await listActiveStudentBookRows(database, "2025-2026", "student-1")).toHaveLength(1);
   });
 });
