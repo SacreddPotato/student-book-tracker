@@ -7,6 +7,16 @@ import previewTauri from "../../src-tauri/tauri.conf.json";
 import { resolveRuntimeConfig } from "./runtime-config";
 
 describe("resolveRuntimeConfig", () => {
+  it("starts the local API with the default desktop development command", () => {
+    const rootPackage = JSON.parse(
+      readFileSync(resolve(process.cwd(), "../../package.json"), "utf8"),
+    ) as { scripts: Record<string, string> };
+
+    expect(rootPackage.scripts["dev:desktop"]).toContain("concurrently");
+    expect(rootPackage.scripts["dev:desktop"]).toContain("dev:api");
+    expect(rootPackage.scripts["dev:desktop"]).toContain("dev:desktop:react");
+  });
+
   it("keeps the release workflow on the production React identity", () => {
     const releaseWorkflow = readFileSync(
       resolve(process.cwd(), "../../.github/workflows/release-windows.yml"),

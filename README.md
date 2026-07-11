@@ -23,7 +23,7 @@ npm run test
 npm run test:e2e
 ```
 
-`dev:desktop` now opens the isolated React preview identity and database. The legacy Svelte app remains buildable through `dev:desktop:legacy`; it must not run at the same time as a production-identity React build because both production shells intentionally use the same installed identifier and SQLite file.
+`dev:desktop` starts both the local sync API and the isolated React/Tauri preview so local sync does not remain Offline merely because the API process was omitted. Use `dev:desktop:react` when the API is already running separately. The legacy Svelte app remains buildable through `dev:desktop:legacy`; it must not run at the same time as a production-identity React build because both production shells intentionally use the same installed identifier and SQLite file.
 
 ## Windows releases
 
