@@ -73,15 +73,20 @@ Completed and committed on `pre-release`:
 - React UI for semester stock receipts, subject disclosures, mixed-semester issuance, logs, read-only archives, initial year setup, typed rollover confirmation, and exact Excel states.
 - Rendered rollover and inventory journeys.
 - Cross-year expandable Books audit history with receipt, issuance, reversal, semester, student, and year metadata; full-row activation; accessible chevrons; and plus stock actions.
+- A frozen local command contract keeps the preserved Svelte rollback frontend buildable without fabricating academic-year or receipt data; the active React frontend remains on the current shared protocol.
 - Automatic CI version/tag/release workflow and updated operator documentation.
 
 Latest verification:
 
 ```text
-npm run test -w @app/desktop-react       28 files / 74 tests passed before audit additions
-npm run test:e2e -w @app/desktop-react   5 Chromium journeys passed
-npm run build -w @app/desktop-react      passed
-npx vitest run src/app/runtime-config.test.ts  8 tests passed
+npm run test              passed: legacy 18/67, React 28/78, sync API 3/15, shared 5/24
+npm run test:e2e          passed: 5 Chromium journeys, including all-year book audit expansion
+npm run typecheck         passed across all workspaces
+npm run lint              passed across all workspaces
+npm run build             passed across all workspaces
+cargo test                passed React Tauri database allowlist test
+cargo check               passed React Tauri native compile
+npm run db:migrate -w @app/sync-api  passed idempotently against development Neon
 ```
 
 Production Neon migration checkpoint (2026-07-11 18:52 Cairo):
@@ -103,6 +108,6 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Run the final full verification matrix and native React/Tauri smoke.
-2. Push `pre-release`, verify CI and the next automatic demo EXE release, then synchronize the CI-authored version commit.
-3. Publish and verify `v1.0.0`, merge the verified branch into `main`, and record final evidence.
+1. Push `pre-release`, verify CI and the next automatic demo EXE release, then synchronize the CI-authored version commit.
+2. Publish and verify `v1.0.0`, merge the verified release commit into `main`, and record final evidence.
+3. Perform a final clean-tree, tag, branch, updater-feed, and artifact audit.
