@@ -32,11 +32,22 @@ export const en = {
     preparatory1: "1st Preparatory", preparatory2: "2nd Preparatory",
     preparatory3: "3rd Preparatory",
   },
+  semesters: { first: "First semester", second: "Second semester" },
+  academicYears: {
+    label: "Academic year", setupTitle: "Set academic year",
+    setupDescription: "Enter the academic year to start using this workspace.",
+    start: "Start academic year", archiveBanner: "This academic year is archived and read only.",
+    settingsTitle: "Academic year", current: "Current academic year: {year}",
+    advanceTo: "Advance to {year}", advanceTitle: "Advance academic year?",
+    advanceDescription: "Students will move to their succeeding grade in {year}. Existing years remain read only, while books and stock remain unchanged.",
+    confirmLabel: "Type {year} to confirm", advanceAction: "Advance academic year",
+  },
   fields: {
     studentName: "Student name", governmentId: "Government ID",
     educationStage: "Education stage", gradeLevel: "Grade level",
     bookName: "Book name", quantity: "Quantity", type: "Type",
     fromDate: "From date", toDate: "To date",
+    receiptNumber: "Issue receipt number", receiptDate: "Issue receipt date",
   },
   students: {
     title: "Student registry", description: "Manage students and issue stage-matched books.",
@@ -55,6 +66,7 @@ export const en = {
   books: {
     title: "Book inventory", description: "Track stage-specific books and available stock.",
     add: "Add book", edit: "Edit book", addStock: "Add stock", addStockTo: "Add stock to {name}",
+    addSemesterStockTo: "Add {semester} stock to {name}",
     searchPlaceholder: "Search book names", allStages: "All stages",
     inStock: "In stock", outOfStock: "Out of stock", count: "{count} books",
     zeroCount: "{count} out of stock", noResults: "No books match these filters.",
@@ -66,7 +78,7 @@ export const en = {
     stockIncrease: "Shipment increase", studentIssue: "Student issue", reversal: "Reversal",
     alreadyReversed: "Already reversed", reverse: "Reverse transaction",
     reverseTitle: "Reverse transaction?", reverseDescription: "This creates an inverse transaction and keeps the original in history.",
-    quantityAfter: "After: {count}", noResults: "No transactions match these filters.",
+    quantityAfter: "After: {count}", receipt: "Issue receipt {number} · {date}", noResults: "No transactions match these filters.",
     empty: "No inventory history yet.", count: "{count} transactions",
   },
   settings: {

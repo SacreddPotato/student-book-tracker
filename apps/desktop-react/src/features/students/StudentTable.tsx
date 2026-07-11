@@ -6,11 +6,12 @@ import { Button } from "../../components/ui/Button";
 import { DataTable, TableActions } from "../../components/ui/DataTable";
 import type { StudentRow } from "../../core/db/repositories/students";
 
-export function StudentTable({ students, selectedId, onSelect, onEdit }: {
+export function StudentTable({ students, selectedId, onSelect, onEdit, readOnly = false }: {
   students: StudentRow[];
   selectedId: string | null;
   onSelect(student: StudentRow): void;
   onEdit(student: StudentRow): void;
+  readOnly?: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -34,9 +35,9 @@ export function StudentTable({ students, selectedId, onSelect, onEdit }: {
                 <Button size="small" intent="quiet" aria-label={`${t("students.select")} ${student.name}`} onClick={() => onSelect(student)}>
                   <UserRoundCheck size={16} aria-hidden="true" />
                 </Button>
-                <Button size="small" intent="quiet" aria-label={`${t("students.edit")} ${student.name}`} onClick={() => onEdit(student)}>
+                {!readOnly ? <Button size="small" intent="quiet" aria-label={`${t("students.edit")} ${student.name}`} onClick={() => onEdit(student)}>
                   <Pencil size={16} aria-hidden="true" />
-                </Button>
+                </Button> : null}
               </TableActions>
             </td>
           </tr>

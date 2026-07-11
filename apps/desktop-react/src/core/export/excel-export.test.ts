@@ -8,11 +8,12 @@ const now = "2026-07-08T10:00:00.000Z";
 const students: StudentRow[] = [{
   id: "student-1", scopeId: "global", name: "Mona Ahmed",
   governmentId: "29801011234567", educationStage: "primary",
-  gradeLevel: "primary1", createdAt: now, updatedAt: now, deletedAt: null,
+  gradeLevel: "primary1", academicYear: "2025-2026", previousStudentId: null,
+  createdAt: now, updatedAt: now, deletedAt: null,
 }];
 const books: BookRow[] = [{
   id: "book-1", scopeId: "global", name: "Primary Math",
-  educationStage: "primary", quantity: 2, createdAt: now,
+  educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 2, createdAt: now,
   updatedAt: now, deletedAt: null,
 }];
 
@@ -23,7 +24,10 @@ describe("student Excel export", () => {
       books,
       gradeLevel: "primary1",
       language: "en",
-      issuedBookIdsByStudentId: { "student-1": ["book-1"] },
+      issuedBookSelectionsByStudentId: { "student-1": [
+        { bookId: "book-1", semester: "first" },
+        { bookId: "book-1", semester: "second" },
+      ] },
       translate: (key) => ({
         "export.name": "name",
         "export.alGharbia": "Al-Gharbia",
@@ -40,7 +44,7 @@ describe("student Excel export", () => {
 
     expect(worksheet.getCell("A1").value).toBe("Al-Gharbia");
     expect(worksheet.getCell(6, 1).value).toBe("Mona Ahmed");
-    expect(worksheet.getCell(6, 2).value).toBe("Issued");
+    expect(worksheet.getCell(6, 2).value).toBe("Both semesters issued");
   });
 
   it("uses an RTL worksheet in Arabic", () => {
@@ -49,7 +53,7 @@ describe("student Excel export", () => {
       books,
       gradeLevel: "primary1",
       language: "ar",
-      issuedBookIdsByStudentId: {},
+      issuedBookSelectionsByStudentId: {},
       translate: (key) => key,
     });
 
@@ -62,8 +66,25 @@ describe("student Excel export", () => {
       books,
       gradeLevel: "all",
       language: "en",
-      issuedBookIdsByStudentId: {},
+      issuedBookSelectionsByStudentId: {},
       translate: (key) => key,
     })).toThrow("Choose a grade group");
+  });
+
+  it("writes the exact semester issuance states and leaves neither blank", () => {
+    const statuses = [
+      { selections: [{ bookId: "book-1", semester: "first" as const }], expected: "Only the first semester issued" },
+      { selections: [{ bookId: "book-1", semester: "second" as const }], expected: "Only the 2nd semester issued" },
+      { selections: [{ bookId: "book-1", semester: "first" as const }, { bookId: "book-1", semester: "second" as const }], expected: "Both semesters issued" },
+      { selections: [], expected: null },
+    ];
+    for (const { selections, expected } of statuses) {
+      const workbook = buildStudentsWorkbook({
+        students, books, gradeLevel: "primary1", language: "en",
+        issuedBookSelectionsByStudentId: { "student-1": selections },
+        translate: (key) => key,
+      });
+      expect(workbook.getWorksheet("Students")!.getCell(6, 2).value || null).toBe(expected);
+    }
   });
 });

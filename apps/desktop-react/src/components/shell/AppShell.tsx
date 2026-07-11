@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { useI18n, useNavigation, useNotices, type ScreenId } from "../../app/AppProviders";
 import { NativeTitleBar } from "./NativeTitleBar";
+import { AcademicYearSetupDialog } from "../../features/settings/AcademicYearSetupDialog";
 
 const screens: Array<{ id: ScreenId; icon: typeof GraduationCap }> = [
   { id: "students", icon: GraduationCap },
@@ -73,6 +74,7 @@ export function AppShell({ children, statusSlot }: {
           </div>
         ))}
       </div>
+      <AcademicYearSetupDialog />
       </div>
     </div>
   );

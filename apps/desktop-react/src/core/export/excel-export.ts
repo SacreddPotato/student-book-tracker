@@ -17,7 +17,10 @@ export type StudentsWorkbookInput = {
   books: BookRow[];
   gradeLevel: ExportGrade;
   language: ExportLanguage;
-  issuedBookIdsByStudentId: Record<string, string[]>;
+  issuedBookSelectionsByStudentId: Record<
+    string,
+    Array<{ bookId: string; semester: "first" | "second" }>
+  >;
   translate: TranslateExport;
 };
 
@@ -64,12 +67,19 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
 
   gradeStudents.forEach((student, studentIndex) => {
     const row = headerRow + studentIndex + 1;
-    const issued = new Set(input.issuedBookIdsByStudentId[student.id] ?? []);
+    const issued = new Set((input.issuedBookSelectionsByStudentId[student.id] ?? [])
+      .map(({ bookId, semester }) => `${bookId}:${semester}`));
     worksheet.getCell(row, 1).value = student.name;
     stageBooks.forEach((book, bookIndex) => {
-      worksheet.getCell(row, bookIndex + 2).value = issued.has(book.id)
-        ? t("students.issued")
-        : "";
+      const first = issued.has(`${book.id}:first`);
+      const second = issued.has(`${book.id}:second`);
+      worksheet.getCell(row, bookIndex + 2).value = first && second
+        ? "Both semesters issued"
+        : first
+          ? "Only the first semester issued"
+          : second
+            ? "Only the 2nd semester issued"
+            : null;
     });
     worksheet.getCell(row, stageBooks.length + 2).value = "";
   });

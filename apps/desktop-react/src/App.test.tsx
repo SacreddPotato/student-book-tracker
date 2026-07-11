@@ -14,7 +14,9 @@ describe("App", () => {
   });
 
   it("syncs on startup and reconnect, then refreshes active local queries", async () => {
-    const backend = createFixtureBackend();
+    const backend = createFixtureBackend({ academicYears: [{
+      academicYear: "2025-2026", status: "current", createdAt: "2026-07-08T10:00:00.000Z", archivedAt: null,
+    }] });
     backend.requestSync = vi.fn(async () => undefined);
     const listStudents = vi.spyOn(backend, "listStudents");
     render(<App backend={backend} />);

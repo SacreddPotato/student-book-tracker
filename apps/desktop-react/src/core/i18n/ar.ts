@@ -19,11 +19,22 @@ export const ar = {
     primary6: "السادس الابتدائي", preparatory1: "الأول الإعدادي",
     preparatory2: "الثاني الإعدادي", preparatory3: "الثالث الإعدادي",
   },
+  semesters: { first: "الفصل الدراسي الأول", second: "الفصل الدراسي الثاني" },
+  academicYears: {
+    label: "العام الدراسي", setupTitle: "تحديد العام الدراسي",
+    setupDescription: "أدخل العام الدراسي لبدء استخدام مساحة العمل.",
+    start: "بدء العام الدراسي", archiveBanner: "هذا العام الدراسي مؤرشف ومتاح للقراءة فقط.",
+    settingsTitle: "العام الدراسي", current: "العام الدراسي الحالي: {year}",
+    advanceTo: "الانتقال إلى {year}", advanceTitle: "الانتقال إلى العام الدراسي التالي؟",
+    advanceDescription: "سينتقل الطلاب إلى الصف التالي في {year}. تبقى الأعوام السابقة للقراءة فقط، ولا تتغير الكتب أو كمياتها.",
+    confirmLabel: "اكتب {year} للتأكيد", advanceAction: "الانتقال إلى العام الدراسي التالي",
+  },
   fields: {
     studentName: "اسم الطالب", governmentId: "الرقم القومي",
     educationStage: "المرحلة التعليمية", gradeLevel: "الصف الدراسي",
     bookName: "اسم الكتاب", quantity: "الكمية", type: "النوع",
     fromDate: "من تاريخ", toDate: "إلى تاريخ",
+    receiptNumber: "رقم إذن الاستلام", receiptDate: "تاريخ إذن الاستلام",
   },
   students: {
     title: "سجل الطلاب", description: "إدارة الطلاب وتسليم الكتب المطابقة للمرحلة.",
@@ -42,7 +53,7 @@ export const ar = {
   books: {
     title: "مخزون الكتب", description: "متابعة كتب كل مرحلة والمخزون المتاح.",
     add: "إضافة كتاب", edit: "تعديل الكتاب", addStock: "إضافة مخزون",
-    addStockTo: "إضافة مخزون إلى {name}", searchPlaceholder: "ابحث باسم الكتاب",
+    addStockTo: "إضافة مخزون إلى {name}", addSemesterStockTo: "إضافة مخزون {semester} إلى {name}", searchPlaceholder: "ابحث باسم الكتاب",
     allStages: "كل المراحل", inStock: "متوفر", outOfStock: "نفد المخزون",
     count: "{count} كتب", zeroCount: "{count} نفد مخزونها",
     noResults: "لا توجد كتب مطابقة لهذه التصفية.", empty: "لا توجد كتب بعد.",
@@ -54,7 +65,7 @@ export const ar = {
     stockIncrease: "زيادة شحنة", studentIssue: "تسليم لطالب", reversal: "عكس العملية",
     alreadyReversed: "تم عكسها", reverse: "عكس العملية", reverseTitle: "عكس العملية؟",
     reverseDescription: "سيتم إنشاء عملية عكسية مع إبقاء السجل الأصلي في التاريخ.",
-    quantityAfter: "بعد: {count}", noResults: "لا توجد عمليات مطابقة لهذه التصفية.",
+    quantityAfter: "بعد: {count}", receipt: "إذن الاستلام {number} · {date}", noResults: "لا توجد عمليات مطابقة لهذه التصفية.",
     empty: "لا يوجد سجل مخزون بعد.", count: "{count} عمليات",
   },
   settings: {

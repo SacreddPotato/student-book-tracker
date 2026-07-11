@@ -1,9 +1,10 @@
-import { educationStages, gradeLevelsByStage, type EducationStage, type GradeLevel } from "@app/shared";
+import { educationStages, gradeLevelsByStage, type BookSelection, type EducationStage, type GradeLevel } from "@app/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useBackend, useI18n, useNavigation, useNotices } from "../../app/AppProviders";
+import { useAcademicYear } from "../../app/AcademicYearProvider";
 import { Button } from "../../components/ui/Button";
 import { EmptyState, LoadingState, Alert } from "../../components/ui/Feedback";
 import { Field } from "../../components/ui/Field";
@@ -24,7 +25,8 @@ export function StudentsScreen() {
   const navigation = useNavigation();
   const notices = useNotices();
   const queryClient = useQueryClient();
-  const studentsQuery = useStudentsQuery();
+  const { years, currentYear, viewYear, archived, setViewYear } = useAcademicYear();
+  const studentsQuery = useStudentsQuery(viewYear);
   const booksQuery = useBooksQuery();
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<StageFilter>("all");
@@ -39,8 +41,8 @@ export function StudentsScreen() {
   const [exporting, setExporting] = useState(false);
   const navigationResolver = useRef<((allowed: boolean) => void) | null>(null);
   const selected = studentsQuery.data?.find(({ id }) => id === selectedId) ?? null;
-  const issuedQuery = useIssuedBooksQuery(selectedId);
-  const issuedIds = useMemo(() => new Set(issuedQuery.data?.map(({ bookId }) => bookId) ?? []), [issuedQuery.data]);
+  const issuedQuery = useIssuedBooksQuery(viewYear, selectedId);
+  const issuedSelections = useMemo(() => new Set(issuedQuery.data?.map(({ bookId, semester }) => `${bookId}:${semester}`) ?? []), [issuedQuery.data]);
 
   useEffect(() => {
     if (!draft.size) {
@@ -73,11 +75,11 @@ export function StudentsScreen() {
     onError: () => setEditorError(t("errors.save")),
   });
   const issueMutation = useMutation({
-    mutationFn: () => backend.issueBooks({ studentId: selectedId!, bookIds: [...draft] }),
+    mutationFn: () => backend.issueBooks({ academicYear: currentYear!, studentId: selectedId!, bookSelections: [...draft].map((value) => { const [bookId, semester] = value.split(":"); return { bookId, semester: semester as "first" | "second" }; }) }),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: studentKeys.books }),
-        queryClient.invalidateQueries({ queryKey: studentKeys.issued(selectedId!) }),
+        queryClient.invalidateQueries({ queryKey: studentKeys.issued(currentYear!, selectedId!) }),
       ]);
       setDraft(new Set());
       setIssueError(null);
@@ -144,7 +146,7 @@ export function StudentsScreen() {
       const students = studentsQuery.data ?? [];
       const issuedEntries = await Promise.all(students.filter((item) => item.gradeLevel === grade).map(async (item) => [
         item.id,
-        (await backend.listIssuedBooks(item.id)).map(({ bookId }) => bookId),
+        (await backend.listIssuedBooks(viewYear!, item.id)).map(({ bookId, semester }) => ({ bookId, semester })),
       ] as const));
       const { buildStudentsWorkbook, downloadStudentsWorkbook } = await import("../../core/export/excel-export");
       const workbook = buildStudentsWorkbook({
@@ -152,7 +154,7 @@ export function StudentsScreen() {
         books: booksQuery.data ?? [],
         gradeLevel: grade,
         language,
-        issuedBookIdsByStudentId: Object.fromEntries(issuedEntries),
+        issuedBookSelectionsByStudentId: Object.fromEntries(issuedEntries),
         translate: (key) => t(key as Parameters<typeof t>[0]),
       });
       await downloadStudentsWorkbook(workbook, `students-${grade}.xlsx`);
@@ -171,15 +173,17 @@ export function StudentsScreen() {
       <header className="workspace-heading">
         <div><h2>{t("students.title")}</h2><p>{t("students.description")}</p></div>
         <div className="workspace-heading-actions">
-          <Button disabled={grade === "all"} busy={exporting} onClick={() => void exportGrade()} title={grade === "all" ? t("students.exportHint") : undefined}>
+          <Button disabled={grade === "all" || !viewYear} busy={exporting} onClick={() => void exportGrade()} title={grade === "all" ? t("students.exportHint") : undefined}>
             <Download size={17} aria-hidden="true" />{t("students.export")}
           </Button>
-          <Button intent="primary" onClick={() => { setEditing(null); setEditorError(null); setEditorOpen(true); }}>
+          {!archived ? <Button intent="primary" onClick={() => { setEditing(null); setEditorError(null); setEditorOpen(true); }}>
             <Plus size={17} aria-hidden="true" />{t("students.add")}
-          </Button>
+          </Button> : null}
         </div>
       </header>
+      {archived ? <Alert>{t("academicYears.archiveBanner")}</Alert> : null}
       <div className="student-filters">
+        <SelectField label={t("academicYears.label")} value={viewYear ?? ""} options={years.map(({ academicYear }) => ({ value: academicYear, label: academicYear }))} onValueChange={(value) => { setDraft(new Set()); setSelectedId(null); setViewYear(value); }} />
         <div className="student-search"><Search size={17} aria-hidden="true" /><Field label={t("common.search")} value={search} placeholder={t("students.searchPlaceholder")} onChange={(event) => setSearch(event.target.value)} /></div>
         <SelectField label={t("fields.educationStage")} value={stage} options={stageOptions} onValueChange={(value) => { setStage(value as StageFilter); if (value !== "all" && grade !== "all" && !(gradeLevelsByStage[value as EducationStage] as readonly string[]).includes(grade)) setGrade("all"); }} />
         <SelectField label={t("fields.gradeLevel")} value={grade} options={gradeOptions} onValueChange={(value) => setGrade(value as GradeFilter)} />
@@ -188,23 +192,24 @@ export function StudentsScreen() {
       {failed ? <Alert>{t("errors.studentsLoad")}</Alert> : loading ? <LoadingState label={t("common.loading")} /> : !(studentsQuery.data?.length) ? <EmptyState title={t("students.empty")} /> : (
         <div className="students-layout">
           <div className="student-table-region">
-            {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={editStudent} />
+            {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={editStudent} readOnly={archived} />
               : <EmptyState title={t("students.noResults")} />}
           </div>
           <StudentIssuancePanel
             student={selected}
             books={booksQuery.data ?? []}
-            issuedBookIds={issuedIds}
-            draftBookIds={draft}
+            issuedSelections={issuedSelections}
+            draftSelections={draft}
             loading={issuedQuery.isPending && Boolean(selectedId)}
             saving={issueMutation.isPending}
             error={issueError}
-            onToggle={(bookId, checked) => setDraft((current) => { const next = new Set(current); if (checked) next.add(bookId); else next.delete(bookId); return next; })}
+            readOnly={archived}
+            onToggle={(selection: BookSelection, checked) => setDraft((current) => { const next = new Set(current); const key = `${selection.bookId}:${selection.semester}`; if (checked) next.add(key); else next.delete(key); return next; })}
             onConfirm={() => { if (draft.size && !issueMutation.isPending) issueMutation.mutate(); }}
           />
         </div>
       )}
-      <StudentEditorSheet open={editorOpen} student={editing} saving={saveMutation.isPending} error={editorError} onOpenChange={setEditorOpen} onSave={(input) => saveMutation.mutate(input)} />
+      {!archived ? <StudentEditorSheet open={editorOpen} student={editing} saving={saveMutation.isPending} error={editorError} onOpenChange={setEditorOpen} onSave={(input) => saveMutation.mutate(input)} /> : null}
       <DiscardDraftDialog open={discardOpen} onCancel={() => resolveDiscard(false)} onDiscard={() => resolveDiscard(true)} />
     </section>
   );

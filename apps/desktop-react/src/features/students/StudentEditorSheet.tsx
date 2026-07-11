@@ -2,6 +2,7 @@ import { educationStages, gradeLevelsByStage, type EducationStage, type GradeLev
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useI18n } from "../../app/AppProviders";
+import { useAcademicYear } from "../../app/AcademicYearProvider";
 import { Alert } from "../../components/ui/Feedback";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
@@ -19,6 +20,7 @@ export function StudentEditorSheet({ open, student, saving, error, onOpenChange,
   onSave(input: StudentInput): void;
 }) {
   const { t } = useI18n();
+  const { currentYear } = useAcademicYear();
   const [name, setName] = useState("");
   const [governmentId, setGovernmentId] = useState("");
   const [stage, setStage] = useState<EducationStage>("primary");
@@ -41,7 +43,8 @@ export function StudentEditorSheet({ open, student, saving, error, onOpenChange,
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!name.trim() || !governmentId.trim()) return;
-    onSave({ id: student?.id, name, governmentId, educationStage: stage, gradeLevel: grade });
+    if (!currentYear) return;
+    onSave({ id: student?.id, name, governmentId, educationStage: stage, gradeLevel: grade, academicYear: currentYear });
   }
 
   const stageOptions = educationStages.map((value) => ({ value, label: t(`stages.${value}`) }));

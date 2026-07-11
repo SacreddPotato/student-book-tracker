@@ -6,7 +6,10 @@
 .book-metrics { min-block-size: 42px; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); color: var(--text-muted); font-size: .84rem; font-weight: 700; }
 .book-metrics [data-warning] { color: var(--warning); }
 .book-quantity { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.book-semester-stock { min-inline-size: 170px; }
+.book-semester-stock > * { margin-inline-end: var(--space-2); }
+.book-semester-stock .ui-button { margin-inline-end: 0; }
 .ui-table tr[data-empty] { background: var(--warning-soft); }
 .book-editor, .add-stock-form { display: grid; gap: var(--space-4); }
 @media (max-width: 860px) { .book-summary { grid-template-columns: 1fr 190px; } .book-metrics { grid-column: 1 / -1; justify-content: flex-start; } }
-@media (max-width: 620px) { .book-summary { grid-template-columns: 1fr; } .book-metrics { grid-column: auto; } }
+@media (max-width: 620px) { .book-summary { grid-template-columns: 1fr; } .book-metrics { grid-column: auto; } .book-semester-stock { min-inline-size: 150px; } }

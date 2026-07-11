@@ -6,6 +6,10 @@ import { createFixtureBackend } from "../../core/backend/fixture-backend";
 import { AppProviders, useI18n, useNavigation } from "../../app/AppProviders";
 import { AppShell } from "./AppShell";
 
+const backend = () => createFixtureBackend({ academicYears: [{
+  academicYear: "2025-2026", status: "current", createdAt: "2026-07-08T10:00:00.000Z", archivedAt: null,
+}] });
+
 function Harness() {
   const { language } = useI18n();
   const { screen: activeScreen } = useNavigation();
@@ -20,7 +24,7 @@ describe("AppShell", () => {
   it("renders labelled navigation and updates document direction", async () => {
     const user = userEvent.setup();
     render(
-      <AppProviders backend={createFixtureBackend()}>
+      <AppProviders backend={backend()}>
         <Harness />
       </AppProviders>,
     );
@@ -44,7 +48,7 @@ describe("AppShell", () => {
       );
     }
     render(
-      <AppProviders backend={createFixtureBackend()} initialLanguage="en">
+      <AppProviders backend={backend()} initialLanguage="en">
         <BlockedHarness />
       </AppProviders>,
     );

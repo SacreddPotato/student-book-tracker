@@ -13,7 +13,7 @@ describe("SettingsScreen", () => {
     const user = userEvent.setup();
     const download = vi.fn(async () => undefined);
     const install = vi.fn(async () => undefined);
-    const backend = createFixtureBackend();
+    const backend = createFixtureBackend({ academicYears: [{ academicYear: "2025-2026", status: "current", createdAt: "2026-07-08T10:00:00.000Z", archivedAt: null }] });
     backend.updater = createUpdaterController({
       currentVersion: "0.1.0",
       enabled: true,

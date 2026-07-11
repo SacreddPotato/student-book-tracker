@@ -13,21 +13,32 @@ const now = "2026-07-08T10:00:00.000Z";
 const student: StudentRow = {
   id: "student-1", scopeId: "global", name: "Mona Ahmed",
   governmentId: "29801011234567", educationStage: "primary",
-  gradeLevel: "primary1", createdAt: now, updatedAt: now, deletedAt: null,
+  gradeLevel: "primary1", academicYear: "2025-2026", previousStudentId: null,
+  createdAt: now, updatedAt: now, deletedAt: null,
 };
 const availableBook: BookRow = {
   id: "book-1", scopeId: "global", name: "Primary Math",
-  educationStage: "primary", quantity: 2, createdAt: now, updatedAt: now, deletedAt: null,
+  educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 1,
+  createdAt: now, updatedAt: now, deletedAt: null,
 };
 const emptyBook: BookRow = {
   id: "book-2", scopeId: "global", name: "Primary Science",
-  educationStage: "primary", quantity: 0, createdAt: now, updatedAt: now, deletedAt: null,
+  educationStage: "primary", firstSemesterQuantity: 0, secondSemesterQuantity: 0,
+  createdAt: now, updatedAt: now, deletedAt: null,
 };
 
 function renderStudents(options: { empty?: boolean } = {}) {
   const backend = createFixtureBackend(options.empty ? {} : {
+    academicYears: [{ academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null }],
     students: [student], books: [availableBook, emptyBook],
   });
+  if (options.empty) {
+    return renderStudentsWithBackend(createFixtureBackend({ academicYears: [{ academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null }] }));
+  }
+  return renderStudentsWithBackend(backend);
+}
+
+function renderStudentsWithBackend(backend: ReturnType<typeof createFixtureBackend>) {
   render(
     <AppProviders backend={backend} initialLanguage="en">
       <AppShell><StudentsScreen /></AppShell>
@@ -48,7 +59,7 @@ describe("StudentsScreen", () => {
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("Amina Hassan")).toBeVisible();
-    expect(await backend.listStudents()).toHaveLength(1);
+    expect(await backend.listStudents("2025-2026")).toHaveLength(1);
   });
 
   it("keeps selections as drafts, disables zero stock, then issues once", async () => {
@@ -56,24 +67,29 @@ describe("StudentsScreen", () => {
     const backend = renderStudents();
 
     await user.click(await screen.findByRole("button", { name: "Select student Mona Ahmed" }));
-    const available = await screen.findByRole("checkbox", { name: /Primary Math/ });
-    const empty = screen.getByRole("checkbox", { name: /Primary Science/ });
-    expect(empty).toBeDisabled();
-    await user.click(available);
-    expect(await backend.listIssuedBooks("student-1")).toEqual([]);
+    await user.click(await screen.findByRole("button", { name: "Primary Math" }));
+    const first = screen.getByRole("checkbox", { name: /First semester/ });
+    const second = screen.getByRole("checkbox", { name: /Second semester/ });
+    await user.click(first);
+    await user.click(second);
+    await user.click(screen.getByRole("button", { name: "Primary Science" }));
+    expect(screen.getAllByRole("checkbox", { name: /First semester/ })[1]).toBeDisabled();
+    expect(await backend.listIssuedBooks("2025-2026", "student-1")).toEqual([]);
 
     const confirm = screen.getByRole("button", { name: "Issue selected books" });
     await user.dblClick(confirm);
 
-    expect(await backend.listIssuedBooks("student-1")).toHaveLength(1);
-    expect((await backend.listBooks()).find(({ id }) => id === "book-1")?.quantity).toBe(1);
+    expect(await backend.listIssuedBooks("2025-2026", "student-1")).toHaveLength(2);
+    const updated = (await backend.listBooks()).find(({ id }) => id === "book-1");
+    expect(updated).toMatchObject({ firstSemesterQuantity: 1, secondSemesterQuantity: 0 });
   });
 
   it("guards navigation while a draft selection exists", async () => {
     const user = userEvent.setup();
     renderStudents();
     await user.click(await screen.findByRole("button", { name: "Select student Mona Ahmed" }));
-    await user.click(await screen.findByRole("checkbox", { name: /Primary Math/ }));
+    await user.click(await screen.findByRole("button", { name: "Primary Math" }));
+    await user.click(await screen.findByRole("checkbox", { name: /First semester/ }));
 
     await user.click(screen.getByRole("button", { name: "Books" }));
 
@@ -87,7 +103,8 @@ describe("StudentsScreen", () => {
     const user = userEvent.setup();
     renderStudents();
     await user.click(await screen.findByRole("button", { name: "Select student Mona Ahmed" }));
-    await user.click(await screen.findByRole("checkbox", { name: /Primary Math/ }));
+    await user.click(await screen.findByRole("button", { name: "Primary Math" }));
+    await user.click(await screen.findByRole("checkbox", { name: /First semester/ }));
 
     await user.click(screen.getByRole("button", { name: "Edit student Mona Ahmed" }));
     const discard = screen.getByRole("dialog", { name: "Discard book selection?" });
@@ -106,5 +123,23 @@ describe("StudentsScreen", () => {
     await user.click(screen.getByRole("option", { name: "1st Primary" }));
 
     expect(exportButton).toBeEnabled();
+  });
+
+  it("keeps archived student records selectable but removes mutation controls", async () => {
+    const user = userEvent.setup();
+    const backend = createFixtureBackend({
+      academicYears: [
+        { academicYear: "2026-2027", status: "current", createdAt: now, archivedAt: null },
+        { academicYear: "2025-2026", status: "archived", createdAt: now, archivedAt: now },
+      ],
+      students: [student], books: [availableBook],
+    });
+    renderStudentsWithBackend(backend);
+    await user.click(await screen.findByRole("combobox", { name: "Academic year" }));
+    await user.click(screen.getByRole("option", { name: "2025-2026" }));
+    expect(await screen.findByText("This academic year is archived and read only.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Add student" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit student Mona Ahmed" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Select student Mona Ahmed" })).toBeVisible();
   });
 });

@@ -12,7 +12,7 @@ const now = "2026-07-08T10:00:00.000Z";
 describe("SyncStatus", () => {
   it("shows and acknowledges a rejected command without deleting it", async () => {
     const user = userEvent.setup();
-    const backend = createFixtureBackend({ conflicts: [{
+    const backend = createFixtureBackend({ academicYears: [{ academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null }], conflicts: [{
       commandId: "command-1",
       row: { id: "command-1", commandType: "ISSUE_BOOKS_TO_STUDENT", payloadJson: "{}", status: "rejected", attempts: 1, lastError: "INSUFFICIENT_STOCK", createdAt: now, updatedAt: now },
       command: null, isInsufficientStock: true, studentName: "Mona Ahmed", bookNames: ["Primary Math"], acknowledged: false,

@@ -7,15 +7,18 @@ test("student, stock, issuance, export, history, and reversal flow", async ({ pa
   await createPrimaryStudent(page);
   await createPrimaryBook(page);
 
-  await page.getByRole("button", { name: "Add stock to Primary Math" }).click();
-  const stockDialog = page.getByRole("dialog", { name: "Add stock to Primary Math" });
+  await page.getByRole("button", { name: "Add first semester stock to Primary Math" }).click();
+  const stockDialog = page.getByRole("dialog", { name: "Add first semester stock to Primary Math" });
   await stockDialog.getByLabel("Quantity").fill("2");
+  await stockDialog.getByLabel("Issue receipt number").fill("00041");
+  await stockDialog.getByLabel("Issue receipt date").fill("2026-01-14");
   await stockDialog.getByRole("button", { name: "Add stock" }).click();
   await expect(page.getByRole("row", { name: /Primary Math/ })).toContainText("2");
 
   await page.getByRole("button", { name: "Students" }).click();
   await page.getByRole("button", { name: "Select student Mona Ahmed" }).click();
-  await page.getByRole("checkbox", { name: /Primary Math/ }).click();
+  await page.getByRole("button", { name: "Primary Math" }).click();
+  await page.getByRole("checkbox", { name: /First semester/ }).click();
   await page.getByRole("button", { name: "Issue selected books" }).click();
   await expect(page.getByText("Books issued.")).toBeVisible();
 
