@@ -2,9 +2,13 @@ node_modules/
 .env
 .env.*
 !.env.example
+!apps/desktop-react/.env.production-release
 dist/
 build/
 .svelte-kit/
 target/
+test-results/
+playwright-report/
 *.log
 *.local
+.vscode

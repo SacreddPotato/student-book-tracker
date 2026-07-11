@@ -1,0 +1,30 @@
+.books-screen { display: grid; gap: var(--space-5); }
+.book-summary { padding: var(--space-4); display: grid; grid-template-columns: minmax(260px, 1fr) 210px auto; align-items: end; gap: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--surface); }
+.book-search { position: relative; }
+.book-search > svg { position: absolute; z-index: 1; inset-inline-start: 12px; inset-block-end: 13px; color: var(--text-muted); }
+.book-search input { padding-inline-start: 38px; }
+.book-metrics { min-block-size: 42px; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); color: var(--text-muted); font-size: .84rem; font-weight: 700; }
+.book-metrics [data-warning] { color: var(--warning); }
+.book-quantity { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.book-semester-stock { min-inline-size: 170px; }
+.book-semester-stock > * { margin-inline-end: var(--space-2); }
+.book-semester-stock .ui-button { margin-inline-end: 0; }
+.book-row { cursor: pointer; }
+.book-row:hover, .book-row[data-expanded] { background: var(--surface-subtle); }
+.book-history-toggle svg { transition: transform var(--motion-fast); }
+.book-history-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.book-history-row > td { padding: 0 !important; background: var(--surface-subtle); }
+.book-history-panel { padding: var(--space-4); display: grid; gap: var(--space-4); border-block-start: 1px solid var(--border); }
+.book-history-year { display: grid; gap: var(--space-2); }
+.book-history-year h4 { margin: 0; color: var(--text-muted); font-size: .78rem; letter-spacing: .04em; }
+.book-history-events { display: grid; gap: var(--space-2); }
+.book-history-event { min-block-size: 58px; padding: var(--space-3); display: grid; grid-template-columns: minmax(190px, 1fr) auto auto minmax(220px, auto); align-items: center; gap: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
+.book-history-event-title, .book-history-metadata { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.book-history-event small, .book-history-metadata { color: var(--text-muted); }
+.book-history-metadata { justify-content: flex-end; font-size: .8rem; }
+.ui-table tr[data-empty] { background: var(--warning-soft); }
+.book-editor, .add-stock-form { display: grid; gap: var(--space-4); }
+@media (max-width: 860px) { .book-summary { grid-template-columns: 1fr 190px; } .book-metrics { grid-column: 1 / -1; justify-content: flex-start; } }
+@media (max-width: 620px) { .book-summary { grid-template-columns: 1fr; } .book-metrics { grid-column: auto; } .book-semester-stock { min-inline-size: 150px; } }
+@media (max-width: 760px) { .book-history-event { grid-template-columns: 1fr auto; } .book-history-metadata { grid-column: 1 / -1; justify-content: flex-start; } }
+@media (prefers-reduced-motion: reduce) { .book-history-toggle svg { transition: none; } }

@@ -87,7 +87,7 @@ Every reversible log has a Reverse button. Reversal must create a new inverse tr
 
 ### Excel Export
 
-The Students page exports the currently grouped or filtered student view to XLSX.
+The Students page exports the current student grade group to XLSX. Exporting is disabled unless a specific grade group is selected, because a printable sheet must contain students with identical grade-level book requirements.
 
 Header layout:
 
@@ -105,7 +105,7 @@ Header layout:
 Body columns:
 
 - `name`
-- one column for each relevant book in the selected stage or grade view
+- one column for each relevant book in the selected grade's education stage
 - `student signature`
 
 Arabic mode must set the worksheet to RTL and use Arabic labels. English mode must use English labels.
@@ -562,16 +562,22 @@ export type SyncCommandResult = {
 
 - [ ] Install ExcelJS or an equivalent XLSX writer.
 - [ ] Implement `exportStudentsWorkbook({ students, books, selectedStage, selectedGradeLevel, language })`.
+- [ ] Require `selectedGradeLevel` to be a concrete grade; do not export when it is `all`.
 - [ ] Create the left header lines exactly as specified.
 - [ ] Create the center header with selected stage, selected grade level, and educational year line.
 - [ ] Reserve the right header area for a logo.
-- [ ] Create body columns for name, relevant books, and student signature.
+- [ ] Create body rows from students in the selected grade group only.
+- [ ] Create body columns for name, books in the selected grade's education stage, and student signature.
 - [ ] Mark issued books in their book columns.
 - [ ] Enable RTL worksheet direction for Arabic.
 - [ ] Add Export button to the Students tab.
+- [ ] Disable Export while the grade group is `all`.
+- [ ] Add translated helper text saying `Choose a grade group before exporting.`
 - [ ] Test English header values.
 - [ ] Test Arabic RTL workbook setting.
-- [ ] Test body columns match relevant books.
+- [ ] Test Export is disabled and helper text appears when grade group is `all`.
+- [ ] Test body rows include only students from the selected grade group.
+- [ ] Test body columns match books in the selected grade's education stage.
 - [ ] Run `npm run test -w @app/desktop`.
 - [ ] Commit with message `feat: add student excel export`.
 

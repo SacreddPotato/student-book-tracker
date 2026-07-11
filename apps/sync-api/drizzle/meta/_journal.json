@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1783622303649,
+      "tag": "0000_initial_sync_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783783160161,
+      "tag": "0001_semester_inventory_academic_years",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783783176331,
+      "tag": "0002_drop_legacy_book_quantity",
+      "breakpoints": true
+    }
+  ]
+}
