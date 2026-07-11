@@ -41,8 +41,13 @@ describe("UI primitives", () => {
     render(<Checkbox checked onCheckedChange={() => undefined} label="Primary Math" />);
     const checkbox = screen.getByRole("checkbox", { name: "Primary Math" });
     const indicator = checkbox.querySelector(".ui-checkbox-indicator");
+    const checkmark = checkbox.querySelector<SVGElement>(".ui-checkbox-checkmark");
 
     expect(indicator).toBeInTheDocument();
-    expect(indicator).toContainElement(checkbox.querySelector("svg"));
+    expect(checkbox).toHaveAttribute("dir", "ltr");
+    expect(indicator).toContainElement(checkmark);
+    expect(checkmark).toHaveClass("lucide-check");
+    expect(checkmark).toHaveAttribute("width", "14");
+    expect(checkmark).toHaveAttribute("height", "14");
   });
 });

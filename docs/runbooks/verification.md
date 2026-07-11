@@ -29,13 +29,17 @@ The ordinary Vite browser preview is not a valid local-persistence acceptance te
    npm run dev:desktop
    ```
 
-2. Confirm the preview opens as `Student Book Tracker React Preview` and creates `%APPDATA%\com.studentbooktracker.reactdev\student-book-tracker-react.db`; it must not modify the production database.
-3. On the fresh preview database, open Students and Books. Neither screen may show a load error.
-4. Create a book, add stock, create a student with a different government ID, select that student, issue the book, and open Logs. The book quantity must decrement and both inventory events must appear.
-5. Check a book without confirming it, select another student, and confirm the unsaved-selection warning. A zero-stock book must be disabled.
-6. Choose a concrete grade group and export the workbook. Confirm its name, book columns, signature column, and Arabic RTL worksheet when Arabic is selected.
-7. Disconnect from the sync API, make a local write, then reconnect. Confirm pending commands sync. Verify a rejected stock conflict stays available for review.
-8. Switch Arabic/English, resize through the compact rail and labelled bottom-navigation breakpoints, and verify dialogs close with Escape and restore focus.
+   This command starts both the local sync API and the React/Tauri preview. Use
+   `npm run dev:desktop:react` only when the API is already running separately.
+
+2. Confirm the preview opens maximized, in Arabic/RTL, with the dark custom title bar and creates `%APPDATA%\com.studentbooktracker.reactdev\student-book-tracker-react.db`; it must not modify the production database.
+3. Confirm sync reaches `Synced`. Exercise the custom minimize, restore/maximize, and close controls in the real Tauri window, then relaunch before continuing.
+4. On the fresh preview database, open Students and Books. Neither screen may show a load error.
+5. Create a book, add stock, create a student with a different government ID, select that student, issue the book, and open Logs. The book quantity must decrement and both inventory events must appear.
+6. Check a book without confirming it, verify the checkmark is centered, select another student, and confirm the unsaved-selection warning. A zero-stock book must be disabled.
+7. Choose a concrete grade group and export the workbook. Confirm its name, book columns, signature column, and Arabic RTL worksheet when Arabic is selected.
+8. Disconnect from the sync API, make a local write, then reconnect. Confirm pending commands sync. Verify a rejected stock conflict stays available for review.
+9. Switch Arabic/English, resize through the compact rail and labelled bottom-navigation breakpoints, and verify dialogs close with Escape and restore focus.
 
 ## Packaged Windows smoke test
 

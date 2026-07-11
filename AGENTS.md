@@ -533,4 +533,22 @@ Update this file at the end of every completed implementation segment. Keep the 
 
 ## Next Segment Starting Point
 
-- The React frontend revamp and production cutover are complete. Continue only with release publication/signed updater smoke testing for `0.1.0-demo.6` or separately scoped post-release feedback; keep `apps/desktop` intact as the rollback source.
+### Maintenance: Native Window And Sync Startup Polish
+
+- Status: completed on `pre-release`.
+- Root `npm run dev:desktop` now launches the local sync API and React/Tauri preview together; `dev:desktop:react` remains available when the API is already running.
+- Fixed WebView2 sync requests by invoking the stored `fetch` function with the window receiver. The prior `Illegal invocation` error is covered by a regression test.
+- Replaced native Windows decorations with a dark custom Tauri-only title bar and working minimize, maximize/restore, and close controls. Preview and production windows now start maximized.
+- The React app now starts in Arabic/RTL by default while preserving the EN/AR toggle.
+- The student-book checkbox keeps the Lucide `Check` icon but positions its indicator from the physical center with an explicit LTR coordinate system, preventing the offset from flipping between Arabic RTL and English LTR.
+- Native verification completed against the real Tauri preview: fresh launch opened maximized in Arabic, reported `تمت المزامنة`, changed maximize/restore labels with native state, minimized/restored through Windows, and closed successfully.
+- Verification completed:
+  - `npm run test -w @app/desktop-react` (25 files, 62 tests)
+  - `npm run test:e2e -w @app/desktop-react`
+  - `npm run typecheck -w @app/desktop-react`
+  - `npm run build -w @app/desktop-react`
+  - `cargo check --manifest-path apps/desktop-react/src-tauri/Cargo.toml`
+
+## Next Segment Starting Point
+
+- The React frontend revamp, native window polish, and local sync startup path are complete. Continue with release publication/signed updater smoke testing for `0.1.0-demo.6` or separately scoped post-release feedback; keep `apps/desktop` intact as the rollback source.

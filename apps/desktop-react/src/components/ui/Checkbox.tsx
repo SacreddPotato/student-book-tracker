@@ -18,12 +18,13 @@ export function Checkbox({
     <label className="ui-checkbox-row" data-disabled={disabled || undefined}>
       <CheckboxPrimitive.Root
         className="ui-checkbox"
+        dir="ltr"
         checked={checked}
         disabled={disabled}
         onCheckedChange={(value) => onCheckedChange(value === true)}
       >
         <CheckboxPrimitive.Indicator className="ui-checkbox-indicator">
-          <Check size={14} />
+          <Check className="ui-checkbox-checkmark" size={14} aria-hidden="true" />
         </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
       <span className="ui-checkbox-copy">
