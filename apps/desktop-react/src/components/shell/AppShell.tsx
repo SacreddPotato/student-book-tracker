@@ -1,7 +1,9 @@
 import { BookOpen, GraduationCap, History, Settings } from "lucide-react";
+import { isTauri } from "@tauri-apps/api/core";
 import type { ReactNode } from "react";
 
 import { useI18n, useNavigation, useNotices, type ScreenId } from "../../app/AppProviders";
+import { NativeTitleBar } from "./NativeTitleBar";
 
 const screens: Array<{ id: ScreenId; icon: typeof GraduationCap }> = [
   { id: "students", icon: GraduationCap },
@@ -17,9 +19,12 @@ export function AppShell({ children, statusSlot }: {
   const { language, setLanguage, t } = useI18n();
   const navigation = useNavigation();
   const { notices, dismiss } = useNotices();
+  const nativeWindow = isTauri();
 
   return (
-    <div className="app-shell">
+    <div className="app-frame" data-native-window={nativeWindow || undefined}>
+      {nativeWindow ? <NativeTitleBar /> : null}
+      <div className="app-shell">
       <aside className="app-rail">
         <div className="app-brand" aria-label={t("app.title")}>
           <span className="app-brand-mark"><BookOpen size={22} /></span>
@@ -67,6 +72,7 @@ export function AppShell({ children, statusSlot }: {
             <button type="button" onClick={() => dismiss(notice.id)} aria-label={t("common.close")}>×</button>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

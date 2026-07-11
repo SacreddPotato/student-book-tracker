@@ -32,6 +32,14 @@ describe("resolveRuntimeConfig", () => {
     );
   });
 
+  it("uses the custom maximized window frame in preview and production", () => {
+    for (const config of [previewTauri, productionTauri]) {
+      const window = config.app.windows[0];
+      expect(window.decorations).toBe(false);
+      expect(window.maximized).toBe(true);
+    }
+  });
+
   it("isolates preview identity and database", () => {
     const config = resolveRuntimeConfig({ DEV: true, PROD: false });
 

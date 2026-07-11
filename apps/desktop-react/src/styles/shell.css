@@ -1,3 +1,13 @@
+.app-frame[data-native-window] { block-size: 100vh; overflow: hidden; border: 1px solid #0b1912; background: #13271d; }
+.native-titlebar { block-size: 38px; direction: ltr; display: flex; align-items: center; background: #13271d; color: #dce8df; border-block-end: 1px solid #294136; user-select: none; }
+.native-titlebar-title { min-inline-size: 0; flex: 1; align-self: stretch; display: flex; align-items: center; padding-inline: 13px; font-size: .74rem; font-weight: 650; color: #b9c7be; }
+.native-titlebar-actions { align-self: stretch; display: flex; }
+.native-titlebar-actions button { inline-size: 46px; block-size: 100%; border: 0; border-radius: 0; display: grid; place-items: center; background: transparent; color: #dce8df; cursor: default; transition: background var(--motion-fast), color var(--motion-fast); }
+.native-titlebar-actions button:hover { background: rgb(255 255 255 / 10%); color: white; }
+.native-titlebar-actions .native-titlebar-close:hover { background: #c42b1c; }
+.app-frame[data-native-window] > .app-shell { min-block-size: 0; block-size: calc(100vh - 40px); }
+.app-frame[data-native-window] .app-rail { block-size: 100%; }
+.app-frame[data-native-window] .app-main-column { max-block-size: 100%; overflow: auto; }
 .app-shell { min-block-size: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); }
 .app-rail { position: sticky; inset-block-start: 0; block-size: 100vh; padding: var(--space-5) var(--space-3); background: #13271d; color: #edf4ef; display: flex; flex-direction: column; gap: var(--space-6); }
 .app-brand { display: flex; align-items: center; gap: var(--space-3); padding-inline: var(--space-2); }

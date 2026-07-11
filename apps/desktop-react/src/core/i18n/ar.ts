@@ -2,6 +2,7 @@ import type { TranslationDictionary } from "./en";
 
 export const ar = {
   app: { title: "تسليم كتب دراسية لمدرسة الرافعي", primarySections: "الأقسام الرئيسية", workspace: "مساحة إدارة مخزون المدرسة" },
+  window: { minimize: "تصغير", maximize: "تكبير", restore: "استعادة", close: "إغلاق" },
   tabs: { students: "الطلاب", books: "الكتب", logs: "السجلات", settings: "الإعدادات" },
   common: {
     search: "بحث", resultCount: "{count} نتيجة", loading: "جارٍ التحميل", close: "إغلاق",

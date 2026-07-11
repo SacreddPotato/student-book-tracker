@@ -4,6 +4,7 @@ export const en = {
     primarySections: "Primary sections",
     workspace: "School inventory workspace",
   },
+  window: { minimize: "Minimize", maximize: "Maximize", restore: "Restore", close: "Close" },
   tabs: { students: "Students", books: "Books", logs: "Logs", settings: "Settings" },
   common: {
     search: "Search",
