@@ -187,9 +187,18 @@ Grade-aware React workflow checkpoint (2026-07-12):
 - SQLite, fixture, UI, and export paths all enforce exact-grade eligibility. The temporary grade-less `saveBook` compatibility API was removed from services, backends, types, and tests.
 - TDD RED captured the seven missing rendered/export behaviors and the same-stage wrong-grade local issuance gap. Focused GREEN verification passed 6 files / 34 tests with React typecheck.
 
+Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
+
+- PostgreSQL 17 disposable rehearsal applied the complete four-migration Drizzle history twice successfully. A separate pre-`0003` upgrade rehearsal preserved representative KG, Primary, and Preparatory book IDs plus both semester balances while mapping them to `kg1`, `primary1`, and `preparatory1`.
+- Rehearsal inspection confirmed `books.grade_level` is `NOT NULL` and only `books_scope_grade_name_unique` remains. The temporary PostgreSQL container was stopped and removed.
+- Applied `0003_grade_scoped_books.sql` idempotently to the configured development Neon target and verified four migration rows, the non-null column, and the grade-scoped unique index at redacted fingerprint `7368381c29be`.
+- Added a manual production migration workflow and reusable verifier. The workflow requires typed confirmation, reads the database only from GitHub Secrets, locks execution to known production fingerprint `8479f751bcff`, and verifies the schema without printing the URL.
+- A plaintext repository Variable copy of `DATABASE_URL` had been reintroduced and was removed. The GitHub Secret remains; rotate the now-exposed Neon credential before online sync resumes. No database credential is bundled into the desktop.
+- Full pre-release gates passed at this checkpoint: 46 files / 211 tests, five Chromium journeys, workspace lint/typecheck/build, Rust database allowlist test, and `cargo check`.
+
 ## Next Starting Point
 
-1. Run Task 5 full workspace verification, including rendered Chromium journeys, lint/typecheck/build, native Rust checks, migration rehearsal, and a production-profile offline WebView smoke test.
-2. Keep `0003_grade_scoped_books.sql` unapplied until disposable-Postgres rehearsal passes, then intentionally migrate and inspect both configured Neon targets without exposing credentials.
-3. Bump all release metadata directly from `1.0.1` to exactly `1.0.3`, merge through `main`, wait for green CI, tag the exact merge, and audit the signed Windows release plus global updater feed.
+1. Bump release metadata directly from `1.0.1` to exactly `1.0.3`, build the exact production-profile executable with sync absent, and perform the offline Arabic/maximized grade/deletion WebView smoke test.
+2. Merge through `main`, wait for green CI, then dispatch the fingerprint-locked production migration workflow and verify production fingerprint `8479f751bcff`.
+3. Tag the exact verified merge as `v1.0.3`; audit the signed Windows release, setup executable metadata/hash, updater signature, and global `releases/latest` feed.
 4. Preserve `codex/hostless-neon-sync` for later; never expose the owner `DATABASE_URL` or server shared secret in the desktop.
