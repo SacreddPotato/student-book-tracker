@@ -166,14 +166,23 @@ Atomic local creation and deletion checkpoint (2026-07-12):
 - Multi-grade creation validates the complete grade selection before opening one local transaction, then creates one independent zero-stock book and `UPSERT_BOOK` outbox command per grade. Single-row edits preserve both semester balances and `createdAt` and cannot fan out.
 - Student deletion is limited to an active student in the current academic year. Student and book deletion use one timestamp for `deletedAt` / `updatedAt` and queue the matching tombstone command in the same transaction.
 - Normal student/book lists remain active-only. Log composition uses include-deleted repository lookups so tombstoned names remain visible in audit history.
-- `LegacyBookInput` and `saveBook` are temporary deterministic first-grade compatibility adapters so Track A can merge before Track B. Task 4 must delete the legacy type, service/backend adapters, and `BookEditorSheet` compatibility usage when the editor moves to `saveBooks` with explicit grades.
+- `LegacyBookInput` and `saveBook` are temporary deterministic first-grade compatibility adapters. Task 4 must delete the legacy type, service/backend adapters, and `BookEditorSheet` compatibility usage when the editor moves to `saveBooks` with explicit grades.
 - Required focused verification passed 3 files / 19 tests; React typecheck passed; the full React suite passed 28 files / 92 tests.
-- Track A merges first, but no tag or release should be created until Track B rebases/merges and the combined implementation passes full verification.
+- Task 2 received a fresh inline review and rerun of its required focused suite (3 files / 19 tests). The user paused the independent hostless-sync worktree and directed this feature branch to ship on its own as `v1.0.3`.
+
+Remote grade and tombstone checkpoint (2026-07-12):
+
+- The sync route now requires `UPSERT_BOOK.book.gradeLevel`, accepts `DELETE_STUDENT` / `DELETE_BOOK`, and rejects malformed grade-less book payloads.
+- Remote upserts validate that a book grade belongs to its education stage. Issuance requires both the student's stage and exact grade.
+- Student deletion requires the current academic year and matching active snapshot; book deletion preserves balances. Both commands set `deletedAt` / `updatedAt`, record the complete tombstone in `sync_changes`, and remain duplicate-safe.
+- Drizzle and memory stores implement active-only tombstone mutations; Postgres book conflict updates now include `gradeLevel`.
+- Pull regression coverage confirms tombstones disappear from active lists while include-deleted audit lookups retain names.
+- TDD RED observed four intended failures (wrong-grade issuance accepted, two missing tombstones, route 400). GREEN passed sync API 2 files / 13 tests, React sync engine 1 file / 5 tests, React typecheck, and sync API typecheck.
 
 ## Next Starting Point
 
-1. Execute Task 3 from `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md`, beginning with failing remote grade validation and tombstone command tests.
-2. After Track A merges, rebase/merge Track B and complete Task 4. Replace `BookEditorSheet` with explicit grade selection through `saveBooks`, then delete `LegacyBookInput` and every `saveBook` compatibility adapter.
-3. Keep `0003_grade_scoped_books.sql` unapplied until the combined implementation has passed disposable-Postgres rehearsal and the user intentionally designates each Neon target.
-4. Tag and publish only the combined Track A plus Track B result after full workspace, native, production artifact, and independent updater-feed verification.
-5. Keep future hostless Neon Data API/Auth/RLS work separate and never expose the owner `DATABASE_URL` or server shared secret in the desktop.
+1. Complete Task 4 inline. Begin with failing rendered tests for stage-specific grade options, multi-grade book creation, exact-grade issuance, and student/book delete confirmation flows.
+2. Replace `BookEditorSheet` with explicit grade selection through `saveBooks`, then delete `LegacyBookInput` and every `saveBook` compatibility adapter.
+3. Keep `0003_grade_scoped_books.sql` unapplied until the feature has passed disposable-Postgres rehearsal and the user intentionally designates each Neon target.
+4. After full workspace, native, production artifact, CI, and updater-feed verification, publish this branch as exactly `v1.0.3`.
+5. Preserve `codex/hostless-neon-sync` for later; never expose the owner `DATABASE_URL` or server shared secret in the desktop.
