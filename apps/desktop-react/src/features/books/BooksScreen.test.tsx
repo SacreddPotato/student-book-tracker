@@ -24,7 +24,7 @@ function renderBooksWithBackend(backend: ReturnType<typeof createFixtureBackend>
 }
 
 describe("BooksScreen", () => {
-  it("creates a book in a stable editor sheet", async () => {
+  it("creates independent books for every selected grade", async () => {
     const user = userEvent.setup();
     const backend = renderBooks(true);
     await user.click(screen.getByRole("button", { name: "Add book" }));
@@ -32,10 +32,26 @@ describe("BooksScreen", () => {
     await user.type(within(sheet).getByLabelText("Book name"), "Preparatory Physics");
     await user.click(within(sheet).getByRole("combobox", { name: "Education stage" }));
     await user.click(screen.getByRole("option", { name: "Preparatory" }));
+    await user.click(within(sheet).getByRole("checkbox", { name: "2nd Preparatory" }));
     await user.click(within(sheet).getByRole("button", { name: "Save" }));
-    expect(await screen.findByText("Preparatory Physics")).toBeVisible();
-    expect((await backend.listBooks())[0]?.educationStage).toBe("preparatory");
+    expect((await screen.findAllByText("Preparatory Physics"))).toHaveLength(2);
+    expect((await backend.listBooks()).map(({ gradeLevel }) => gradeLevel)).toEqual([
+      "preparatory1", "preparatory2",
+    ]);
   }, 10_000);
+
+  it("deletes a subject only after destructive confirmation", async () => {
+    const user = userEvent.setup();
+    const backend = renderBooks();
+    await user.click(await screen.findByRole("button", { name: "Delete book Primary Math" }));
+    const dialog = screen.getByRole("dialog", { name: "Delete book" });
+    expect(within(dialog).getByText(/Primary Math/)).toBeVisible();
+
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+    expect(screen.queryByText("Primary Math")).not.toBeInTheDocument();
+    expect((await backend.listBooks()).map(({ id }) => id)).toEqual(["book-2"]);
+  });
 
   it("shows zero stock clearly and adds stock only once", async () => {
     const user = userEvent.setup();

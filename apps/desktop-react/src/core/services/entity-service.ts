@@ -1,5 +1,4 @@
 import {
-  gradeLevelsByStage,
   isGradeAllowedForStage,
   type DeleteBookCommand,
   type DeleteStudentCommand,
@@ -164,18 +163,6 @@ export async function saveBooks(
     }
     return rows;
   });
-}
-
-/** @deprecated Remove after the grade-aware book editor lands. */
-export async function saveBook(
-  draft: Omit<BookDraft, "gradeLevels">,
-  context: EntityServiceContext,
-): Promise<BookRow> {
-  const [row] = await saveBooks({
-    ...draft,
-    gradeLevels: [gradeLevelsByStage[draft.educationStage][0]],
-  }, context);
-  return row!;
 }
 
 export async function deleteStudent(

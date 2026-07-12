@@ -127,6 +127,48 @@ describe("StudentsScreen", () => {
     expect(exportButton).toBeEnabled();
   });
 
+  it("shows only grades belonging to the selected education stage", async () => {
+    const user = userEvent.setup();
+    renderStudents();
+
+    await user.click(screen.getByRole("combobox", { name: "Education stage" }));
+    await user.click(screen.getByRole("option", { name: "Primary" }));
+    await user.click(screen.getByRole("combobox", { name: "Grade level" }));
+
+    expect(screen.getByRole("option", { name: "1st Primary" })).toBeVisible();
+    expect(screen.queryByRole("option", { name: "1st Preparatory" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "KG 1" })).not.toBeInTheDocument();
+  });
+
+  it("offers issuance books only for the student's exact grade", async () => {
+    const user = userEvent.setup();
+    renderStudentsWithBackend(createFixtureBackend({
+      academicYears: [{ academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null }],
+      students: [student],
+      books: [availableBook, {
+        ...availableBook, id: "book-primary2", name: "Primary 2 Math", gradeLevel: "primary2",
+      }],
+    }));
+
+    await user.click(await screen.findByRole("button", { name: "Select student Mona Ahmed" }));
+
+    expect(screen.getByRole("button", { name: "Primary Math" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Primary 2 Math" })).not.toBeInTheDocument();
+  });
+
+  it("deletes a current-year student only after destructive confirmation", async () => {
+    const user = userEvent.setup();
+    const backend = renderStudents();
+    await user.click(await screen.findByRole("button", { name: "Delete student Mona Ahmed" }));
+    const dialog = screen.getByRole("dialog", { name: "Delete student" });
+    expect(within(dialog).getByText(/Mona Ahmed/)).toBeVisible();
+
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+    expect(screen.queryByText("Mona Ahmed")).not.toBeInTheDocument();
+    expect(await backend.listStudents("2025-2026")).toEqual([]);
+  });
+
   it("keeps archived student records selectable but removes mutation controls", async () => {
     const user = userEvent.setup();
     const backend = createFixtureBackend({
@@ -142,6 +184,7 @@ describe("StudentsScreen", () => {
     expect(await screen.findByText("This academic year is archived and read only.")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Add student" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit student Mona Ahmed" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete student Mona Ahmed" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Select student Mona Ahmed" })).toBeVisible();
   });
 });

@@ -48,10 +48,11 @@ async function seedBook(
   firstSemesterQuantity: number,
   secondSemesterQuantity: number,
   stage: "primary" | "preparatory" = "primary",
+  gradeLevel: "primary1" | "primary2" | "preparatory1" = stage === "primary" ? "primary1" : "preparatory1",
 ) {
   await upsertBook(database, {
     id, scopeId: "global", name: `${id} name`, educationStage: stage,
-    gradeLevel: stage === "primary" ? "primary1" : "preparatory1",
+    gradeLevel,
     firstSemesterQuantity, secondSemesterQuantity, createdAt: fixedNow,
     updatedAt: fixedNow, deletedAt: null,
   });
@@ -148,6 +149,22 @@ describe("React semester inventory service", () => {
     expect(await getBookById(database, "book-1")).toMatchObject({
       firstSemesterQuantity: 2,
       secondSemesterQuantity: 0,
+    });
+    expect(await listInventoryTransactions(database, academicYear)).toEqual([]);
+  });
+
+  it("rejects a book from another grade in the same education stage", async () => {
+    await seedStudent(database);
+    await seedBook(database, "book-1", 2, 0, "primary", "primary2");
+
+    await expect(issueBooksToStudent({
+      academicYear,
+      studentId: "student-1",
+      bookSelections: [{ bookId: "book-1", semester: "first" }],
+    }, context(database, []))).rejects.toThrow("grade");
+
+    expect(await getBookById(database, "book-1")).toMatchObject({
+      firstSemesterQuantity: 2,
     });
     expect(await listInventoryTransactions(database, academicYear)).toEqual([]);
   });

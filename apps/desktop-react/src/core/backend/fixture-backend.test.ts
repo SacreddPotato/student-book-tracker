@@ -4,18 +4,9 @@ import { createFixtureBackend } from "./fixture-backend";
 import type { AppBackend, BookInput } from "./types";
 
 describe("fixture backend", () => {
-  it("keeps the temporary legacy adapter deterministic without weakening BookInput", async () => {
+  it("exposes only the grade-aware book write contract", async () => {
     expectTypeOf<Parameters<AppBackend["saveBooks"]>[0]>().toEqualTypeOf<BookInput>();
-    const backend = createFixtureBackend();
-    const legacyInput = {
-      name: "Primary Math",
-      educationStage: "primary" as const,
-      gradeLevels: ["preparatory1"],
-    };
-
-    const book = await backend.saveBook(legacyInput);
-
-    expect(book.gradeLevel).toBe("primary1");
+    expectTypeOf<AppBackend>().not.toHaveProperty("saveBook");
   });
 
   it("supports semester inventory and current-year lifecycle", async () => {
@@ -26,7 +17,7 @@ describe("fixture backend", () => {
       name: "Mona Ahmed", governmentId: "29801011234567",
       educationStage: "primary", gradeLevel: "primary1", academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Primary Math", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Primary Math", educationStage: "primary", gradeLevels: ["primary1"] });
     expect(book.gradeLevel).toBe("primary1");
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "second", quantity: 2,
@@ -58,7 +49,7 @@ describe("fixture backend", () => {
       name: "Mona", governmentId: "1", educationStage: "kg", gradeLevel: "kg2",
       academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Arabic", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Arabic", educationStage: "primary", gradeLevels: ["primary1"] });
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
       receiptNumber: "1", receiptDate: "2026-01-14",
@@ -90,7 +81,7 @@ describe("fixture backend", () => {
       name: "Mona", governmentId: "1", educationStage: "primary",
       gradeLevel: "primary1", academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Math", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Math", educationStage: "primary", gradeLevels: ["primary1"] });
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
       receiptNumber: "R-41", receiptDate: "2026-01-14",

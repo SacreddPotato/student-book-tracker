@@ -1,5 +1,4 @@
 import {
-  gradeLevelsByStage,
   isGradeAllowedForStage,
   nextAcademicYear,
   parseAcademicYear,
@@ -23,7 +22,6 @@ import { createUpdaterController } from "../updater/updater-controller";
 import type {
   AppBackend,
   BookInput,
-  LegacyBookInput,
   LogEntry,
   StudentInput,
 } from "./types";
@@ -223,13 +221,6 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
       if (existing) Object.assign(existing, rows[0]); else books.push(...rows);
       return structuredClone(rows);
     },
-    async saveBook(input: LegacyBookInput) {
-      const [row] = await backend.saveBooks({
-        ...input,
-        gradeLevels: [gradeLevelsByStage[input.educationStage][0]],
-      });
-      return row!;
-    },
     async deleteBook(bookId) {
       const book = books.find(({ id, deletedAt }) => id === bookId && !deletedAt);
       if (!book) throw new Error(`Unknown book: ${bookId}`);
@@ -283,8 +274,8 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
         book: books.find(({ id, deletedAt }) => id === selection.bookId && !deletedAt),
       }));
       if (selected.some(({ book }) => !book)) throw new Error("Unknown book.");
-      if (selected.some(({ book }) => book!.educationStage !== student.educationStage)) {
-        throw new Error("Books must match the student education stage.");
+      if (selected.some(({ book }) => book!.gradeLevel !== student.gradeLevel)) {
+        throw new Error("Books must match the student's exact grade.");
       }
       if (selected.some(({ book, selection }) => semesterQuantity(book!, selection.semester) <= 0)) {
         throw new Error("Cannot issue books with zero stock.");

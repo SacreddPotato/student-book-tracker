@@ -34,7 +34,7 @@ describe("database backend", () => {
       name: "Mona Ahmed", governmentId: "29801011234567",
       educationStage: "primary", gradeLevel: "primary1", academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Primary Math", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Primary Math", educationStage: "primary", gradeLevels: ["primary1"] });
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 2,
       receiptNumber: "00041", receiptDate: "2026-01-14",
@@ -76,7 +76,7 @@ describe("database backend", () => {
     });
     await backend.initialize();
     await backend.initializeAcademicYear("2025-2026");
-    const book = await backend.saveBook({ name: "Math", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Math", educationStage: "primary", gradeLevels: ["primary1"] });
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
       receiptNumber: "R-41", receiptDate: "2026-01-14",

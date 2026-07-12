@@ -21,7 +21,6 @@ import {
 import {
   deleteBook,
   deleteStudent,
-  saveBook,
   saveBooks,
   saveStudent,
 } from "../services/entity-service";
@@ -96,11 +95,6 @@ export function createDatabaseBackend(options: {
       const rows = await saveBooks(input, mutationContext);
       queueSync();
       return rows;
-    },
-    async saveBook(input) {
-      const row = await saveBook(input, mutationContext);
-      queueSync();
-      return row;
     },
     async deleteBook(bookId) {
       await deleteBook(bookId, mutationContext);
