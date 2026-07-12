@@ -28,7 +28,7 @@ describe("sync conflicts", () => {
     });
     await upsertBook(database, {
       id: "book-1", scopeId: "global", name: "Primary Math",
-      educationStage: "primary", firstSemesterQuantity: 0,
+      educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 0,
       secondSemesterQuantity: 0, createdAt: now,
       updatedAt: now, deletedAt: null,
     });

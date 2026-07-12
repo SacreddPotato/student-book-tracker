@@ -3,6 +3,8 @@ import { describe, expectTypeOf, it } from "vitest";
 import type {
   AddBookStockCommand,
   AdvanceAcademicYearCommand,
+  DeleteBookCommand,
+  DeleteStudentCommand,
   InitializeAcademicYearCommand,
   IssueBooksToStudentCommand,
   ReverseTransactionCommand,
@@ -20,9 +22,42 @@ describe("sync command contracts", () => {
       | ReverseTransactionCommand
       | UpsertStudentCommand
       | UpsertBookCommand
+      | DeleteStudentCommand
+      | DeleteBookCommand
       | InitializeAcademicYearCommand
       | AdvanceAcademicYearCommand
     >();
+  });
+
+  it("requires grade scope for book upserts and exposes deletion command shapes", () => {
+    expectTypeOf<UpsertBookCommand["book"]["gradeLevel"]>().toEqualTypeOf<
+      | "kg1"
+      | "kg2"
+      | "primary1"
+      | "primary2"
+      | "primary3"
+      | "primary4"
+      | "primary5"
+      | "primary6"
+      | "preparatory1"
+      | "preparatory2"
+      | "preparatory3"
+    >();
+    expectTypeOf<DeleteStudentCommand>().toMatchTypeOf<{
+      id: string;
+      type: "DELETE_STUDENT";
+      deviceId: string;
+      occurredAt: string;
+      studentId: string;
+      academicYear: string;
+    }>();
+    expectTypeOf<DeleteBookCommand>().toMatchTypeOf<{
+      id: string;
+      type: "DELETE_BOOK";
+      deviceId: string;
+      occurredAt: string;
+      bookId: string;
+    }>();
   });
 
   it("carries semester, receipt, and academic year inventory dimensions", () => {

@@ -22,6 +22,13 @@
       "when": 1783783176331,
       "tag": "0002_drop_legacy_book_quantity",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783886537616,
+      "tag": "0003_grade_scoped_books",
+      "breakpoints": true
     }
   ]
 }

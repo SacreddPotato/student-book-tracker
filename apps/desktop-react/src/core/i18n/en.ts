@@ -12,6 +12,7 @@ export const en = {
     loading: "Loading",
     close: "Close",
     cancel: "Cancel",
+    delete: "Delete",
     save: "Save",
     saving: "Saving…",
     confirm: "Confirm",
@@ -51,7 +52,8 @@ export const en = {
   },
   students: {
     title: "Student registry", description: "Manage students and issue stage-matched books.",
-    add: "Add student", edit: "Edit student", select: "Select student",
+    add: "Add student", edit: "Edit student", delete: "Delete student", select: "Select student",
+    deleteTitle: "Delete student", deleteDescription: "This removes the student from the current academic year. Historical records remain available.",
     selectedStudent: "Selected student", searchPlaceholder: "Search students or government ID",
     allStages: "All stages", allGrades: "All grades", bookChecklist: "Book checklist",
     issueDescription: "Choose available books, then confirm the draft selection.",
@@ -64,8 +66,10 @@ export const en = {
     empty: "No students yet.", count: "{count} students",
   },
   books: {
-    title: "Book inventory", description: "Track stage-specific books and available stock.",
-    add: "Add book", edit: "Edit book", addStock: "Add stock", addStockTo: "Add stock to {name}",
+    title: "Book inventory", description: "Track grade-specific books and available stock.",
+    add: "Add book", edit: "Edit book", delete: "Delete book", addStock: "Add stock", addStockTo: "Add stock to {name}",
+    deleteTitle: "Delete book", deleteDescription: "This removes the book from active inventory. Historical transactions remain available.",
+    gradeSelection: "Grades that use this book",
     addSemesterStockTo: "Add {semester} stock to {name}",
     searchPlaceholder: "Search book names", allStages: "All stages",
     inStock: "In stock", outOfStock: "Out of stock", count: "{count} books",
@@ -114,7 +118,7 @@ export const en = {
     studentSignature: "student signature",
   },
   feedback: {
-    studentSaved: "Student saved.", bookSaved: "Book saved.", booksIssued: "Books issued.",
+    studentSaved: "Student saved.", studentDeleted: "Student deleted.", bookSaved: "Book saved.", bookDeleted: "Book deleted.", booksIssued: "Books issued.",
     transactionReversed: "Transaction reversed.", exportReady: "Export created.",
     conflictAcknowledged: "Conflict acknowledged.",
   },
@@ -123,6 +127,7 @@ export const en = {
     logsLoad: "Could not load inventory history.", save: "Could not save changes.",
     issue: "Could not issue the selected books.", stock: "Could not update stock.",
     reverse: "Could not reverse this transaction.", export: "Could not create the export.",
+    delete: "Could not delete this record.",
   },
 } as const;
 

@@ -1,4 +1,4 @@
-import type { EducationStage } from "./education";
+import type { EducationStage, GradeLevel } from "./education";
 
 export const bookSemesters = ["first", "second"] as const;
 export type BookSemester = (typeof bookSemesters)[number];
@@ -8,19 +8,22 @@ export type BookSelection = {
   semester: BookSemester;
 };
 
-export type StageScopedBook = {
+export type GradeScopedBook = {
   id?: string;
   educationStage: EducationStage;
+  gradeLevel: GradeLevel;
 };
 
-export type StageScopedStudent = {
+export type GradeScopedStudent = {
   id?: string;
   educationStage: EducationStage;
+  gradeLevel: GradeLevel;
 };
 
 export function bookCanBeIssuedToStudent(
-  book: StageScopedBook,
-  student: StageScopedStudent,
+  book: GradeScopedBook,
+  student: GradeScopedStudent,
 ): boolean {
-  return book.educationStage === student.educationStage;
+  return book.educationStage === student.educationStage
+    && book.gradeLevel === student.gradeLevel;
 }

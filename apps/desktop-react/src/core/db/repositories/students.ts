@@ -46,10 +46,32 @@ export function listStudents(database: SqlDatabase, academicYear: string): Promi
   );
 }
 
+export function listStudentRecords(
+  database: SqlDatabase,
+  academicYear: string,
+): Promise<StudentRow[]> {
+  return database.select(
+    `${studentSelect} WHERE academic_year = $1 ORDER BY name`,
+    [academicYear],
+  );
+}
+
 export async function getStudentById(database: SqlDatabase, id: string) {
   const rows = await database.select<StudentRow>(
     `${studentSelect} WHERE id = $1 AND deleted_at IS NULL`,
     [id],
   );
   return rows[0] ?? null;
+}
+
+export async function markStudentDeleted(
+  database: SqlDatabase,
+  id: string,
+  deletedAt: string,
+) {
+  await database.execute(
+    `UPDATE students SET deleted_at = $1, updated_at = $1
+      WHERE id = $2 AND deleted_at IS NULL`,
+    [deletedAt, id],
+  );
 }

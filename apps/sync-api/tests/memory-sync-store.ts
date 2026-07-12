@@ -108,6 +108,14 @@ export class MemorySyncStore implements SyncStore, SyncStoreTransaction, SyncCha
     return student;
   }
 
+  async markStudentDeleted(studentId: string, deletedAt: string): Promise<StudentRecord> {
+    const student = this.students.get(studentId);
+    if (!student || student.deletedAt) throw new Error(`Active student not found: ${studentId}`);
+    const deleted = { ...student, deletedAt, updatedAt: deletedAt };
+    this.students.set(studentId, structuredClone(deleted));
+    return deleted;
+  }
+
   async upsertBook(
     record: Omit<BookRecord, "firstSemesterQuantity" | "secondSemesterQuantity">,
   ): Promise<BookRecord> {
@@ -125,6 +133,14 @@ export class MemorySyncStore implements SyncStore, SyncStoreTransaction, SyncCha
   async updateBook(record: BookRecord): Promise<BookRecord> {
     this.books.set(record.id, structuredClone(record));
     return record;
+  }
+
+  async markBookDeleted(bookId: string, deletedAt: string): Promise<BookRecord> {
+    const book = this.books.get(bookId);
+    if (!book || book.deletedAt) throw new Error(`Active book not found: ${bookId}`);
+    const deleted = { ...book, deletedAt, updatedAt: deletedAt };
+    this.books.set(bookId, structuredClone(deleted));
+    return deleted;
   }
 
   async insertTransaction(record: InventoryTransactionRecord): Promise<void> {

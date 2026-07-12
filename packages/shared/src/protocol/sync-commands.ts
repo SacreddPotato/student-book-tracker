@@ -7,6 +7,8 @@ export type SyncCommand =
   | ReverseTransactionCommand
   | UpsertStudentCommand
   | UpsertBookCommand
+  | DeleteStudentCommand
+  | DeleteBookCommand
   | InitializeAcademicYearCommand
   | AdvanceAcademicYearCommand;
 
@@ -67,7 +69,25 @@ export type UpsertBookCommand = {
     id: string;
     name: string;
     educationStage: EducationStage;
+    gradeLevel: GradeLevel;
   };
+};
+
+export type DeleteStudentCommand = {
+  id: string;
+  type: "DELETE_STUDENT";
+  deviceId: string;
+  occurredAt: string;
+  studentId: string;
+  academicYear: string;
+};
+
+export type DeleteBookCommand = {
+  id: string;
+  type: "DELETE_BOOK";
+  deviceId: string;
+  occurredAt: string;
+  bookId: string;
 };
 
 export type InitializeAcademicYearCommand = {

@@ -148,10 +148,10 @@ export async function issueBooksToStudent(
     const booksById = new Map(books.map((book) => [book.id, book]));
     const missing = bookIds.filter((id) => !booksById.has(id));
     if (missing.length) throw new Error(`Unknown books: ${missing.join(", ")}`);
-    const wrongStage = books.filter(({ educationStage }) => educationStage !== student.educationStage);
-    if (wrongStage.length) {
+    const wrongGrade = books.filter(({ gradeLevel }) => gradeLevel !== student.gradeLevel);
+    if (wrongGrade.length) {
       throw new Error(
-        `Books must match the student education stage: ${wrongStage.map(({ id }) => id).join(", ")}`,
+        `Books must match the student's exact grade: ${wrongGrade.map(({ id }) => id).join(", ")}`,
       );
     }
     const empty = input.bookSelections.filter((selection) =>

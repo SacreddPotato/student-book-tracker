@@ -1,0 +1,36 @@
+name: Migrate production database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type MIGRATE PRODUCTION to apply committed Drizzle migrations
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    if: ${{ inputs.confirmation == 'MIGRATE PRODUCTION' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply committed Drizzle migrations
+        run: npm run db:migrate -w @app/sync-api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SYNC_API_SHARED_SECRET: ${{ secrets.SYNC_API_SHARED_SECRET }}
+          NODE_ENV: production
+      - name: Verify production schema and target fingerprint
+        run: npm run db:verify -w @app/sync-api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EXPECTED_DATABASE_FINGERPRINT: 8479f751bcff

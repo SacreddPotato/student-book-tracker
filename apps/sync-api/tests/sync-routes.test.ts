@@ -45,7 +45,10 @@ describe("sync API routes", () => {
       type: "UPSERT_BOOK",
       deviceId: "device-a",
       occurredAt,
-      book: { id: "book-1", name: "Primary Math", educationStage: "primary" },
+      book: {
+        id: "book-1", name: "Primary Math", educationStage: "primary",
+        gradeLevel: "primary1",
+      },
     };
 
     const pushResponse = await sync.request("http://api.test/push", {
@@ -106,5 +109,53 @@ describe("sync API routes", () => {
       (await sync.request("http://api.test/pull?since=not-a-number", { headers: syncHeaders() }))
         .status,
     ).toBe(400);
+  });
+
+  it("validates grade-scoped books and accepts student and book tombstones", async () => {
+    const { sync, store } = createRoutes();
+    const commands = [
+      {
+        id: "initialize", type: "INITIALIZE_ACADEMIC_YEAR", deviceId: "device-a",
+        occurredAt, academicYear: "2025-2026",
+      },
+      {
+        id: "student", type: "UPSERT_STUDENT", deviceId: "device-a", occurredAt,
+        student: {
+          id: "student-1", name: "Mona", governmentId: "1",
+          educationStage: "primary", gradeLevel: "primary1",
+          academicYear: "2025-2026", previousStudentId: null,
+        },
+      },
+      {
+        id: "book", type: "UPSERT_BOOK", deviceId: "device-a", occurredAt,
+        book: {
+          id: "book-1", name: "English", educationStage: "primary",
+          gradeLevel: "primary1",
+        },
+      },
+      {
+        id: "delete-student", type: "DELETE_STUDENT", deviceId: "device-a",
+        occurredAt, academicYear: "2025-2026", studentId: "student-1",
+      },
+      {
+        id: "delete-book", type: "DELETE_BOOK", deviceId: "device-a",
+        occurredAt, bookId: "book-1",
+      },
+    ];
+    const response = await sync.request("http://api.test/push", {
+      method: "POST", headers: syncHeaders(), body: JSON.stringify({ commands }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(store.students.get("student-1")?.deletedAt).toBe(occurredAt);
+    expect(store.books.get("book-1")?.deletedAt).toBe(occurredAt);
+
+    const malformedBook = await sync.request("http://api.test/push", {
+      method: "POST", headers: syncHeaders(), body: JSON.stringify({ commands: [{
+        id: "bad-book", type: "UPSERT_BOOK", deviceId: "device-a", occurredAt,
+        book: { id: "bad", name: "Bad", educationStage: "primary" },
+      }] }),
+    });
+    expect(malformedBook.status).toBe(400);
   });
 });

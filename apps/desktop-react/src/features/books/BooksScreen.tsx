@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useBackend, useI18n, useNotices } from "../../app/AppProviders";
 import { useAcademicYear } from "../../app/AcademicYearProvider";
 import { Button } from "../../components/ui/Button";
+import { DeleteConfirmationDialog } from "../../components/ui/DeleteConfirmationDialog";
 import { Alert, EmptyState, LoadingState } from "../../components/ui/Feedback";
 import { Field } from "../../components/ui/Field";
 import { SelectField } from "../../components/ui/Select";
@@ -29,12 +30,22 @@ export function BooksScreen() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<BookRow | null>(null);
   const [stockTarget, setStockTarget] = useState<{ book: BookRow; semester: BookSemester } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BookRow | null>(null);
   const [editorError, setEditorError] = useState<string | null>(null);
   const [stockError, setStockError] = useState<string | null>(null);
   const saveMutation = useMutation({
-    mutationFn: (input: Parameters<typeof backend.saveBook>[0]) => backend.saveBook(input),
+    mutationFn: (input: Parameters<typeof backend.saveBooks>[0]) => backend.saveBooks(input),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: booksKey }); setEditorOpen(false); setEditing(null); setEditorError(null); notices.announce(t("feedback.bookSaved")); },
     onError: () => setEditorError(t("errors.save")),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () => backend.deleteBook(deleteTarget!.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: booksKey });
+      setDeleteTarget(null);
+      notices.announce(t("feedback.bookDeleted"));
+    },
+    onError: () => notices.announce(t("errors.delete"), "error"),
   });
   const stockMutation = useMutation({
     mutationFn: (input: { quantity: number; receiptNumber: string; receiptDate: string }) => backend.addStock({ academicYear: currentYear!, bookId: stockTarget!.book.id, semester: stockTarget!.semester, ...input }),
@@ -54,9 +65,10 @@ export function BooksScreen() {
         <SelectField label={t("fields.educationStage")} value={stage} options={[{ value: "all", label: t("books.allStages") }, ...educationStages.map((value) => ({ value, label: t(`stages.${value}`) }))]} onValueChange={(value) => setStage(value as StageFilter)} />
         <div className="book-metrics"><span>{t("books.count", { count: filtered.length })}</span><span data-warning={zeroCount > 0 || undefined}>{t("books.zeroCount", { count: zeroCount })}</span></div>
       </div>
-      {booksQuery.isError ? <Alert>{t("errors.booksLoad")}</Alert> : booksQuery.isPending ? <LoadingState label={t("common.loading")} /> : filtered.length ? <BookTable books={filtered} onEdit={(book) => { setEditing(book); setEditorError(null); setEditorOpen(true); }} onAddStock={(book, semester) => { setStockError(null); setStockTarget({ book, semester }); }} /> : <EmptyState title={(booksQuery.data?.length ?? 0) ? t("books.noResults") : t("books.empty")} />}
+      {booksQuery.isError ? <Alert>{t("errors.booksLoad")}</Alert> : booksQuery.isPending ? <LoadingState label={t("common.loading")} /> : filtered.length ? <BookTable books={filtered} onEdit={(book) => { setEditing(book); setEditorError(null); setEditorOpen(true); }} onDelete={setDeleteTarget} onAddStock={(book, semester) => { setStockError(null); setStockTarget({ book, semester }); }} /> : <EmptyState title={(booksQuery.data?.length ?? 0) ? t("books.noResults") : t("books.empty")} />}
       <BookEditorSheet open={editorOpen} book={editing} saving={saveMutation.isPending} error={editorError} onOpenChange={setEditorOpen} onSave={(input) => { if (!saveMutation.isPending) saveMutation.mutate(input); }} />
       <AddStockDialog target={stockTarget} saving={stockMutation.isPending} error={stockError} onOpenChange={(open) => { if (!open) setStockTarget(null); }} onAdd={(input) => { if (!stockMutation.isPending) stockMutation.mutate(input); }} />
+      <DeleteConfirmationDialog open={Boolean(deleteTarget)} title={t("books.deleteTitle")} description={t("books.deleteDescription")} entityName={deleteTarget?.name ?? ""} saving={deleteMutation.isPending} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} onConfirm={() => { if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(); }} />
     </section>
   );
 }

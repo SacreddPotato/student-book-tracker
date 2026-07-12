@@ -29,6 +29,7 @@ export type BookInput = {
   id?: string;
   name: string;
   educationStage: EducationStage;
+  gradeLevels: GradeLevel[];
 };
 
 export type LogItem = InventoryTransactionItemRow & { bookName: string };
@@ -47,7 +48,9 @@ export type AppBackend = {
   saveStudent(input: StudentInput): Promise<StudentRow>;
   listBooks(): Promise<BookRow[]>;
   listBookHistory(bookId: string): Promise<BookHistoryEvent[]>;
-  saveBook(input: BookInput): Promise<BookRow>;
+  saveBooks(input: BookInput): Promise<BookRow[]>;
+  deleteStudent(studentId: string, academicYear: string): Promise<void>;
+  deleteBook(bookId: string): Promise<void>;
   listIssuedBooks(academicYear: string, studentId: string): Promise<StudentBookRow[]>;
   addStock(input: AddBookStockInput): Promise<void>;
   issueBooks(input: IssueBooksToStudentInput): Promise<void>;

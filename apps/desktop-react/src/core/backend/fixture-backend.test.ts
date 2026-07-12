@@ -1,8 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { createFixtureBackend } from "./fixture-backend";
+import type { AppBackend, BookInput } from "./types";
 
 describe("fixture backend", () => {
+  it("exposes only the grade-aware book write contract", async () => {
+    expectTypeOf<Parameters<AppBackend["saveBooks"]>[0]>().toEqualTypeOf<BookInput>();
+    expectTypeOf<AppBackend>().not.toHaveProperty("saveBook");
+  });
+
   it("supports semester inventory and current-year lifecycle", async () => {
     const backend = createFixtureBackend();
     await backend.initialize();
@@ -11,7 +17,8 @@ describe("fixture backend", () => {
       name: "Mona Ahmed", governmentId: "29801011234567",
       educationStage: "primary", gradeLevel: "primary1", academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Primary Math", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Primary Math", educationStage: "primary", gradeLevels: ["primary1"] });
+    expect(book.gradeLevel).toBe("primary1");
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "second", quantity: 2,
       receiptNumber: "00041", receiptDate: "2026-01-14",
@@ -42,7 +49,7 @@ describe("fixture backend", () => {
       name: "Mona", governmentId: "1", educationStage: "kg", gradeLevel: "kg2",
       academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Arabic", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Arabic", educationStage: "primary", gradeLevels: ["primary1"] });
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
       receiptNumber: "1", receiptDate: "2026-01-14",
@@ -74,7 +81,7 @@ describe("fixture backend", () => {
       name: "Mona", governmentId: "1", educationStage: "primary",
       gradeLevel: "primary1", academicYear: "2025-2026",
     });
-    const book = await backend.saveBook({ name: "Math", educationStage: "primary" });
+    const [book] = await backend.saveBooks({ name: "Math", educationStage: "primary", gradeLevels: ["primary1"] });
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "first", quantity: 3,
       receiptNumber: "R-41", receiptDate: "2026-01-14",
@@ -108,5 +115,59 @@ describe("fixture backend", () => {
       studentName: "Mona", semester: "first", quantityDelta: -1,
       reversedByTransactionId: history[1]?.transactionId,
     }));
+  });
+
+  it("mirrors grade-scoped creation and tombstones while retaining log names", async () => {
+    const backend = createFixtureBackend();
+    await backend.initializeAcademicYear("2025-2026");
+    const student = await backend.saveStudent({
+      name: "Mona Ahmed",
+      governmentId: "1",
+      educationStage: "primary",
+      gradeLevel: "primary1",
+      academicYear: "2025-2026",
+    });
+    const created = await backend.saveBooks({
+      name: "Primary Math",
+      educationStage: "primary",
+      gradeLevels: ["primary1", "primary2"],
+    });
+    expect(created.map(({ gradeLevel }) => gradeLevel)).toEqual(["primary1", "primary2"]);
+    await expect(backend.saveBooks({
+      name: "Invalid",
+      educationStage: "primary",
+      gradeLevels: ["preparatory1"],
+    })).rejects.toThrow(/grade level/i);
+    const book = created[0]!;
+    await backend.addStock({
+      academicYear: "2025-2026",
+      bookId: book.id,
+      semester: "first",
+      quantity: 1,
+      receiptNumber: "R-1",
+      receiptDate: "2026-01-14",
+    });
+    await backend.issueBooks({
+      academicYear: "2025-2026",
+      studentId: student.id,
+      bookSelections: [{ bookId: book.id, semester: "first" }],
+    });
+    await expect(backend.deleteStudent(student.id, "2024-2025"))
+      .rejects.toThrow(/archived/i);
+
+    await backend.deleteStudent(student.id, "2025-2026");
+    await backend.deleteBook(book.id);
+
+    expect(await backend.listStudents("2025-2026")).toEqual([]);
+    expect(await backend.listBooks()).toEqual([
+      expect.objectContaining({ id: created[1]!.id, gradeLevel: "primary2" }),
+    ]);
+    expect(await backend.listLogs("2025-2026")).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: "student_issue",
+        studentName: "Mona Ahmed",
+        items: [expect.objectContaining({ bookName: "Primary Math" })],
+      }),
+    ]));
   });
 });

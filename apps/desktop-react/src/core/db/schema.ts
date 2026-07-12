@@ -12,7 +12,7 @@ export const requiredTableNames = [
 
 export const requiredIndexNames = [
   "students_scope_year_government_id_unique",
-  "books_scope_stage_name_unique",
+  "books_scope_grade_name_unique",
 ] as const;
 
 export const schemaStatements = [
@@ -45,14 +45,15 @@ export const schemaStatements = [
     scope_id TEXT NOT NULL DEFAULT 'global',
     name TEXT NOT NULL,
     education_stage TEXT NOT NULL,
+    grade_level TEXT NOT NULL,
     first_semester_quantity INTEGER NOT NULL DEFAULT 0 CHECK(first_semester_quantity >= 0),
     second_semester_quantity INTEGER NOT NULL DEFAULT 0 CHECK(second_semester_quantity >= 0),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     deleted_at TEXT
   )`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS books_scope_stage_name_unique
-    ON books(scope_id, education_stage, name)
+  `CREATE UNIQUE INDEX IF NOT EXISTS books_scope_grade_name_unique
+    ON books(scope_id, grade_level, name)
     WHERE deleted_at IS NULL`,
   `CREATE TABLE IF NOT EXISTS inventory_transactions (
     id TEXT PRIMARY KEY,

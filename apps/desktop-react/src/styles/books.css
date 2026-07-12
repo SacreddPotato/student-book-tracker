@@ -24,6 +24,8 @@
 .book-history-metadata { justify-content: flex-end; font-size: .8rem; }
 .ui-table tr[data-empty] { background: var(--warning-soft); }
 .book-editor, .add-stock-form { display: grid; gap: var(--space-4); }
+.book-editor-grades { margin: 0; padding: var(--space-3); display: grid; gap: var(--space-1); border: 1px solid var(--border); border-radius: var(--radius-control); }
+.book-editor-grades legend { padding-inline: var(--space-2); color: var(--text-muted); font-size: .84rem; font-weight: 700; }
 @media (max-width: 860px) { .book-summary { grid-template-columns: 1fr 190px; } .book-metrics { grid-column: 1 / -1; justify-content: flex-start; } }
 @media (max-width: 620px) { .book-summary { grid-template-columns: 1fr; } .book-metrics { grid-column: auto; } .book-semester-stock { min-inline-size: 150px; } }
 @media (max-width: 760px) { .book-history-event { grid-template-columns: 1fr auto; } .book-history-metadata { grid-column: 1 / -1; justify-content: flex-start; } }

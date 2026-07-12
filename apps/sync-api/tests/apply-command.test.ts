@@ -16,7 +16,12 @@ async function initialize(store: MemorySyncStore) {
 function bookCommand(id = "book-command") {
   return {
     id, type: "UPSERT_BOOK" as const, deviceId: "device-a", occurredAt,
-    book: { id: "book-1", name: "Primary Math", educationStage: "primary" as const },
+    book: {
+      id: "book-1",
+      name: "Primary Math",
+      educationStage: "primary" as const,
+      gradeLevel: "primary1" as const,
+    },
   };
 }
 
@@ -101,6 +106,66 @@ describe("applyCommand", () => {
       secondSemesterQuantity: 0,
     });
     expect(store.transactions.has("issue-1")).toBe(false);
+  });
+
+  it("rejects issuing a book to a different grade in the same stage", async () => {
+    const store = new MemorySyncStore();
+    await initialize(store);
+    await applyCommand(store, bookCommand());
+    await applyCommand(store, {
+      ...studentCommand(),
+      student: { ...studentCommand().student, gradeLevel: "primary2" },
+    });
+    await applyCommand(store, shipmentCommand("shipment-1", "first", 2));
+
+    expect(await applyCommand(store, {
+      id: "issue-wrong-grade", type: "ISSUE_BOOKS_TO_STUDENT",
+      deviceId: "device-a", occurredAt, academicYear, studentId: "student-1",
+      bookSelections: [{ bookId: "book-1", semester: "first" }],
+    })).toMatchObject({ status: "rejected", reasonCode: "VALIDATION_FAILED" });
+    expect(store.books.get("book-1")?.firstSemesterQuantity).toBe(2);
+    expect(store.transactions.has("issue-wrong-grade")).toBe(false);
+  });
+
+  it("soft deletes a current-year student and records a duplicate-safe tombstone", async () => {
+    const store = new MemorySyncStore();
+    await initialize(store);
+    await applyCommand(store, studentCommand());
+    const command = {
+      id: "delete-student", type: "DELETE_STUDENT" as const,
+      deviceId: "device-a", occurredAt, academicYear, studentId: "student-1",
+    };
+
+    expect(await applyCommand(store, command)).toEqual({
+      commandId: "delete-student", status: "accepted",
+    });
+    expect(store.students.get("student-1")).toMatchObject({
+      deletedAt: occurredAt, updatedAt: occurredAt,
+    });
+    expect(JSON.parse(store.changes.at(-1)!.payloadJson)).toMatchObject({
+      id: "student-1", deletedAt: occurredAt,
+    });
+    expect(await applyCommand(store, command)).toEqual({
+      commandId: "delete-student", status: "duplicate",
+    });
+  });
+
+  it("soft deletes a book without changing its balances or audit identity", async () => {
+    const store = new MemorySyncStore();
+    await initialize(store);
+    await applyCommand(store, bookCommand());
+    await applyCommand(store, shipmentCommand("shipment-1", "second", 4));
+
+    expect(await applyCommand(store, {
+      id: "delete-book", type: "DELETE_BOOK", deviceId: "device-a",
+      occurredAt, bookId: "book-1",
+    })).toEqual({ commandId: "delete-book", status: "accepted" });
+    expect(store.books.get("book-1")).toMatchObject({
+      secondSemesterQuantity: 4, deletedAt: occurredAt, updatedAt: occurredAt,
+    });
+    expect(JSON.parse(store.changes.at(-1)!.payloadJson)).toMatchObject({
+      id: "book-1", name: "Primary Math", deletedAt: occurredAt,
+    });
   });
 
   it("issues both semesters and reverses exact balances once", async () => {

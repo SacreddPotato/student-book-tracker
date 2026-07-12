@@ -27,7 +27,7 @@ export function StudentIssuancePanel({ student, books, issuedSelections, draftSe
   const { t } = useI18n();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   if (!student) return <aside className="issuance-panel"><EmptyState title={t("students.selectPrompt")} /></aside>;
-  const stageBooks = books.filter((book) => book.educationStage === student.educationStage);
+  const stageBooks = books.filter((book) => book.gradeLevel === student.gradeLevel);
 
   return (
     <aside className="issuance-panel" aria-label={t("students.bookChecklist")}>

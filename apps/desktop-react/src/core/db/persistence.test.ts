@@ -53,7 +53,7 @@ describe("React desktop SQLite persistence", () => {
       await database.select<{ count: number }>(
         "SELECT COUNT(*) AS count FROM local_schema_migrations",
       ),
-    ).toEqual([{ count: 2 }]);
+    ).toEqual([{ count: 3 }]);
   });
 
   it("persists academic years, yearly students, and both semester balances", async () => {
@@ -76,6 +76,7 @@ describe("React desktop SQLite persistence", () => {
       scopeId: "global",
       name: "Primary Math",
       educationStage: "primary",
+      gradeLevel: "primary1",
       firstSemesterQuantity: 12,
       secondSemesterQuantity: 7,
       createdAt: fixedNow,
