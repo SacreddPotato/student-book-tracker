@@ -7,12 +7,12 @@ import { Alert } from "../../components/ui/Feedback";
 import { Field } from "../../components/ui/Field";
 import { SelectField } from "../../components/ui/Select";
 import { Sheet } from "../../components/ui/Sheet";
-import type { BookInput } from "../../core/backend/types";
+import type { LegacyBookInput } from "../../core/backend/types";
 import type { BookRow } from "../../core/db/repositories/books";
 
 export function BookEditorSheet({ open, book, saving, error, onOpenChange, onSave }: {
   open: boolean; book: BookRow | null; saving: boolean; error: string | null;
-  onOpenChange(open: boolean): void; onSave(input: BookInput): void;
+  onOpenChange(open: boolean): void; onSave(input: LegacyBookInput): void;
 }) {
   const { t } = useI18n();
   const [name, setName] = useState("");

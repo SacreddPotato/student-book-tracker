@@ -49,6 +49,12 @@ export function listBooks(database: SqlDatabase): Promise<BookRow[]> {
   );
 }
 
+export function listBookRecords(database: SqlDatabase): Promise<BookRow[]> {
+  return database.select(
+    `${bookSelect} ORDER BY education_stage, grade_level, name`,
+  );
+}
+
 export async function getBookById(database: SqlDatabase, id: string) {
   const rows = await database.select<BookRow>(
     `${bookSelect} WHERE id = $1 AND deleted_at IS NULL`,
@@ -64,6 +70,18 @@ export async function getBooksByIds(database: SqlDatabase, ids: readonly string[
     if (row) rows.push(row);
   }
   return rows;
+}
+
+export async function markBookDeleted(
+  database: SqlDatabase,
+  id: string,
+  deletedAt: string,
+) {
+  await database.execute(
+    `UPDATE books SET deleted_at = $1, updated_at = $1
+      WHERE id = $2 AND deleted_at IS NULL`,
+    [deletedAt, id],
+  );
 }
 
 export async function updateBookSemesterQuantity(

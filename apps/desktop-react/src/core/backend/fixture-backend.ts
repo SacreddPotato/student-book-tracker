@@ -20,7 +20,13 @@ import { createExternalStore } from "../state/external-store";
 import type { SyncConflict } from "../sync/conflicts";
 import { initialSyncStatus, type SyncStatus } from "../sync/sync-engine";
 import { createUpdaterController } from "../updater/updater-controller";
-import type { AppBackend, BookInput, LogEntry, StudentInput } from "./types";
+import type {
+  AppBackend,
+  BookInput,
+  LegacyBookInput,
+  LogEntry,
+  StudentInput,
+} from "./types";
 
 export type FixtureSeed = {
   academicYears?: AcademicYearRow[];
@@ -148,6 +154,16 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
       if (existing) Object.assign(existing, row); else students.push(row);
       return structuredClone(row);
     },
+    async deleteStudent(studentId, academicYear) {
+      assertCurrentYear(academicYear);
+      const student = students.find(({ id, deletedAt }) => id === studentId && !deletedAt);
+      if (!student || student.academicYear !== academicYear) {
+        throw new Error(`Unknown current-year student: ${studentId}`);
+      }
+      const timestamp = now();
+      student.deletedAt = timestamp;
+      student.updatedAt = timestamp;
+    },
     async listBooks() {
       return structuredClone(books.filter(({ deletedAt }) => !deletedAt))
         .sort((a, b) => a.educationStage.localeCompare(b.educationStage)
@@ -172,20 +188,54 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
         || right.createdAt.localeCompare(left.createdAt)
         || right.id.localeCompare(left.id));
     },
-    async saveBook(input: BookInput) {
+    async saveBooks(input: BookInput) {
       if (!input.name.trim()) throw new Error("Book name is required.");
-      const existing = input.id ? books.find(({ id }) => id === input.id) : undefined;
+      if (input.gradeLevels.length === 0) {
+        throw new Error("Select at least one grade level.");
+      }
+      if (new Set(input.gradeLevels).size !== input.gradeLevels.length) {
+        throw new Error("Duplicate grade level selection.");
+      }
+      if (input.gradeLevels.some((gradeLevel) =>
+        !isGradeAllowedForStage(input.educationStage, gradeLevel))) {
+        throw new Error("The grade level does not belong to the selected education stage.");
+      }
+      if (input.id && input.gradeLevels.length !== 1) {
+        throw new Error("Editing a book requires exactly one grade.");
+      }
+      const existing = input.id
+        ? books.find(({ id, deletedAt }) => id === input.id && !deletedAt)
+        : undefined;
+      if (input.id && !existing) throw new Error(`Unknown book: ${input.id}`);
       const timestamp = now();
-      const row: BookRow = {
-        id: existing?.id ?? input.id ?? createId("book"), scopeId: existing?.scopeId ?? "global",
-        name: input.name.trim(), educationStage: input.educationStage,
-        gradeLevel: gradeLevelsByStage[input.educationStage][0],
+      const rows = input.gradeLevels.map((gradeLevel): BookRow => ({
+        id: existing?.id ?? createId("book"),
+        scopeId: existing?.scopeId ?? "global",
+        name: input.name.trim(),
+        educationStage: input.educationStage,
+        gradeLevel,
         firstSemesterQuantity: existing?.firstSemesterQuantity ?? 0,
         secondSemesterQuantity: existing?.secondSemesterQuantity ?? 0,
-        createdAt: existing?.createdAt ?? timestamp, updatedAt: timestamp, deletedAt: null,
-      };
-      if (existing) Object.assign(existing, row); else books.push(row);
-      return structuredClone(row);
+        createdAt: existing?.createdAt ?? timestamp,
+        updatedAt: timestamp,
+        deletedAt: null,
+      }));
+      if (existing) Object.assign(existing, rows[0]); else books.push(...rows);
+      return structuredClone(rows);
+    },
+    async saveBook(input: LegacyBookInput) {
+      const [row] = await backend.saveBooks({
+        ...input,
+        gradeLevels: [gradeLevelsByStage[input.educationStage][0]],
+      });
+      return row!;
+    },
+    async deleteBook(bookId) {
+      const book = books.find(({ id, deletedAt }) => id === bookId && !deletedAt);
+      if (!book) throw new Error(`Unknown book: ${bookId}`);
+      const timestamp = now();
+      book.deletedAt = timestamp;
+      book.updatedAt = timestamp;
     },
     async listIssuedBooks(academicYear, studentId) {
       return structuredClone(studentBooks.filter((row) =>
@@ -193,7 +243,7 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
     },
     async addStock(input) {
       assertCurrentYear(input.academicYear);
-      const book = books.find(({ id }) => id === input.bookId);
+      const book = books.find(({ id, deletedAt }) => id === input.bookId && !deletedAt);
       if (!book) throw new Error(`Unknown book: ${input.bookId}`);
       if (!Number.isInteger(input.quantity) || input.quantity <= 0) {
         throw new Error("Stock quantity must be a positive integer.");
@@ -230,7 +280,7 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
       }
       const selected = input.bookSelections.map((selection) => ({
         selection,
-        book: books.find(({ id }) => id === selection.bookId),
+        book: books.find(({ id, deletedAt }) => id === selection.bookId && !deletedAt),
       }));
       if (selected.some(({ book }) => !book)) throw new Error("Unknown book.");
       if (selected.some(({ book }) => book!.educationStage !== student.educationStage)) {

@@ -5,8 +5,8 @@ import { resolveRuntimeConfig } from "../../app/runtime-config";
 import { initializeLocalDatabase } from "../db/local-db";
 import { runMigrations } from "../db/migrations";
 import { listAcademicYears } from "../db/repositories/academic-years";
-import { listBooks } from "../db/repositories/books";
-import { listStudents } from "../db/repositories/students";
+import { listBookRecords, listBooks } from "../db/repositories/books";
+import { listStudentRecords, listStudents } from "../db/repositories/students";
 import {
   listActiveStudentBookRows,
   listBookHistory,
@@ -18,7 +18,13 @@ import {
   advanceAcademicYear,
   initializeAcademicYear,
 } from "../services/academic-year-service";
-import { saveBook, saveStudent } from "../services/entity-service";
+import {
+  deleteBook,
+  deleteStudent,
+  saveBook,
+  saveBooks,
+  saveStudent,
+} from "../services/entity-service";
 import { addBookStock, issueBooksToStudent, reverseTransaction } from "../services/inventory-service";
 import { createExternalStore } from "../state/external-store";
 import { createSyncApiClient, type SyncApiClient } from "../sync/api-client";
@@ -80,12 +86,25 @@ export function createDatabaseBackend(options: {
       queueSync();
       return row;
     },
+    async deleteStudent(studentId, academicYear) {
+      await deleteStudent(studentId, academicYear, mutationContext);
+      queueSync();
+    },
     listBooks: () => listBooks(options.database),
     listBookHistory: (bookId) => listBookHistory(options.database, bookId),
+    async saveBooks(input) {
+      const rows = await saveBooks(input, mutationContext);
+      queueSync();
+      return rows;
+    },
     async saveBook(input) {
       const row = await saveBook(input, mutationContext);
       queueSync();
       return row;
+    },
+    async deleteBook(bookId) {
+      await deleteBook(bookId, mutationContext);
+      queueSync();
     },
     listIssuedBooks: (academicYear, studentId) =>
       listActiveStudentBookRows(options.database, academicYear, studentId),
@@ -100,8 +119,8 @@ export function createDatabaseBackend(options: {
     async listLogs(academicYear) {
       const [transactions, students, books] = await Promise.all([
         listInventoryTransactions(options.database, academicYear),
-        listStudents(options.database, academicYear),
-        listBooks(options.database),
+        listStudentRecords(options.database, academicYear),
+        listBookRecords(options.database),
       ]);
       const studentNames = new Map(students.map(({ id, name }) => [id, name]));
       const bookNames = new Map(books.map(({ id, name }) => [id, name]));

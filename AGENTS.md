@@ -160,10 +160,20 @@ Grade-scoped contracts and schema checkpoint (2026-07-12):
 - Full package verification passed: shared 5 files / 26 tests, React 28 files / 82 tests, sync API 3 files / 16 tests, React and sync API typechecks, and the preserved Svelte rollback typecheck (0 errors / 0 warnings). The focused SQLite continuity suite passed 1 file / 2 tests, and Drizzle reported no remaining schema diff.
 - No secret values were read or exposed, and no remote database was mutated during this segment.
 
+Atomic local creation and deletion checkpoint (2026-07-12):
+
+- Task 2 now exposes exact grade-aware `BookInput`, atomic `saveBooks`, and synchronized `deleteStudent` / `deleteBook` APIs across the SQLite and fixture backends.
+- Multi-grade creation validates the complete grade selection before opening one local transaction, then creates one independent zero-stock book and `UPSERT_BOOK` outbox command per grade. Single-row edits preserve both semester balances and `createdAt` and cannot fan out.
+- Student deletion is limited to an active student in the current academic year. Student and book deletion use one timestamp for `deletedAt` / `updatedAt` and queue the matching tombstone command in the same transaction.
+- Normal student/book lists remain active-only. Log composition uses include-deleted repository lookups so tombstoned names remain visible in audit history.
+- `LegacyBookInput` and `saveBook` are temporary deterministic first-grade compatibility adapters so Track A can merge before Track B. Task 4 must delete the legacy type, service/backend adapters, and `BookEditorSheet` compatibility usage when the editor moves to `saveBooks` with explicit grades.
+- Required focused verification passed 3 files / 19 tests; React typecheck passed; the full React suite passed 28 files / 92 tests.
+- Track A merges first, but no tag or release should be created until Track B rebases/merges and the combined implementation passes full verification.
+
 ## Next Starting Point
 
-1. Execute Task 2 from `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md` on `codex/grade-scoped-delete`, beginning with failing atomic multi-grade creation and student/book tombstone tests.
-2. Use the required `BookRow.gradeLevel` and shared delete commands from Task 1; replace the temporary first-grade creation adapters rather than layering another fallback on top.
-3. Keep `0003_grade_scoped_books.sql` unapplied until the complete feature has passed disposable-Postgres rehearsal and the user intentionally designates each Neon target.
-4. Publish a new signed release only after full workspace, native, production artifact, and independent updater-feed verification.
-5. Begin hostless Neon Data API/Auth/RLS work only after this feature release; do not expose the owner `DATABASE_URL` or server shared secret in the desktop.
+1. Execute Task 3 from `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md`, beginning with failing remote grade validation and tombstone command tests.
+2. After Track A merges, rebase/merge Track B and complete Task 4. Replace `BookEditorSheet` with explicit grade selection through `saveBooks`, then delete `LegacyBookInput` and every `saveBook` compatibility adapter.
+3. Keep `0003_grade_scoped_books.sql` unapplied until the combined implementation has passed disposable-Postgres rehearsal and the user intentionally designates each Neon target.
+4. Tag and publish only the combined Track A plus Track B result after full workspace, native, production artifact, and independent updater-feed verification.
+5. Keep future hostless Neon Data API/Auth/RLS work separate and never expose the owner `DATABASE_URL` or server shared secret in the desktop.
