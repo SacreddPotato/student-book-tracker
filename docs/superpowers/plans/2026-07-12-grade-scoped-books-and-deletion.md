@@ -86,16 +86,30 @@ export type DeleteBookCommand = CommandBase & {
 };
 ```
 
-Add local migration `003_grade_scoped_books`:
+Add local migration `003_grade_scoped_books` as a table rebuild so upgraded databases also enforce `grade_level TEXT NOT NULL`:
 
 ```sql
-ALTER TABLE books ADD COLUMN grade_level TEXT;
-UPDATE books SET grade_level = CASE education_stage
+DROP INDEX IF EXISTS books_scope_stage_name_unique;
+ALTER TABLE books RENAME TO books_before_grade_scope;
+CREATE TABLE books (
+  id TEXT PRIMARY KEY,
+  scope_id TEXT NOT NULL DEFAULT 'global',
+  name TEXT NOT NULL,
+  education_stage TEXT NOT NULL,
+  grade_level TEXT NOT NULL,
+  first_semester_quantity INTEGER NOT NULL DEFAULT 0 CHECK(first_semester_quantity >= 0),
+  second_semester_quantity INTEGER NOT NULL DEFAULT 0 CHECK(second_semester_quantity >= 0),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT
+);
+INSERT INTO books SELECT id, scope_id, name, education_stage, CASE education_stage
   WHEN 'kg' THEN 'kg1'
   WHEN 'primary' THEN 'primary1'
   ELSE 'preparatory1'
-END WHERE grade_level IS NULL;
-DROP INDEX IF EXISTS books_scope_stage_name_unique;
+END, first_semester_quantity, second_semester_quantity, created_at, updated_at, deleted_at
+FROM books_before_grade_scope;
+DROP TABLE books_before_grade_scope;
 CREATE UNIQUE INDEX books_scope_grade_name_unique
   ON books(scope_id, grade_level, name) WHERE deleted_at IS NULL;
 ```
