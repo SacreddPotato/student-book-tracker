@@ -18,7 +18,33 @@ export type SyncClientConfig = {
   apiBaseUrl: string;
   transportToken: string | null;
 };
+export type SyncClientFactoryConfig = {
+  apiBaseUrl: string | null;
+  transportToken: string | null;
+};
 type FetchLike = typeof fetch;
+
+class UnavailableSyncApiClient implements SyncApiClient {
+  async push(_commands: SyncCommand[]): Promise<SyncCommandResult[]> {
+    throw unavailableSyncError();
+  }
+
+  async pull(_since: string | null): Promise<PullResponse> {
+    throw unavailableSyncError();
+  }
+}
+
+export function createSyncApiClient(
+  config: SyncClientFactoryConfig,
+  request: FetchLike = fetch,
+): SyncApiClient {
+  return config.apiBaseUrl
+    ? new FetchSyncApiClient({
+      apiBaseUrl: config.apiBaseUrl,
+      transportToken: config.transportToken,
+    }, request)
+    : new UnavailableSyncApiClient();
+}
 
 export class FetchSyncApiClient implements SyncApiClient {
   constructor(
@@ -78,4 +104,8 @@ function readError(payload: unknown, status: number) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function unavailableSyncError() {
+  return new TypeError("Sync API is not configured for this build.");
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FetchSyncApiClient } from "./api-client";
+import { createSyncApiClient, FetchSyncApiClient } from "./api-client";
 
 describe("FetchSyncApiClient", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -61,5 +61,31 @@ describe("FetchSyncApiClient", () => {
       "https://sync.example.test/sync/pull?since=8",
       expect.any(Object),
     );
+  });
+
+  it("creates the fetch client when a sync URL is configured", async () => {
+    const request = vi.fn(async () => new Response(JSON.stringify({
+      changes: [], nextCursor: "0",
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    const client = createSyncApiClient({
+      apiBaseUrl: "https://sync.example.test",
+      transportToken: null,
+    }, request);
+
+    await expect(client.pull(null)).resolves.toEqual({ changes: [], nextCursor: "0" });
+    expect(request).toHaveBeenCalledOnce();
+  });
+
+  it("creates an unavailable client without making a request when sync is unconfigured", async () => {
+    const request = vi.fn();
+    const client = createSyncApiClient({
+      apiBaseUrl: null,
+      transportToken: null,
+    }, request as typeof fetch);
+
+    await expect(client.pull(null)).rejects.toEqual(
+      new TypeError("Sync API is not configured for this build."),
+    );
+    expect(request).not.toHaveBeenCalled();
   });
 });

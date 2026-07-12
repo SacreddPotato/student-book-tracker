@@ -4,7 +4,7 @@ export type RuntimeConfig = {
   profile: DesktopProfile;
   databaseUrl: string;
   databaseFile: string;
-  syncApiBaseUrl: string;
+  syncApiBaseUrl: string | null;
   syncApiSharedSecret?: string;
   updaterEnabled: boolean;
 };
@@ -17,13 +17,11 @@ export function resolveRuntimeConfig(env: Record<string, unknown>): RuntimeConfi
   }
 
   const production = rawProfile === "production";
-  const syncApiBaseUrl = String(
-    env.VITE_SYNC_API_BASE_URL ?? (production ? "" : "http://127.0.0.1:8787"),
-  );
-
-  if (production && !syncApiBaseUrl) {
-    throw new Error("Production builds require VITE_SYNC_API_BASE_URL.");
-  }
+  const configuredSyncApiBaseUrl = env.VITE_SYNC_API_BASE_URL == null
+    ? ""
+    : String(env.VITE_SYNC_API_BASE_URL).trim();
+  const syncApiBaseUrl = configuredSyncApiBaseUrl
+    || (production ? null : "http://127.0.0.1:8787");
 
   if (syncApiBaseUrl && !/^https?:\/\//.test(syncApiBaseUrl)) {
     throw new Error("Sync API base URL must use HTTP or HTTPS.");
@@ -44,5 +42,3 @@ export function resolveRuntimeConfig(env: Record<string, unknown>): RuntimeConfi
     updaterEnabled: production,
   };
 }
-
-export const runtimeConfig = resolveRuntimeConfig(import.meta.env);

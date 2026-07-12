@@ -103,6 +103,21 @@ describe("resolveRuntimeConfig", () => {
     );
   });
 
+  it("keeps production locally usable when sync is not configured", () => {
+    const config = resolveRuntimeConfig({
+      DEV: false,
+      PROD: true,
+      VITE_DESKTOP_PROFILE: "production",
+    });
+
+    expect(config).toMatchObject({
+      profile: "production",
+      databaseUrl: "sqlite:student-book-tracker.db",
+      syncApiBaseUrl: null,
+      updaterEnabled: true,
+    });
+  });
+
   it("rejects an unknown profile", () => {
     expect(() =>
       resolveRuntimeConfig({
