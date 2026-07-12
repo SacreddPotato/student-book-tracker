@@ -105,6 +105,18 @@ Offline startup recovery checkpoint (2026-07-12):
 - Package version `1.0.1` was merged to `main`, tagged, published as a signed Windows release, and independently verified against the GitHub asset digests and global updater feed.
 - Accidental repository Variable copies of `DATABASE_URL` and `SYNC_API_SHARED_SECRET` were removed after confirming their Secret entries remained. Rotate the exposed Neon credential before future online-sync work. Only a public deployed HTTPS API origin belongs in `SYNC_API_BASE_URL` as a repository Variable.
 
+Hostless Neon sync design checkpoint (2026-07-12):
+
+- Track B architecture and TDD planning are complete on `codex/hostless-neon-sync`; no production code or migration was created in this segment.
+- Approved design: keep SQLite/outbox/pull-cursor/conflict behavior, replace the normal hosted Hono transport with Neon Auth plus branch-level Neon Data API RPCs, expose only `sync_identity`, `sync_push`, and `sync_pull`, and derive the one active school `scope_id` inside PostgreSQL from `auth.user_id()` membership under forced RLS.
+- `apps/sync-api` remains an explicit operator diagnostic/rollback adapter over the same SQL functions and is removed from normal desktop startup/runtime selection.
+- Public release configuration becomes paired `NEON_AUTH_URL` and `NEON_DATA_API_URL` repository Variables mapped to `VITE_NEON_AUTH_URL` and `VITE_NEON_DATA_API_URL`. Owner URLs, management keys, JWT secrets, shared sync secrets, user credentials, and session tokens remain prohibited from desktop configuration.
+- Track A's grade/deletion branch merges first and owns `0003_grade_scoped_books`; hostless schema implementation must merge/rebase updated `main` first and begin at `0004` or later. Track A and Track B ship in one combined release.
+- Before auth implementation, a blocking production-profile Tauri spike must prove the exact WebView origin (`http://tauri.localhost` unless runtime evidence differs) can complete authentication, restart/session restoration, token refresh, sign out, and an authenticated Data API call without generic localhost access. If embedded Neon Auth is unsupported, prove a no-client-secret device-code or system-browser PKCE JWT flow whose JWKS works with the Data API.
+- Design: `docs/superpowers/specs/2026-07-12-hostless-neon-sync-design.md`.
+- TDD plan: `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`.
+- Planning verification passed: official Neon Data API/Auth documentation was refreshed on 2026-07-12; current client/engine/routes/schema/release paths were inspected; spec and plan placeholder, consistency, scope, type/interface, and `git diff --check` reviews passed.
+
 Release checkpoint (2026-07-12):
 
 - Branch CI run `29188600139` passed lint, typecheck, all 187 tests, five rendered Chromium journeys, and the workspace build for recovery commit `a994ff6`.
@@ -144,7 +156,9 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Rotate the exposed Neon credential before designing the post-recovery sync architecture. Keep database credentials and shared secrets server-only; do not expose them through Vite or GitHub Variables.
-2. Design the self-sufficient sync architecture separately from the completed offline recovery. The desktop must remain fully functional with local SQLite when no sync transport is configured or reachable.
-3. Add only a deployed public HTTPS API origin to the `SYNC_API_BASE_URL` repository Variable when an authenticated sync transport exists; do not put a Neon connection string there.
-4. Keep schema changes behind committed Drizzle migrations and apply them intentionally to both configured Neon branches.
+1. Merge Track A's grade/deletion work into `main`, then merge/rebase that updated `main` into the hostless sync implementation branch. Confirm `0003_grade_scoped_books` and the final shared command discriminants before editing.
+2. Execute Task 2 of the hostless plan before other auth work: prove the exact production Tauri origin with the development Neon branch, or prove the native-safe device-code/system-browser PKCE fallback. Commit `docs/runbooks/neon-desktop-auth-spike.md`; do not bypass the gate by enabling generic localhost access.
+3. Rotate the exposed Neon credential before applying any online-sync migration or provisioning. Keep database credentials, management keys, JWT secrets, and shared secrets server-only.
+4. Implement the scoped schema as `0004_hostless_neon_sync.sql` or later, rehearse it on disposable PostgreSQL 17, then apply intentionally to development Neon before production.
+5. Preserve full SQLite functionality when the paired public Auth/Data API origins are absent, unreachable, signed out, expired, unassigned, or scope-mismatched.
+6. Ship the grade/deletion and hostless sync work only as one combined, fully verified signed release.
