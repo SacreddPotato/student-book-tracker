@@ -70,6 +70,7 @@ Active post-`v1.0.1` implementation (branch `codex/grade-scoped-delete`):
 - Existing stage-only book rows will keep their IDs, balances, and history while migration assigns the first grade of their stage; stock will not be cloned.
 - Hostless Neon sync is designed as a separate follow-up using Neon Data API, authentication, and RLS. This feature release must remain offline-functional and must not embed owner database credentials or the server shared secret.
 - Isolated baseline passed all 46 test files / 187 tests before implementation.
+- The detailed five-task TDD plan is at `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md`; parallel subagent-driven execution starts with shared contracts and migrations.
 
 Completed, released, and merged to `main`:
 
@@ -151,7 +152,7 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Write the TDD implementation plan from `docs/superpowers/specs/2026-07-12-grade-scoped-books-and-deletion-design.md`, then execute it inline on `codex/grade-scoped-delete`.
+1. Execute Task 1 from `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md` on `codex/grade-scoped-delete`, beginning with failing shared and migration tests.
 2. Add and verify committed local/Drizzle grade migrations before applying the remote migration intentionally to either Neon branch.
 3. Publish a new signed release only after full workspace, native, production artifact, and independent updater-feed verification.
 4. Begin hostless Neon Data API/Auth/RLS work only after this feature release; do not expose the owner `DATABASE_URL` or server shared secret in the desktop.
