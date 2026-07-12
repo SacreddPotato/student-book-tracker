@@ -102,8 +102,18 @@ Offline startup recovery checkpoint (2026-07-12):
 - Branch `codex/offline-safe-production-boot` now treats a missing or blank sync API URL as an intentional offline configuration, creates an unavailable sync client without making network requests, and resolves runtime configuration inside the caught asynchronous Tauri bootstrap path. Malformed non-empty URLs still fail validation.
 - Local commands remain SQLite-backed and queued while sync is unavailable; no database URL or shared secret is embedded in the desktop application.
 - The exact production-profile executable was built with the sync URL removed, inspected through its production WebView, and exercised through initial academic-year creation. The UI stayed Arabic, maximized, and explicitly offline.
-- Package version is staged at `1.0.1`; merge, tag, signed installer publication, and independent release-feed verification remain outstanding.
+- Package version `1.0.1` was merged to `main`, tagged, published as a signed Windows release, and independently verified against the GitHub asset digests and global updater feed.
 - Accidental repository Variable copies of `DATABASE_URL` and `SYNC_API_SHARED_SECRET` were removed after confirming their Secret entries remained. Rotate the exposed Neon credential before future online-sync work. Only a public deployed HTTPS API origin belongs in `SYNC_API_BASE_URL` as a repository Variable.
+
+Release checkpoint (2026-07-12):
+
+- Branch CI run `29188600139` passed lint, typecheck, all 187 tests, five rendered Chromium journeys, and the workspace build for recovery commit `a994ff6`.
+- Merge commit `dd996c1` passed main CI run `29188764244`; annotated tag `v1.0.1` points to that exact merge.
+- Signed Windows release workflow `29188855243` passed release-source validation, quality gates, optimized native packaging, updater verification, and publication.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.1`.
+- EXE: `Student.Book.Tracker_1.0.1_x64-setup.exe`, 4,414,078 bytes, SHA-256 `3207b035888c869cfe77883fd120d18c868d6027c4aadd03f492a68cac8b4faf`; downloaded ProductVersion and FileVersion both report `1.0.1`.
+- Updater signature SHA-256: `78afc0965e8247b833a44ee8aecd61e95c0109223cbc06c3e514a6fe25af0cd3`.
+- `latest.json` SHA-256: `b8d9d72261bf950ef56fb0a64cc56efbd8b0e8eb4ce872b718242323c83d9944`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.1`, and exposed matching signed `windows-x86_64` and `windows-x86_64-nsis` targets.
 
 Release checkpoint (2026-07-11):
 
@@ -134,7 +144,7 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Finish the `v1.0.1` recovery from `codex/offline-safe-production-boot`: rerun post-version verification, merge to `main`, wait for main CI, then create the new annotated `v1.0.1` tag without rewriting `v1.0.0`.
-2. Verify the signed installer, updater signature, `latest.json`, and global `releases/latest` feed independently before calling the recovery complete.
-3. Rotate the exposed Neon credential before designing the post-recovery sync architecture. Keep database credentials and shared secrets server-only; do not expose them through Vite or GitHub Variables.
+1. Rotate the exposed Neon credential before designing the post-recovery sync architecture. Keep database credentials and shared secrets server-only; do not expose them through Vite or GitHub Variables.
+2. Design the self-sufficient sync architecture separately from the completed offline recovery. The desktop must remain fully functional with local SQLite when no sync transport is configured or reachable.
+3. Add only a deployed public HTTPS API origin to the `SYNC_API_BASE_URL` repository Variable when an authenticated sync transport exists; do not put a Neon connection string there.
 4. Keep schema changes behind committed Drizzle migrations and apply them intentionally to both configured Neon branches.
