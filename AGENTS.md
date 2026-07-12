@@ -196,9 +196,19 @@ Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
 - A plaintext repository Variable copy of `DATABASE_URL` had been reintroduced and was removed. The GitHub Secret remains; rotate the now-exposed Neon credential before online sync resumes. No database credential is bundled into the desktop.
 - Full pre-release gates passed at this checkpoint: 46 files / 211 tests, five Chromium journeys, workspace lint/typecheck/build, Rust database allowlist test, and `cargo check`.
 
+`v1.0.3` production candidate checkpoint (2026-07-12):
+
+- Release metadata moved directly from `1.0.1` to `1.0.3`; no `1.0.2` tag or release is created.
+- Built the exact production-identity executable with `VITE_SYNC_API_BASE_URL` absent. Windows ProductVersion and FileVersion both report `1.0.3`.
+- To avoid Windows resolving the shared production identity to the installed `v1.0.1` executable, the newly built binary was copied under a unique smoke-test filename and launched from the worktree. The underlying bytes were unchanged.
+- A clean restart rendered maximized at 1920x1032, Arabic, and explicitly offline. The custom maximize action also restored a normal window to the full workspace.
+- Live local SQLite/WebView exercise created one subject for Primary 1 and Primary 2 as two independent zero-stock rows, exposed grade and delete controls on each row, and restricted the student grade dropdown to the selected stage. Rendered tests cover both destructive confirmation flows and archived-year delete suppression.
+- The production smoke process was closed. Smoke data is placeholder-only under the user-approved local production database and can be removed through the new confirmed delete flow.
+- Final post-version verification passed sequentially: 46 files / 211 tests, workspace lint, workspace typecheck, five Chromium journeys, and all workspace builds. Test and lint must not be launched concurrently because both run `svelte-kit sync` against the preserved legacy frontend's generated `.svelte-kit` directory.
+
 ## Next Starting Point
 
-1. Bump release metadata directly from `1.0.1` to exactly `1.0.3`, build the exact production-profile executable with sync absent, and perform the offline Arabic/maximized grade/deletion WebView smoke test.
+1. Run the final post-version full verification and commit the `1.0.3` release candidate.
 2. Merge through `main`, wait for green CI, then dispatch the fingerprint-locked production migration workflow and verify production fingerprint `8479f751bcff`.
 3. Tag the exact verified merge as `v1.0.3`; audit the signed Windows release, setup executable metadata/hash, updater signature, and global `releases/latest` feed.
 4. Preserve `codex/hostless-neon-sync` for later; never expose the owner `DATABASE_URL` or server shared secret in the desktop.
