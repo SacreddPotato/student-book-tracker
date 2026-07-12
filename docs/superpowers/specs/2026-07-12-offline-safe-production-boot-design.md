@@ -13,7 +13,7 @@ The desktop must always boot into its local SQLite workspace when no sync API UR
 1. Change `RuntimeConfig.syncApiBaseUrl` to `string | null`. Missing production configuration resolves to `null`; non-empty values retain HTTP(S) validation.
 2. Resolve runtime configuration inside `createTauriBackend()` rather than through a throwing module-level constant. This keeps configuration failures within the existing `bootstrap().catch(...)` boundary.
 3. Add a sync-client factory. It returns `FetchSyncApiClient` for a configured URL and an explicit unavailable client otherwise. The unavailable client rejects with a network-style `TypeError`, allowing the existing sync engine to enter its offline phase without changing local data or rejecting queued commands.
-4. Update the release workflow to prefer `vars.SYNC_API_BASE_URL` and fall back to `secrets.SYNC_API_BASE_URL`. The URL is public after compilation; neither `DATABASE_URL` nor `SYNC_API_SHARED_SECRET` may be passed to Vite.
+4. Keep the release workflow on the public `vars.SYNC_API_BASE_URL` input. The build must remain valid when that variable is absent; neither `DATABASE_URL` nor `SYNC_API_SHARED_SECRET` may be passed to Vite.
 5. Release the verified patch as `v1.0.1` without rewriting `v1.0.0`.
 
 ## Verification
