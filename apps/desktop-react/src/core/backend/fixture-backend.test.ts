@@ -12,6 +12,7 @@ describe("fixture backend", () => {
       educationStage: "primary", gradeLevel: "primary1", academicYear: "2025-2026",
     });
     const book = await backend.saveBook({ name: "Primary Math", educationStage: "primary" });
+    expect(book.gradeLevel).toBe("primary1");
     await backend.addStock({
       academicYear: "2025-2026", bookId: book.id, semester: "second", quantity: 2,
       receiptNumber: "00041", receiptDate: "2026-01-14",

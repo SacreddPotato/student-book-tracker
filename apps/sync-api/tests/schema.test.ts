@@ -19,6 +19,21 @@ import {
 import { readSyncApiEnv } from "../src/env";
 
 describe("remote database schema", () => {
+  it("migrates existing books to required deterministic grade scope", async () => {
+    const gradeMigration = await readFile(
+      new URL("../drizzle/0003_grade_scoped_books.sql", import.meta.url),
+      "utf8",
+    );
+
+    expect(gradeMigration).toContain('ADD COLUMN "grade_level" text');
+    expect(gradeMigration).toContain("WHEN 'kg' THEN 'kg1'");
+    expect(gradeMigration).toContain("WHEN 'primary' THEN 'primary1'");
+    expect(gradeMigration).toContain("ELSE 'preparatory1'");
+    expect(gradeMigration).toContain('ALTER COLUMN "grade_level" SET NOT NULL');
+    expect(gradeMigration).toContain('DROP INDEX "books_scope_stage_name_unique"');
+    expect(gradeMigration).toContain('CREATE UNIQUE INDEX "books_scope_grade_name_unique"');
+  });
+
   it("clears placeholder data before required columns and removes legacy quantity", async () => {
     const semesterMigration = await readFile(
       new URL("../drizzle/0001_semester_inventory_academic_years.sql", import.meta.url),
@@ -69,6 +84,8 @@ describe("remote database schema", () => {
     expect(students.educationStage.name).toBe("education_stage");
     expect(students.gradeLevel.name).toBe("grade_level");
     expect(books.educationStage.name).toBe("education_stage");
+    expect(books.gradeLevel.name).toBe("grade_level");
+    expect(books.gradeLevel.notNull).toBe(true);
     expect(books.firstSemesterQuantity.name).toBe("first_semester_quantity");
     expect(books.secondSemesterQuantity.name).toBe("second_semester_quantity");
     expect(students.academicYear.name).toBe("academic_year");

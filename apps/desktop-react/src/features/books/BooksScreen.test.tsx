@@ -10,8 +10,8 @@ import { BooksScreen } from "./BooksScreen";
 
 const now = "2026-07-08T10:00:00.000Z";
 const year = { academicYear: "2025-2026", status: "current" as const, createdAt: now, archivedAt: null };
-const stocked: BookRow = { id: "book-1", scopeId: "global", name: "Primary Math", educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 1, createdAt: now, updatedAt: now, deletedAt: null };
-const empty: BookRow = { id: "book-2", scopeId: "global", name: "Primary Science", educationStage: "primary", firstSemesterQuantity: 0, secondSemesterQuantity: 0, createdAt: now, updatedAt: now, deletedAt: null };
+const stocked: BookRow = { id: "book-1", scopeId: "global", name: "Primary Math", educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 2, secondSemesterQuantity: 1, createdAt: now, updatedAt: now, deletedAt: null };
+const empty: BookRow = { id: "book-2", scopeId: "global", name: "Primary Science", educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 0, secondSemesterQuantity: 0, createdAt: now, updatedAt: now, deletedAt: null };
 
 function renderBooks(isEmpty = false) {
   const backend = createFixtureBackend({ academicYears: [year], ...(isEmpty ? {} : { books: [stocked, empty] }) });

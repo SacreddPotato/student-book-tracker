@@ -16,7 +16,12 @@ async function initialize(store: MemorySyncStore) {
 function bookCommand(id = "book-command") {
   return {
     id, type: "UPSERT_BOOK" as const, deviceId: "device-a", occurredAt,
-    book: { id: "book-1", name: "Primary Math", educationStage: "primary" as const },
+    book: {
+      id: "book-1",
+      name: "Primary Math",
+      educationStage: "primary" as const,
+      gradeLevel: "primary1" as const,
+    },
   };
 }
 

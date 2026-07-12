@@ -1,4 +1,5 @@
 import {
+  gradeLevelsByStage,
   isGradeAllowedForStage,
   type EducationStage,
   type GradeLevel,
@@ -112,6 +113,7 @@ export async function saveBook(
       scopeId: existing?.scopeId ?? "global",
       name,
       educationStage: draft.educationStage,
+      gradeLevel: gradeLevelsByStage[draft.educationStage][0],
       firstSemesterQuantity: existing?.firstSemesterQuantity ?? 0,
       secondSemesterQuantity: existing?.secondSemesterQuantity ?? 0,
       createdAt: existing?.createdAt ?? occurredAt,
@@ -127,6 +129,7 @@ export async function saveBook(
         id: row.id,
         name: row.name,
         educationStage: row.educationStage,
+        gradeLevel: row.gradeLevel,
       },
     };
     await upsertBook(database, row);

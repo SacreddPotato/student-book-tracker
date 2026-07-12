@@ -51,6 +51,7 @@ async function seedBook(
 ) {
   await upsertBook(database, {
     id, scopeId: "global", name: `${id} name`, educationStage: stage,
+    gradeLevel: stage === "primary" ? "primary1" : "preparatory1",
     firstSemesterQuantity, secondSemesterQuantity, createdAt: fixedNow,
     updatedAt: fixedNow, deletedAt: null,
   });

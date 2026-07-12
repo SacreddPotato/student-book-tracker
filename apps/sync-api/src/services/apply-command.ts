@@ -186,6 +186,7 @@ async function applyUpsertBook(
     scopeId: "global",
     name: command.book.name,
     educationStage: command.book.educationStage,
+    gradeLevel: command.book.gradeLevel,
     createdAt: command.occurredAt,
     updatedAt: command.occurredAt,
     deletedAt: null,

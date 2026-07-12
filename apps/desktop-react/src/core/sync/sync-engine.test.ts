@@ -48,7 +48,7 @@ describe("SyncEngine", () => {
     await createInitialAcademicYear(database, "2025-2026", now);
     await upsertBook(database, {
       id: "book-1", scopeId: "global", name: "Primary Math",
-      educationStage: "primary", firstSemesterQuantity: 2,
+      educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 2,
       secondSemesterQuantity: 0, createdAt: now,
       updatedAt: now, deletedAt: null,
     });
@@ -151,7 +151,7 @@ describe("SyncEngine", () => {
           { sequence: 3, commandId: "remote-1", entityTable: "books",
             entityId: "book-1", createdAt: now, payloadJson: JSON.stringify({
               id: "book-1", scopeId: "global", name: "Remote Math",
-              educationStage: "primary", firstSemesterQuantity: 9,
+              educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 9,
               secondSemesterQuantity: 4, createdAt: now,
               updatedAt: now, deletedAt: null,
             }) },

@@ -150,9 +150,20 @@ Development Neon migration checkpoint (2026-07-11):
 - `academic_years`, books, students, transactions, items, student books, and `sync_changes` all contained zero rows after migration.
 - The expandable audit uses the existing transaction/item schema and requires no additional database migration.
 
+Grade-scoped contracts and schema checkpoint (2026-07-12):
+
+- Branch `codex/grade-scoped-delete` completed Task 1 from the grade-scoped books and deletion plan.
+- Shared issuance eligibility now requires matching education stage and grade; book upserts require `gradeLevel`; and the shared command union includes `DELETE_STUDENT` and `DELETE_BOOK` shapes.
+- Fresh SQLite databases create `books.grade_level TEXT NOT NULL` and the active-row `books_scope_grade_name_unique` index. Migration `003_grade_scoped_books` rebuilds the table so upgraded databases also enforce `NOT NULL`, deterministically maps `kg`/`primary`/`preparatory` rows to `kg1`/`primary1`/`preparatory1`, and preserves IDs, semester balances, timestamps, tombstones, and string-ID inventory references.
+- Postgres migration `0003_grade_scoped_books.sql`, its Drizzle journal entry, and snapshot are committed but have not been applied to either Neon branch. Drizzle reports no remaining schema diff.
+- The current stage-only React and fixture creation paths assign the first grade for compatibility; Task 2 replaces those adapters with the planned explicit multi-grade creation service.
+- Full package verification passed: shared 5 files / 26 tests, React 28 files / 82 tests, sync API 3 files / 16 tests, React and sync API typechecks, and the preserved Svelte rollback typecheck (0 errors / 0 warnings). The focused SQLite continuity suite passed 1 file / 2 tests, and Drizzle reported no remaining schema diff.
+- No secret values were read or exposed, and no remote database was mutated during this segment.
+
 ## Next Starting Point
 
-1. Execute Task 1 from `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md` on `codex/grade-scoped-delete`, beginning with failing shared and migration tests.
-2. Add and verify committed local/Drizzle grade migrations before applying the remote migration intentionally to either Neon branch.
-3. Publish a new signed release only after full workspace, native, production artifact, and independent updater-feed verification.
-4. Begin hostless Neon Data API/Auth/RLS work only after this feature release; do not expose the owner `DATABASE_URL` or server shared secret in the desktop.
+1. Execute Task 2 from `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md` on `codex/grade-scoped-delete`, beginning with failing atomic multi-grade creation and student/book tombstone tests.
+2. Use the required `BookRow.gradeLevel` and shared delete commands from Task 1; replace the temporary first-grade creation adapters rather than layering another fallback on top.
+3. Keep `0003_grade_scoped_books.sql` unapplied until the complete feature has passed disposable-Postgres rehearsal and the user intentionally designates each Neon target.
+4. Publish a new signed release only after full workspace, native, production artifact, and independent updater-feed verification.
+5. Begin hostless Neon Data API/Auth/RLS work only after this feature release; do not expose the owner `DATABASE_URL` or server shared secret in the desktop.

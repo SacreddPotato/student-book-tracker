@@ -13,7 +13,8 @@ const students: StudentRow[] = [{
 }];
 const books: BookRow[] = [{
   id: "book-1", scopeId: "global", name: "Primary Math",
-  educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 2, createdAt: now,
+  educationStage: "primary", gradeLevel: "primary1",
+  firstSemesterQuantity: 2, secondSemesterQuantity: 2, createdAt: now,
   updatedAt: now, deletedAt: null,
 }];
 

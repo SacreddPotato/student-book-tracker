@@ -60,6 +60,7 @@ describe("academic year service", () => {
     }
     await upsertBook(database, {
       id: "book-1", scopeId: "global", name: "Math", educationStage: "primary",
+      gradeLevel: "primary1",
       firstSemesterQuantity: 9, secondSemesterQuantity: 4,
       createdAt: now, updatedAt: now, deletedAt: null,
     });

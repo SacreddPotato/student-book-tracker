@@ -75,7 +75,7 @@ describe("entity service", () => {
 
     expect(await listBooks(database)).toEqual([
       expect.objectContaining({
-        id: "entity-1", name: "Primary Math",
+        id: "entity-1", name: "Primary Math", gradeLevel: "primary1",
         firstSemesterQuantity: 0, secondSemesterQuantity: 0,
       }),
     ]);

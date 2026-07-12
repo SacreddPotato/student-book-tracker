@@ -1,4 +1,5 @@
 import {
+  gradeLevelsByStage,
   isGradeAllowedForStage,
   nextAcademicYear,
   parseAcademicYear,
@@ -178,6 +179,7 @@ export function createFixtureBackend(seed: FixtureSeed = {}): AppBackend {
       const row: BookRow = {
         id: existing?.id ?? input.id ?? createId("book"), scopeId: existing?.scopeId ?? "global",
         name: input.name.trim(), educationStage: input.educationStage,
+        gradeLevel: gradeLevelsByStage[input.educationStage][0],
         firstSemesterQuantity: existing?.firstSemesterQuantity ?? 0,
         secondSemesterQuantity: existing?.secondSemesterQuantity ?? 0,
         createdAt: existing?.createdAt ?? timestamp, updatedAt: timestamp, deletedAt: null,

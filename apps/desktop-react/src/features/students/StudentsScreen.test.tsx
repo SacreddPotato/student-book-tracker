@@ -18,12 +18,14 @@ const student: StudentRow = {
 };
 const availableBook: BookRow = {
   id: "book-1", scopeId: "global", name: "Primary Math",
-  educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 1,
+  educationStage: "primary", gradeLevel: "primary1",
+  firstSemesterQuantity: 2, secondSemesterQuantity: 1,
   createdAt: now, updatedAt: now, deletedAt: null,
 };
 const emptyBook: BookRow = {
   id: "book-2", scopeId: "global", name: "Primary Science",
-  educationStage: "primary", firstSemesterQuantity: 0, secondSemesterQuantity: 0,
+  educationStage: "primary", gradeLevel: "primary1",
+  firstSemesterQuantity: 0, secondSemesterQuantity: 0,
   createdAt: now, updatedAt: now, deletedAt: null,
 };
 
