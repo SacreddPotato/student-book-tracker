@@ -64,13 +64,13 @@ Rust may require `$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"`.
 
 ## Current Implementation Status
 
-Active post-`v1.0.1` implementation (branch `codex/grade-scoped-delete`):
+Completed and released as `v1.0.3` from merge `3a026687`:
 
 - Auto-approved design committed scope: per-grade book rows with multi-grade creation, stage-dependent student grade filters, synchronized soft deletion for students/books, and preserved historical audit records.
 - Existing stage-only book rows will keep their IDs, balances, and history while migration assigns the first grade of their stage; stock will not be cloned.
 - Hostless Neon sync is designed as a separate follow-up using Neon Data API, authentication, and RLS. This feature release must remain offline-functional and must not embed owner database credentials or the server shared secret.
 - Isolated baseline passed all 46 test files / 187 tests before implementation.
-- The detailed five-task TDD plan is at `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md`; Tasks 1-4 are complete and release verification remains.
+- The detailed five-task TDD plan is at `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md`; all implementation, migration, verification, and release tasks are complete.
 
 Completed, released, and merged to `main`:
 
@@ -206,9 +206,19 @@ Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
 - The production smoke process was closed. Smoke data is placeholder-only under the user-approved local production database and can be removed through the new confirmed delete flow.
 - Final post-version verification passed sequentially: 46 files / 211 tests, workspace lint, workspace typecheck, five Chromium journeys, and all workspace builds. Test and lint must not be launched concurrently because both run `svelte-kit sync` against the preserved legacy frontend's generated `.svelte-kit` directory.
 
+`v1.0.3` release checkpoint (2026-07-13 Cairo):
+
+- Merge `3a02668793c78e88bcb46e49665bba3af1d3c14e` passed main CI run `29209522207`, including lint, typecheck, all 211 tests, five rendered Chromium journeys, and the workspace build.
+- Production migration workflow `29209627851` applied the committed Drizzle history and verified fingerprint `8479f751bcff`, four migration rows, `grade_level NOT NULL`, and `books_scope_grade_name_unique` without exposing the database URL.
+- Annotated tag `v1.0.3` points to the exact verified merge. Signed Windows release workflow `29209655973` passed source validation, release quality gates, optimized packaging, signature/updater verification, and publication.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.3`.
+- EXE: `Student.Book.Tracker_1.0.3_x64-setup.exe`, 4,418,030 bytes, SHA-256 `ed635537f27591738e01fcdcf0a4434a8d74ac992499e3f57de3f4a34750ad49`; downloaded ProductVersion and FileVersion both report `1.0.3`.
+- Updater signature SHA-256: `f3bcacbe5494196ba2041a1094e9be4d9dcdffd6458387ae44d68f9ad83e6ae0`.
+- `latest.json` SHA-256: `d654df09e46a526630fc203524a503168c5f199b952dfe5284d95d1ad65056e4`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.3`, and exposed matching signed `windows-x86_64` and `windows-x86_64-nsis` targets.
+- The plaintext repository Variable copy of `DATABASE_URL` was removed while its Secret entry remained. Rotate the exposed Neon credential before any online-sync work.
+
 ## Next Starting Point
 
-1. Run the final post-version full verification and commit the `1.0.3` release candidate.
-2. Merge through `main`, wait for green CI, then dispatch the fingerprint-locked production migration workflow and verify production fingerprint `8479f751bcff`.
-3. Tag the exact verified merge as `v1.0.3`; audit the signed Windows release, setup executable metadata/hash, updater signature, and global `releases/latest` feed.
-4. Preserve `codex/hostless-neon-sync` for later; never expose the owner `DATABASE_URL` or server shared secret in the desktop.
+1. Rotate the exposed Neon credential before resuming online-sync work; keep `DATABASE_URL` and `SYNC_API_SHARED_SECRET` exclusively in server-side secret stores.
+2. Resume `codex/hostless-neon-sync` only as a separate follow-up. Re-review its authentication/RLS design before implementation and preserve offline SQLite behavior.
+3. Keep the public desktop free of owner database credentials and shared server secrets. Only a public authenticated sync origin belongs in desktop build configuration.
