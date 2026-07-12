@@ -80,17 +80,30 @@ Completed, released, and merged to `main`:
 Latest verification:
 
 ```text
-npm run test              passed: legacy 18/67, React 28/78, sync API 3/15, shared 5/24
+npm run test              passed: legacy 18/67, React 28/81, sync API 3/15, shared 5/24 (46 files / 187 tests)
 npm run test:e2e          passed: 5 Chromium journeys, including all-year book audit expansion
 npm run typecheck         passed across all workspaces
 npm run lint              passed across all workspaces
 npm run build             passed across all workspaces
 cargo test                passed React Tauri database allowlist test
 cargo check               passed React Tauri native compile
+npm run tauri -w @app/desktop-react -- build --no-bundle --config src-tauri/tauri.production.conf.json
+                          passed with VITE_SYNC_API_BASE_URL deliberately absent
+production WebView check  passed: exact release binary rendered maximized Arabic UI, reported offline,
+                          and created/read academic year 2025-2026 through local SQLite
 npm run db:migrate -w @app/sync-api  passed idempotently against development Neon
 post-merge npm run test    passed the same 46 files / 184 tests on main
 main CI 29167478983        passed lint, typecheck, tests, 5 Chromium journeys, and build
 ```
+
+Offline startup recovery checkpoint (2026-07-12):
+
+- Root cause of the `v1.0.0` blank production window was eager module evaluation of a production runtime configuration that required `VITE_SYNC_API_BASE_URL`; release builds without that GitHub Actions Variable threw before React could render its startup fallback.
+- Branch `codex/offline-safe-production-boot` now treats a missing or blank sync API URL as an intentional offline configuration, creates an unavailable sync client without making network requests, and resolves runtime configuration inside the caught asynchronous Tauri bootstrap path. Malformed non-empty URLs still fail validation.
+- Local commands remain SQLite-backed and queued while sync is unavailable; no database URL or shared secret is embedded in the desktop application.
+- The exact production-profile executable was built with the sync URL removed, inspected through its production WebView, and exercised through initial academic-year creation. The UI stayed Arabic, maximized, and explicitly offline.
+- Package version is staged at `1.0.1`; merge, tag, signed installer publication, and independent release-feed verification remain outstanding.
+- Accidental repository Variable copies of `DATABASE_URL` and `SYNC_API_SHARED_SECRET` were removed after confirming their Secret entries remained. Rotate the exposed Neon credential before future online-sync work. Only a public deployed HTTPS API origin belongs in `SYNC_API_BASE_URL` as a repository Variable.
 
 Release checkpoint (2026-07-11):
 
@@ -121,6 +134,7 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Start post-MVP work from `main` (or a short-lived `codex/*` branch); do not rewrite the `v1.0.0` tag.
-2. Keep schema changes behind committed Drizzle migrations and apply them intentionally to both configured Neon branches.
-3. Use `pre-release` only when an ordered signed demo release is intended; CI-authored version commits must be fetched before further release work.
+1. Finish the `v1.0.1` recovery from `codex/offline-safe-production-boot`: rerun post-version verification, merge to `main`, wait for main CI, then create the new annotated `v1.0.1` tag without rewriting `v1.0.0`.
+2. Verify the signed installer, updater signature, `latest.json`, and global `releases/latest` feed independently before calling the recovery complete.
+3. Rotate the exposed Neon credential before designing the post-recovery sync architecture. Keep database credentials and shared secrets server-only; do not expose them through Vite or GitHub Variables.
+4. Keep schema changes behind committed Drizzle migrations and apply them intentionally to both configured Neon branches.

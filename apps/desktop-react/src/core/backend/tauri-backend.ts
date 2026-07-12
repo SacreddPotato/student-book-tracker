@@ -1,7 +1,7 @@
 import { isTauri } from "@tauri-apps/api/core";
 
 import desktopPackage from "../../../package.json";
-import { runtimeConfig } from "../../app/runtime-config";
+import { resolveRuntimeConfig } from "../../app/runtime-config";
 import { initializeLocalDatabase } from "../db/local-db";
 import { runMigrations } from "../db/migrations";
 import { listAcademicYears } from "../db/repositories/academic-years";
@@ -21,7 +21,7 @@ import {
 import { saveBook, saveStudent } from "../services/entity-service";
 import { addBookStock, issueBooksToStudent, reverseTransaction } from "../services/inventory-service";
 import { createExternalStore } from "../state/external-store";
-import { FetchSyncApiClient, type SyncApiClient } from "../sync/api-client";
+import { createSyncApiClient, type SyncApiClient } from "../sync/api-client";
 import { acknowledgeSyncConflict, countUnacknowledgedSyncConflicts, listSyncConflicts } from "../sync/conflicts";
 import { initialSyncStatus, SyncEngine } from "../sync/sync-engine";
 import { CoalescingSyncRunner } from "../sync/sync-runner";
@@ -140,8 +140,9 @@ export function createDatabaseBackend(options: {
 }
 
 export async function createTauriBackend(): Promise<AppBackend> {
+  const runtimeConfig = resolveRuntimeConfig(import.meta.env);
   const database = await initializeLocalDatabase(runtimeConfig);
-  const client = new FetchSyncApiClient({
+  const client = createSyncApiClient({
     apiBaseUrl: runtimeConfig.syncApiBaseUrl,
     transportToken: runtimeConfig.syncApiSharedSecret ?? null,
   });
