@@ -12,3 +12,4 @@ playwright-report/
 *.log
 *.local
 .vscode
+.worktrees/
