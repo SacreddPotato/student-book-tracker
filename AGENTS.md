@@ -64,6 +64,13 @@ Rust may require `$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"`.
 
 ## Current Implementation Status
 
+Active post-`v1.0.1` implementation (branch `codex/grade-scoped-delete`):
+
+- Auto-approved design committed scope: per-grade book rows with multi-grade creation, stage-dependent student grade filters, synchronized soft deletion for students/books, and preserved historical audit records.
+- Existing stage-only book rows will keep their IDs, balances, and history while migration assigns the first grade of their stage; stock will not be cloned.
+- Hostless Neon sync is designed as a separate follow-up using Neon Data API, authentication, and RLS. This feature release must remain offline-functional and must not embed owner database credentials or the server shared secret.
+- Isolated baseline passed all 46 test files / 187 tests before implementation.
+
 Completed, released, and merged to `main`:
 
 - Shared semester, academic-year, promotion, and sync contracts.
@@ -144,7 +151,7 @@ Development Neon migration checkpoint (2026-07-11):
 
 ## Next Starting Point
 
-1. Rotate the exposed Neon credential before designing the post-recovery sync architecture. Keep database credentials and shared secrets server-only; do not expose them through Vite or GitHub Variables.
-2. Design the self-sufficient sync architecture separately from the completed offline recovery. The desktop must remain fully functional with local SQLite when no sync transport is configured or reachable.
-3. Add only a deployed public HTTPS API origin to the `SYNC_API_BASE_URL` repository Variable when an authenticated sync transport exists; do not put a Neon connection string there.
-4. Keep schema changes behind committed Drizzle migrations and apply them intentionally to both configured Neon branches.
+1. Write the TDD implementation plan from `docs/superpowers/specs/2026-07-12-grade-scoped-books-and-deletion-design.md`, then execute it inline on `codex/grade-scoped-delete`.
+2. Add and verify committed local/Drizzle grade migrations before applying the remote migration intentionally to either Neon branch.
+3. Publish a new signed release only after full workspace, native, production artifact, and independent updater-feed verification.
+4. Begin hostless Neon Data API/Auth/RLS work only after this feature release; do not expose the owner `DATABASE_URL` or server shared secret in the desktop.
