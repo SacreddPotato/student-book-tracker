@@ -256,8 +256,17 @@ Direct desktop Neon transport checkpoint (2026-07-13 Cairo):
 - Windows release builds receive only `secrets.NEON_SYNC_DATABASE_URL` as `VITE_NEON_SYNC_DATABASE_URL`; the old API URL/shared-secret build variables are removed. The release runbook documents that this restricted credential is intentionally extractable on trusted machines.
 - TDD RED captured the missing direct transport and runtime fields. Fresh GREEN verification passed the focused 3-file / 27-test suite, the complete React suite (29 files / 111 tests), React typecheck, and the React production web build.
 
+Local hostless-sync cutover checkpoint (2026-07-13 Cairo):
+
+- SQLite migration `004_hostless_sync_cutover` clears the user-approved placeholder sync universe exactly once: issued-book rows, transaction items/headers, students, books, academic years, outbox rows, sync cursor/error state, and only the conflict-acknowledgement setting. Unrelated preferences and schema/indexes remain intact.
+- All migration statement batches now use `runLocalTransaction`; Tauri therefore executes them through the existing Rust-backed atomic transaction command instead of JavaScript `BEGIN`/`COMMIT`. Fresh databases run the empty cutover harmlessly, and mutations made after its migration record are never cleared.
+- Pending outbox reads are deterministic and capped at 100 with `ORDER BY created_at, id`. One sync request repeatedly pushes complete bounded batches, atomically validates/applies each result set, and pulls only after the pending queue drains.
+- Missing, duplicate, or unknown remote results are rejected before any status mutation. A first-batch transport failure leaves all 101 test commands pending.
+- Direct Neon driver failures now become a credential-redacted `TypeError`, so the existing sync status correctly reports offline rather than exposing connection details.
+- TDD RED proved the absent migration and former 101-command single push. Fresh GREEN verification passed the required 4-file / 19-test regression set and the complete React suite (29 files / 115 tests), including React typecheck.
+
 ## Next Starting Point
 
-1. Execute Task 4 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: add the one-time local SQLite cutover reset and bounded 100-command sync batching.
+1. Execute Task 5 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: harden redacted hostless verification, apply the five migrations to both rotated Neon targets, provision their restricted roles, and prove two-client convergence.
 2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
 3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.

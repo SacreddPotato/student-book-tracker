@@ -265,13 +265,13 @@ git commit -m "feat: connect desktop directly to Neon sync"
 - Consumes: v1.0.3 SQLite and `NeonDirectSyncClient`.
 - Produces: `004_hostless_sync_cutover` and `listPendingOutboxRows(database, limit = 100)`.
 
-- [ ] **Step 1: Write failing cutover and batching tests**
+- [x] **Step 1: Write failing cutover and batching tests**
 
 Seed a v1.0.3 database with all domain tables, pending/rejected outbox rows, a cursor, `sync.acknowledged-conflict-ids`, and an unrelated preference. Assert `004` clears domain/outbox/state/conflict acknowledgement, preserves the unrelated preference, runs once, and never clears a mutation created afterward.
 
 Seed 101 pending commands. Assert one sync request pushes 100 then 1 and then pulls. Assert unexpected first-batch failure leaves every row pending.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 npm run test -w @app/desktop-react -- --run src/core/db/production-data-continuity.test.ts src/core/sync/sync-engine.test.ts
@@ -279,11 +279,11 @@ npm run test -w @app/desktop-react -- --run src/core/db/production-data-continui
 
 Expected: FAIL because migration `004` and bounded reads are absent.
 
-- [ ] **Step 3: Implement cutover and batching**
+- [x] **Step 3: Implement cutover and batching**
 
 Delete child/history rows before parent rows, then delete `sync_outbox`, `sync_state`, and only the conflict acknowledgement setting. Do not drop tables/indexes. Query pending rows with `ORDER BY created_at, id LIMIT $1`. Loop 100-command pushes until fewer than 100 remain and apply each response before reading again. Keep all local write batches in `runLocalTransaction`.
 
-- [ ] **Step 4: Verify GREEN and commit**
+- [x] **Step 4: Verify GREEN and commit**
 
 ```powershell
 npm run test -w @app/desktop-react -- --run src/core/db/production-data-continuity.test.ts src/core/sync/sync-engine.test.ts src/core/services/inventory-service.test.ts src/core/services/academic-year-service.test.ts

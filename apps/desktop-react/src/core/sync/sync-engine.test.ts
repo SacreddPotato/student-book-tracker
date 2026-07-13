@@ -5,7 +5,10 @@ import { createTestDatabase, type TestSqliteDatabase } from "../db/test-database
 import { runMigrations } from "../db/migrations";
 import { createInitialAcademicYear, listAcademicYears } from "../db/repositories/academic-years";
 import { getBookById, listBookRecords, upsertBook } from "../db/repositories/books";
-import { countOutboxRowsByStatus } from "../db/repositories/outbox";
+import {
+  countOutboxRowsByStatus,
+  enqueueSyncCommand,
+} from "../db/repositories/outbox";
 import { listStudentRecords, listStudents } from "../db/repositories/students";
 import {
   listActiveStudentBookRows,
@@ -74,6 +77,66 @@ describe("SyncEngine", () => {
 
     expect(await countOutboxRowsByStatus(database, "pending")).toBe(1);
     expect(store.getSnapshot().phase).toBe("offline");
+  });
+
+  it("pushes 101 pending commands in bounded batches before pulling", async () => {
+    for (let index = 0; index < 101; index += 1) {
+      const id = `command-${String(index).padStart(3, "0")}`;
+      await enqueueSyncCommand(database, {
+        id,
+        type: "INITIALIZE_ACADEMIC_YEAR",
+        deviceId: "device-1",
+        occurredAt: now,
+        academicYear: `year-${index}`,
+      }, now);
+    }
+    const batchSizes: number[] = [];
+    const pull = vi.fn(async () => ({ changes: [], nextCursor: "0" }));
+    await new SyncEngine({
+      database,
+      client: client({
+        push: async (commands) => {
+          batchSizes.push(commands.length);
+          return commands.map(({ id }) => ({ commandId: id, status: "accepted" }));
+        },
+        pull,
+      }),
+      store: createExternalStore(initialSyncStatus),
+      now: () => now,
+    }).sync();
+
+    expect(batchSizes).toEqual([100, 1]);
+    expect(pull).toHaveBeenCalledOnce();
+    expect(await countOutboxRowsByStatus(database, "pending")).toBe(0);
+    expect(await countOutboxRowsByStatus(database, "synced")).toBe(101);
+  });
+
+  it("leaves every command pending when the first bounded batch fails", async () => {
+    for (let index = 0; index < 101; index += 1) {
+      const id = `command-${String(index).padStart(3, "0")}`;
+      await enqueueSyncCommand(database, {
+        id,
+        type: "INITIALIZE_ACADEMIC_YEAR",
+        deviceId: "device-1",
+        occurredAt: now,
+        academicYear: `year-${index}`,
+      }, now);
+    }
+    const push = vi.fn(async (_commands: SyncCommand[]) => {
+      throw new Error("unexpected remote failure");
+    });
+    const pull = vi.fn(async () => ({ changes: [], nextCursor: "0" }));
+    await new SyncEngine({
+      database,
+      client: client({ push, pull }),
+      store: createExternalStore(initialSyncStatus),
+      now: () => now,
+    }).sync();
+
+    expect(push).toHaveBeenCalledOnce();
+    expect(push.mock.calls[0]?.[0]).toHaveLength(100);
+    expect(pull).not.toHaveBeenCalled();
+    expect(await countOutboxRowsByStatus(database, "pending")).toBe(101);
   });
 
   it("marks accepted and rejected commands with visible status", async () => {

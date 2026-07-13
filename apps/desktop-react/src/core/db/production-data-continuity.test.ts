@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { runMigrations } from "./migrations";
+import { schemaStatements } from "./schema";
 import { TestSqliteDatabase } from "./test-database";
 
 const now = "2026-07-10T12:00:00.000Z";
@@ -85,6 +86,7 @@ describe("placeholder database migration", () => {
           { id: "001_initial_local_schema" },
           { id: "002_semester_inventory_academic_years" },
           { id: "003_grade_scoped_books" },
+          { id: "004_hostless_sync_cutover" },
         ]);
     } finally {
       database?.close();
@@ -125,8 +127,10 @@ describe("placeholder database migration", () => {
         created_at TEXT NOT NULL
       )`);
       await database.execute(
-        "INSERT INTO local_schema_migrations (id, applied_at) VALUES ($1, $2), ($3, $2)",
-        ["001_initial_local_schema", now, "002_semester_inventory_academic_years"],
+        `INSERT INTO local_schema_migrations (id, applied_at)
+          VALUES ($1, $2), ($3, $2), ($4, $2)`,
+        ["001_initial_local_schema", now, "002_semester_inventory_academic_years",
+          "004_hostless_sync_cutover"],
       );
       await database.execute(
         `INSERT INTO books VALUES
@@ -162,6 +166,110 @@ describe("placeholder database migration", () => {
       )).toEqual(expect.arrayContaining([{ name: "books_scope_grade_name_unique" }]));
       expect(await database.select("SELECT id, book_id FROM inventory_transaction_items"))
         .toEqual([{ id: "item-1", book_id: "book-1" }]);
+    } finally {
+      database?.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("clears the v1.0.3 local sync universe exactly once while preserving preferences", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "student-book-hostless-cutover-"));
+    const path = join(directory, "student-book-tracker.db");
+    let database: TestSqliteDatabase | undefined;
+    try {
+      database = new TestSqliteDatabase(path);
+      await database.execute(`CREATE TABLE local_schema_migrations (
+        id TEXT PRIMARY KEY,
+        applied_at TEXT NOT NULL
+      )`);
+      for (const statement of schemaStatements) await database.execute(statement);
+      await database.execute(
+        `INSERT INTO local_schema_migrations (id, applied_at) VALUES
+          ('001_initial_local_schema', $1),
+          ('002_semester_inventory_academic_years', $1),
+          ('003_grade_scoped_books', $1)`,
+        [now],
+      );
+      await database.execute(
+        "INSERT INTO academic_years VALUES ('2025-2026', 'current', $1, NULL)",
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO students VALUES
+          ('student-1', 'global', 'Placeholder', '123', 'primary', 'primary1',
+            '2025-2026', NULL, $1, $1, NULL)`,
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO books VALUES
+          ('book-1', 'global', 'Placeholder Book', 'primary', 'primary1', 9, 2, $1, $1, NULL)`,
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO inventory_transactions VALUES
+          ('transaction-1', 'global', '2025-2026', 'student_issue', 'student-1', NULL, NULL,
+            NULL, NULL, 'device-1', 'command-1', $1, $1)`,
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO inventory_transaction_items VALUES
+          ('item-1', 'transaction-1', 'book-1', 'first', -1, 8, $1)`,
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO student_books VALUES
+          ('student-book-1', 'global', '2025-2026', 'student-1', 'book-1', 'first',
+            'transaction-1', $1, NULL)`,
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO sync_outbox VALUES
+          ('command-1', 'UPSERT_BOOK', '{}', 'pending', 0, NULL, $1, $1),
+          ('command-2', 'UPSERT_BOOK', '{}', 'rejected', 1, 'rejected', $1, $1)`,
+        [now],
+      );
+      await database.execute(
+        "INSERT INTO sync_state VALUES ('global', '48', $1, 'old failure')",
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO app_settings VALUES
+          ('sync.acknowledged-conflict-ids', '["command-2"]', $1),
+          ('ui.compact-mode', 'true', $1)`,
+        [now],
+      );
+
+      await runMigrations(database);
+
+      for (const table of [
+        "student_books", "inventory_transaction_items", "inventory_transactions",
+        "students", "books", "academic_years", "sync_outbox", "sync_state",
+      ]) {
+        expect(await database.select(`SELECT * FROM ${table}`)).toEqual([]);
+      }
+      expect(await database.select("SELECT key, value_json FROM app_settings"))
+        .toEqual([{ key: "ui.compact-mode", value_json: "true" }]);
+      expect(await database.select<{ id: string }>(
+        "SELECT id FROM local_schema_migrations WHERE id = '004_hostless_sync_cutover'",
+      )).toEqual([{ id: "004_hostless_sync_cutover" }]);
+
+      await database.execute(
+        `INSERT INTO books VALUES
+          ('book-new', 'global', 'New Book', 'primary', 'primary1', 0, 0, $1, $1, NULL)`,
+        [now],
+      );
+      await database.execute(
+        `INSERT INTO sync_outbox VALUES
+          ('command-new', 'UPSERT_BOOK', '{}', 'pending', 0, NULL, $1, $1)`,
+        [now],
+      );
+
+      await runMigrations(database);
+
+      expect(await database.select<{ id: string }>("SELECT id FROM books"))
+        .toEqual([{ id: "book-new" }]);
+      expect(await database.select<{ id: string }>("SELECT id FROM sync_outbox"))
+        .toEqual([{ id: "command-new" }]);
     } finally {
       database?.close();
       rmSync(directory, { recursive: true, force: true });

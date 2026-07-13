@@ -72,6 +72,17 @@ describe("NeonDirectSyncClient", () => {
     await expect(client.pull("-1")).rejects.toThrow("nonnegative integer");
     expect(query).not.toHaveBeenCalled();
   });
+
+  it("reports driver failures as offline without leaking connection details", async () => {
+    const query = vi.fn(async () => {
+      throw new Error("postgresql://student_book_sync_client:secret@example.test/neondb");
+    }) as unknown as NeonQuery;
+    const client = new NeonDirectSyncClient(query);
+
+    await expect(client.pull(null)).rejects.toEqual(
+      new TypeError("Neon sync is unavailable."),
+    );
+  });
 });
 
 function mockNeonQuery(rows: Record<string, unknown>[]): NeonQuery {

@@ -52,7 +52,7 @@ export class NeonDirectSyncClient implements SyncApiClient {
     try {
       return await this.query(text, parameters);
     } catch {
-      throw new Error("Neon sync query failed.");
+      throw new TypeError("Neon sync is unavailable.");
     }
   }
 }
