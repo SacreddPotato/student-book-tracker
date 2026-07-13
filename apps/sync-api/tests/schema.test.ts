@@ -69,6 +69,9 @@ describe("remote database schema", () => {
     expect(verifier).toContain("sync_api.sync_pull(bigint)");
     expect(verifier).toContain("student_book_sync_runtime");
     expect(verifier).toContain("applied_sync_commands");
+    expect(verifier).toContain(
+      'process.env.REQUIRE_EMPTY_SYNC_TARGET === "1" && cutover?.rows !== 0',
+    );
   });
 
   it("requires secret-backed production targeting and redacted hostless verification", async () => {

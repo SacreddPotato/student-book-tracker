@@ -83,7 +83,7 @@ try {
     || !index
     || appliedTable?.tableName !== "applied_sync_commands"
     || !functionContractValid
-    || cutover?.rows !== 0) {
+    || (process.env.REQUIRE_EMPTY_SYNC_TARGET === "1" && cutover?.rows !== 0)) {
     throw new Error("Hostless sync migration verification failed.");
   }
 

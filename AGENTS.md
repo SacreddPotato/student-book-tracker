@@ -284,6 +284,7 @@ Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
 - The production restricted URL independently called `sync_api.sync_pull(bigint)` with no Hono process. The online production profile then built with only `student_book_sync_client`; bundle inspection found the restricted Neon endpoint and no `neondb_owner` credential.
 - The online executable SHA-256 is `6a44976c541fb41944fa445e612f5ce652fe0733f8114e9a7c18dcd23a249da5` before installer packaging. Local SQLite recorded pull cursor `1`, a fresh `last_synced_at`, no `last_error`, and the command as `synced`; the user independently confirmed the UI status changed to synchronized.
 - The first post-merge Windows run exposed one LF-only static SQL assertion against a CRLF checkout. The test now normalizes line endings before exact multiline checks; its focused 10-test suite and the complete merged 46-file suite passed afterward.
+- Main CI `29248517488` passed, but the first protected migration confirmation correctly stopped before tagging because the schema verifier still treated a now-live production target as required-empty. Empty-row enforcement is now opt-in through `REQUIRE_EMPTY_SYNC_TARGET=1`; schema/fingerprint/function verification remains mandatory. RED reproduced the failure, and GREEN passed the focused 10 tests, complete sync API suite (27 passed / 4 live-gated), and sync API typecheck.
 
 ## Next Starting Point
 
