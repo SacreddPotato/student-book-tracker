@@ -296,8 +296,41 @@ Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
 - Updater signature: 436 bytes, SHA-256 `392320a269945a6b485128b96f6beec03e849605bb6937f387807521f2450d2e`.
 - `latest.json`: 1,354 bytes, SHA-256 `635d836298c514dd25888dde0a0a2bf3b2e566cb170f23bd22ec0ef0b9604196`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.4`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
 
+Excel export refinement checkpoint (2026-07-13 Cairo):
+
+- `StudentsWorkbookInput` now requires the selected academic year and accepts translation interpolation values. The Students screen passes its selected `viewYear`, so archived-year exports print the year being viewed rather than the latest year.
+- The fixed `A/D/G:H` header was replaced by a symmetric three-region layout that keeps equal school/logo side spans and merges the true center across the actual printable width. The approved center contains only the localized full grade and populated academic year; Arabic Preparatory 2 renders as `الصف الثاني الإعدادي`.
+- Arabic workbook cells now persist RTL reading order after XLSX serialization. Arabic text is right-aligned, central/column headings and `0`/`1`/`2` values are centered, and English retains explicit LTR alignment.
+- Printing is landscape, horizontally centered, fitted to one page wide with unrestricted vertical pagination, and limited to the calculated header/body range.
+- TDD RED captured the missing two-line center merges, RTL cell alignment metadata, and print setup. Fresh GREEN verification passed the focused export suite (1 file / 6 tests) and React typecheck.
+
+Initial academic-year sync gate checkpoint (2026-07-13 Cairo):
+
+- `AcademicYearProvider` now observes `backend.syncStore` and exposes `setupReady`. It still reads local academic years immediately, but an empty database cannot open the setup modal while the first sync is `idle` or `syncing`.
+- Every terminal sync phase (`synced`, `rejected`, `offline`, or `error`) triggers a fresh SQLite academic-year read before setup becomes eligible. A year pulled from Neon is therefore adopted without prompting, while an empty offline/error result enables local initialization immediately after the failed attempt.
+- Existing local-year users remain usable while synchronization is pending. Later reconnect attempts reuse the same gate and refresh path, preventing stale provider state from reopening the duplicate initialization race.
+- TDD RED reproduced both failures: the setup dialog opened during `idle`, and a pulled year left the provider at `unset`. Fresh GREEN verification passed the focused export/provider/dialog/lifecycle set (4 files / 21 tests), React typecheck, and the complete React suite (29 passed files / 126 tests with one live-only test skipped).
+
+Excel print-preview QA checkpoint (2026-07-13 Cairo):
+
+- A representative Arabic Preparatory 2 workbook was generated directly from the final exporter with two students, four subjects, and `0`/`1`/`2` issuance states. ExcelJS reload confirmed the exact grade/year values, RTL/right/center alignments, symmetric merges, blank signature cells, and calculated `A1:H7` print area.
+- Microsoft Excel opened the generated XLSX read-only and confirmed landscape orientation, one-page-wide fitting with unrestricted height, horizontal centering, and the same print area. Its exported print-preview PDF rendered the full `الصف الثاني الإعدادي` header and `2025-2026` year in the correct visual order.
+- Excel's bidi layout initially displayed an unisolated year as `2026-2025` inside an RTL cell. A focused RED test captured the defect; the exporter now wraps only the Arabic academic-year token in invisible left-to-right marks. The GREEN export suite passed 1 file / 6 tests, while English output remains unmarked and LTR.
+
+Excel and startup-race final verification checkpoint (2026-07-13 Cairo):
+
+- Sequential workspace verification passed: legacy 18 files / 67 tests; React 29 passed files / 126 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; and shared 5 files / 26 tests.
+- Workspace typecheck and lint passed across all four packages. All five rendered Chromium journeys passed, including the student/export workflow, and every workspace build completed successfully.
+- `git diff --check` passed after the final review. This refinement changes only React UI/export/provider code, translations, tests, and this handoff; it requires no database migration or credential change.
+
+`v1.0.5` release candidate checkpoint (2026-07-13 Cairo):
+
+- At the user's request, desktop package and lockfile metadata advanced from `1.0.4` to `1.0.5`; the Tauri configuration continues to resolve its version from the React package.
+- The candidate contains only the verified Excel export and first-run synchronization refinements. It adds no schema migration and requires no database or credential mutation.
+- The branch remains ready for a verified merge to `main`, main CI, and the signed Windows release workflow. Do not move the `v1.0.5` tag away from the exact main commit validated by that workflow.
+
 ## Next Starting Point
 
-1. `v1.0.4` is complete; use it as the stable baseline for subsequent product work.
-2. Keep production schema verification live-data-safe. Use `REQUIRE_EMPTY_SYNC_TARGET=1` only for disposable or explicitly cleared targets, never for normal production migrations.
-3. Keep the owner `DATABASE_URL`, Neon management credentials, and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
+1. Merge branch `codex/excel-sync-refinement` to `main`, rerun the merged test suite, push, and wait for main CI.
+2. Dispatch the signed Windows workflow for `1.0.5`, then verify the published installer, updater signature, and global latest feed before recording the release checkpoint.
+3. Preserve the offline-first global dataset and the restricted `student_book_sync_client` transport; this refinement requires no database migration or credential change.

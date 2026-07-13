@@ -173,9 +173,10 @@ export function StudentsScreen() {
         students,
         books: booksQuery.data ?? [],
         gradeLevel: grade,
+        academicYear: viewYear!,
         language,
         issuedBookSelectionsByStudentId: Object.fromEntries(issuedEntries),
-        translate: (key) => t(key as Parameters<typeof t>[0]),
+        translate: (key, values) => t(key as Parameters<typeof t>[0], values),
       });
       await downloadStudentsWorkbook(workbook, `students-${grade}.xlsx`);
       notices.announce(t("feedback.exportReady"));

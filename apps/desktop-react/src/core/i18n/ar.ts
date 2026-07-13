@@ -100,7 +100,8 @@ export const ar = {
   export: {
     name: "الاسم", alGharbia: "الغربية",
     eastTantaAdministrativeLearning: "إدارة شرق طنطا التعليمية",
-    alRafiiSchools: "مدرسة الرافعي الرسميىة للغات", educationalYear: "للعام الدراسي:",
+    alRafiiSchools: "مدرسة الرافعي الرسميىة للغات", gradeHeading: "الصف {grade}",
+    educationalYear: "للعام الدراسي: {year}",
     studentSignature: "توقيع الطالب",
   },
   feedback: {
