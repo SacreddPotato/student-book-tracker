@@ -348,8 +348,18 @@ Excel table grid checkpoint (2026-07-13 Cairo):
 - Sequential final gates passed: legacy 18 files / 67 tests; React 29 passed files / 128 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace typecheck/lint/build; and all five rendered Chromium journeys.
 - At the user's request, desktop package and lockfile metadata advanced from `1.0.5` to `1.0.6`. This formatting-only release requires no database migration or credential change.
 
+`v1.0.6` release checkpoint (2026-07-13 Cairo):
+
+- Merge `79eb7f048a605ca3010853aea3efbde8f752b7ff` passed the local post-merge workspace suite and main CI run `29258923207`, including lint, typecheck, all tests, five rendered Chromium journeys, and the workspace build.
+- Signed Windows release workflow `29259478655` validated that exact merge, created annotated tag `v1.0.6`, repeated the quality gates, built and verified the signed installer/updater artifacts, and published the release.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.6`.
+- EXE: `Student.Book.Tracker_1.0.6_x64-setup.exe`, 4,459,870 bytes, SHA-256 `a1519c2e50009099527bf871bf893d007c1dbf1cacdf158d45d592e80750b2a7`; downloaded ProductVersion and FileVersion both report `1.0.6`.
+- Updater signature: 436 bytes, SHA-256 `ea511d48e58baacdebdfd9722460d9a56210e2a4c2a2dddaf0c99acc761b5364`.
+- `latest.json`: 1,354 bytes, SHA-256 `0e46ea68ab174694b6383fcc5ffef06eb4be81c21873b1f2e47a8162aa686087`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.6`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
+- The isolated worktree and merged feature branch were removed. No database migration or credential change was needed.
+
 ## Next Starting Point
 
-1. Merge the verified `codex/excel-table-borders` candidate to `main` and rerun the merged test suite.
-2. Push `main`, wait for CI, then dispatch and independently verify the signed `v1.0.6` Windows release.
-3. Preserve the offline-first global dataset and restricted `student_book_sync_client`; no migration or credential change is required.
+1. `v1.0.6` is complete; use it as the stable baseline for subsequent product work.
+2. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport.
+3. Keep owner database and management credentials out of the desktop; only the dedicated restricted pooled client URL belongs in trusted-client releases.
