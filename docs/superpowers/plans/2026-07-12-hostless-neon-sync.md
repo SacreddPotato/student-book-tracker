@@ -362,7 +362,7 @@ git commit -m "ops: verify hostless Neon sync targets"
 - Consumes: verified production `NEON_SYNC_DATABASE_URL` and all prior commits.
 - Produces: the next signed stable Windows release and updater metadata.
 
-- [ ] **Step 1: Run complete gates sequentially**
+- [x] **Step 1: Run complete gates sequentially**
 
 ```powershell
 npm run test
@@ -377,11 +377,11 @@ cargo check --manifest-path apps/desktop-react/src-tauri/Cargo.toml
 
 Expected: zero failures.
 
-- [ ] **Step 2: Smoke exact production profile offline**
+- [x] **Step 2: Smoke exact production profile offline**
 
 Build with `VITE_NEON_SYNC_DATABASE_URL` absent. Launch a uniquely named copy, verify maximized Arabic rendering, create a local academic year/mutation, and confirm offline plus queued outbox behavior.
 
-- [ ] **Step 3: Smoke exact production profile online**
+- [x] **Step 3: Smoke exact production profile online**
 
 Build with the verified restricted production URL. Verify sync without any Hono process, outbox drain, second-profile pull, and artifact scan absence of `neondb_owner`, the owner target fingerprint, and `SYNC_API_SHARED_SECRET`.
 

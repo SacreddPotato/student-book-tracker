@@ -276,8 +276,16 @@ Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
 - A live development proof used two independent SQLite profiles through the restricted Neon HTTP connection. It exchanged academic-year initialization, grade-scoped book/stock/student data, issuance, reversal, both tombstones, an offline queued book, and year rollover; both devices drained their outboxes and converged to the same cursor. The development branch was cleaned afterward and the empty-target verifier passed.
 - Fresh focused verification passed sync API schema/integration tests (10 passed, 3 live-gated skipped), the complete sync API suite (27 passed, 4 live-gated skipped), sync API typecheck, desktop live integration typecheck, the enabled two-device Neon journey (1 passed in 7.28 seconds), and a fail-closed empty-target development verification.
 
+`v1.0.4` hostless release candidate checkpoint (2026-07-13 Cairo):
+
+- Release metadata advanced from `1.0.3` to `1.0.4`. The exact production-identity native executable reports ProductVersion and FileVersion `1.0.4`.
+- Sequential pre-release gates passed: legacy 18 files / 67 tests, React 29 files / 115 tests with the live-only suite gated, sync API 4 files / 27 tests with the live PostgreSQL suite gated, shared 5 files / 26 tests, workspace lint/typecheck/build, five Chromium journeys, the Rust database allowlist test, and `cargo check`.
+- The URL-less production profile built and rendered maximized at 1920x1032 in Arabic with the initial academic-year dialog, confirming the preserved offline startup path. The offline-created initialization command was subsequently visible in the local outbox and drained after online startup.
+- The production restricted URL independently called `sync_api.sync_pull(bigint)` with no Hono process. The online production profile then built with only `student_book_sync_client`; bundle inspection found the restricted Neon endpoint and no `neondb_owner` credential.
+- The online executable SHA-256 is `6a44976c541fb41944fa445e612f5ce652fe0733f8114e9a7c18dcd23a249da5` before installer packaging. Local SQLite recorded pull cursor `1`, a fresh `last_synced_at`, no `last_error`, and the command as `synced`; the user independently confirmed the UI status changed to synchronized.
+
 ## Next Starting Point
 
-1. Execute Task 6 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md` for the next stable signed Windows release.
-2. After the protected workflow changes reach `main`, dispatch the production migration workflow idempotently and confirm fingerprint `dbaca31802f5` plus five migrations before tagging.
+1. Commit and integrate the `v1.0.4` candidate, wait for main CI, then dispatch the protected production migration workflow idempotently and confirm fingerprint `dbaca31802f5` plus five migrations before tagging.
+2. Tag the exact verified merge as `v1.0.4`, wait for the signed Windows release, verify installer/updater artifacts, and record the final release handoff without moving the tag.
 3. Keep the owner `DATABASE_URL`, Neon management credentials, and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
