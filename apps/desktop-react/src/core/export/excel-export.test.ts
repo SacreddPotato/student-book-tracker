@@ -1,7 +1,9 @@
+import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
 
 import type { BookRow } from "../db/repositories/books";
 import type { StudentRow } from "../db/repositories/students";
+import { getTranslation, type TranslationKey } from "../i18n";
 import { buildStudentsWorkbook } from "./excel-export";
 
 const now = "2026-07-08T10:00:00.000Z";
@@ -24,22 +26,67 @@ const books: BookRow[] = [{
 }];
 
 describe("student Excel export", () => {
+  it("centers the full Arabic grade and selected academic year in a two-line header", () => {
+    const preparatoryStudent: StudentRow = {
+      ...students[0],
+      id: "student-preparatory2",
+      name: "أحمد علي",
+      educationStage: "preparatory",
+      gradeLevel: "preparatory2",
+    };
+    const preparatoryBook: BookRow = {
+      ...books[0],
+      id: "book-preparatory2",
+      name: "اللغة العربية",
+      educationStage: "preparatory",
+      gradeLevel: "preparatory2",
+    };
+    const workbook = buildStudentsWorkbook({
+      students: [preparatoryStudent],
+      books: [preparatoryBook],
+      gradeLevel: "preparatory2",
+      academicYear: "2025-2026",
+      language: "ar",
+      issuedBookSelectionsByStudentId: {},
+      translate: (key, values) => ({
+        "export.name": "الاسم",
+        "export.alGharbia": "الغربية",
+        "export.eastTantaAdministrativeLearning": "إدارة شرق طنطا التعليمية",
+        "export.alRafiiSchools": "مدرسة الرافعي الرسمية للغات",
+        "export.gradeHeading": `الصف ${values?.grade}`,
+        "export.educationalYear": `للعام الدراسي: ${values?.year}`,
+        "export.studentSignature": "توقيع الطالب",
+        "stages.preparatory": "الإعدادي",
+        "grades.preparatory2": "الثاني الإعدادي",
+      })[key] ?? key,
+    });
+    const worksheet = workbook.getWorksheet("Students")!;
+
+    expect(worksheet.model.merges).toEqual(expect.arrayContaining(["C1:F1", "C2:F2"]));
+    expect(worksheet.getCell("C1").value).toBe("الصف الثاني الإعدادي");
+    expect(worksheet.getCell("C2").value).toBe("للعام الدراسي: \u200E2025-2026\u200E");
+    expect(worksheet.getCell("C1").font).toMatchObject({ bold: true, size: 14 });
+    expect(worksheet.getCell("C2").font).toMatchObject({ bold: true, size: 12 });
+  });
+
   it("exports only the selected grade and marks issued books", () => {
     const workbook = buildStudentsWorkbook({
       students,
       books,
       gradeLevel: "primary1",
+      academicYear: "2025-2026",
       language: "en",
       issuedBookSelectionsByStudentId: { "student-1": [
         { bookId: "book-1", semester: "first" },
         { bookId: "book-1", semester: "second" },
       ] },
-      translate: (key) => ({
+      translate: (key, values) => ({
         "export.name": "name",
         "export.alGharbia": "Al-Gharbia",
         "export.eastTantaAdministrativeLearning": "East Tanta",
         "export.alRafiiSchools": "Al-Rafii Schools",
-        "export.educationalYear": "Educational year",
+        "export.gradeHeading": String(values?.grade),
+        "export.educationalYear": `Educational year: ${values?.year}`,
         "export.studentSignature": "student signature",
         "students.issued": "Issued",
         "stages.primary": "Primary",
@@ -48,23 +95,89 @@ describe("student Excel export", () => {
     });
     const worksheet = workbook.getWorksheet("Students")!;
 
+    expect(worksheet.views[0]?.rightToLeft).toBe(false);
+    expect(worksheet.getCell("A1").alignment).toMatchObject({
+      horizontal: "left", readingOrder: "ltr", vertical: "middle",
+    });
     expect(worksheet.getCell("A1").value).toBe("Al-Gharbia");
+    expect(worksheet.getCell("C2").value).toBe("Educational year: 2025-2026");
     expect(worksheet.getCell(6, 1).value).toBe("Mona Ahmed");
     expect(worksheet.getCell(6, 2).value).toBe("2");
     expect(worksheet.getCell(5, 3).value).toBe("student signature");
   });
 
-  it("uses an RTL worksheet in Arabic", () => {
+  it("persists RTL reading order and cell-specific alignment in Arabic", async () => {
+    const arabicStudent = { ...students[0], name: "أحمد علي" };
+    const arabicBook = { ...books[0], name: "اللغة العربية" };
     const workbook = buildStudentsWorkbook({
-      students,
-      books,
+      students: [arabicStudent],
+      books: [arabicBook],
       gradeLevel: "primary1",
+      academicYear: "2025-2026",
       language: "ar",
       issuedBookSelectionsByStudentId: {},
-      translate: (key) => key,
+      translate: (key, values) => getTranslation("ar", key as TranslationKey, values),
     });
+    const data = await workbook.xlsx.writeBuffer();
+    const restored = new ExcelJS.Workbook();
+    await restored.xlsx.load(data);
+    const worksheet = restored.getWorksheet("Students")!;
 
-    expect(workbook.getWorksheet("Students")?.views[0]?.rightToLeft).toBe(true);
+    expect(worksheet.views[0]?.rightToLeft).toBe(true);
+    expect(worksheet.getCell("A1").alignment).toMatchObject({
+      horizontal: "right", readingOrder: "rtl", vertical: "middle",
+    });
+    expect(worksheet.getCell("C1").alignment).toMatchObject({
+      horizontal: "center", readingOrder: "rtl", vertical: "middle",
+    });
+    expect(worksheet.getCell("A5").alignment).toMatchObject({
+      horizontal: "center", readingOrder: "rtl", vertical: "middle",
+    });
+    expect(worksheet.getCell("A6").alignment).toMatchObject({
+      horizontal: "right", readingOrder: "rtl", vertical: "middle",
+    });
+    expect(worksheet.getCell("B6").alignment).toMatchObject({
+      horizontal: "center", readingOrder: "rtl", vertical: "middle",
+    });
+  });
+
+  it("keeps a wide subject header symmetric and configures one-page-width printing", () => {
+    const manyBooks = Array.from({ length: 8 }, (_, index): BookRow => ({
+      ...books[0],
+      id: `book-${index + 1}`,
+      name: `Book ${index + 1}`,
+    }));
+    const workbook = buildStudentsWorkbook({
+      students,
+      books: manyBooks,
+      gradeLevel: "primary1",
+      academicYear: "2025-2026",
+      language: "en",
+      issuedBookSelectionsByStudentId: {},
+      translate: (key, values) => ({
+        "export.name": "name",
+        "export.alGharbia": "Al-Gharbia",
+        "export.eastTantaAdministrativeLearning": "East Tanta",
+        "export.alRafiiSchools": "Al-Rafii Schools",
+        "export.gradeHeading": String(values?.grade),
+        "export.educationalYear": `Educational year: ${values?.year}`,
+        "export.studentSignature": "student signature",
+        "grades.primary1": "1st Primary",
+      })[key] ?? key,
+    });
+    const worksheet = workbook.getWorksheet("Students")!;
+
+    expect(worksheet.model.merges).toEqual(expect.arrayContaining([
+      "A1:C1", "A2:C2", "A3:C3", "D1:G1", "D2:G2", "H1:J3",
+    ]));
+    expect(worksheet.pageSetup).toMatchObject({
+      orientation: "landscape",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      horizontalCentered: true,
+      printArea: "A1:J6",
+    });
   });
 
   it("requires a concrete grade", () => {
@@ -72,6 +185,7 @@ describe("student Excel export", () => {
       students,
       books,
       gradeLevel: "all",
+      academicYear: "2025-2026",
       language: "en",
       issuedBookSelectionsByStudentId: {},
       translate: (key) => key,
@@ -87,7 +201,7 @@ describe("student Excel export", () => {
     ];
     for (const { selections, expected } of statuses) {
       const workbook = buildStudentsWorkbook({
-        students, books, gradeLevel: "primary1", language: "en",
+        students, books, gradeLevel: "primary1", academicYear: "2025-2026", language: "en",
         issuedBookSelectionsByStudentId: { "student-1": selections },
         translate: (key) => key,
       });

@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { AppProviders } from "../../app/AppProviders";
 import { AppShell } from "../../components/shell/AppShell";
@@ -10,6 +10,55 @@ import { SettingsScreen } from "./SettingsScreen";
 const now = "2026-07-08T10:00:00.000Z";
 
 describe("academic year dialogs", () => {
+  it.each(["synced", "rejected", "offline", "error"] as const)(
+    "waits for the initial sync before prompting when it ends as %s",
+    async (phase) => {
+      const backend = createFixtureBackend();
+      backend.syncStore.update({ phase: "idle" });
+      const listAcademicYears = vi.spyOn(backend, "listAcademicYears");
+      render(<AppProviders backend={backend} initialLanguage="en"><AppShell><div>Workspace</div></AppShell></AppProviders>);
+
+      await waitFor(() => expect(listAcademicYears).toHaveBeenCalled());
+      expect(screen.queryByRole("dialog", { name: "Set academic year" })).not.toBeInTheDocument();
+      act(() => backend.syncStore.update({ phase: "syncing" }));
+      expect(screen.queryByRole("dialog", { name: "Set academic year" })).not.toBeInTheDocument();
+
+      act(() => backend.syncStore.update({ phase }));
+      expect(await screen.findByRole("dialog", { name: "Set academic year" })).toBeVisible();
+    },
+  );
+
+  it("adopts a year pulled during initial sync without prompting", async () => {
+    const backend = createFixtureBackend();
+    backend.syncStore.update({ phase: "idle" });
+    const listAcademicYears = vi.spyOn(backend, "listAcademicYears");
+    render(<AppProviders backend={backend} initialLanguage="en"><AppShell><div>Workspace</div></AppShell></AppProviders>);
+
+    await waitFor(() => expect(listAcademicYears).toHaveBeenCalled());
+    expect(screen.queryByRole("dialog", { name: "Set academic year" })).not.toBeInTheDocument();
+    act(() => backend.syncStore.update({ phase: "syncing" }));
+    await backend.initializeAcademicYear("2025-2026");
+    act(() => backend.syncStore.update({ phase: "synced" }));
+
+    await waitFor(() => expect(listAcademicYears.mock.calls.length).toBeGreaterThan(1));
+    expect(screen.queryByRole("dialog", { name: "Set academic year" })).not.toBeInTheDocument();
+  });
+
+  it("does not block an existing local academic year while sync is pending", async () => {
+    const backend = createFixtureBackend({ academicYears: [
+      { academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null },
+    ] });
+    backend.syncStore.update({ phase: "idle" });
+    const listAcademicYears = vi.spyOn(backend, "listAcademicYears");
+    render(<AppProviders backend={backend} initialLanguage="en"><AppShell><div>Workspace</div></AppShell></AppProviders>);
+
+    await waitFor(() => expect(listAcademicYears).toHaveBeenCalled());
+    act(() => backend.syncStore.update({ phase: "syncing" }));
+
+    expect(screen.queryByRole("dialog", { name: "Set academic year" })).not.toBeInTheDocument();
+    expect(screen.getByText("Workspace")).toBeVisible();
+  });
+
   it("blocks first use until a valid academic year is initialized", async () => {
     const user = userEvent.setup();
     const backend = createFixtureBackend();

@@ -114,7 +114,8 @@ export const en = {
   export: {
     name: "name", alGharbia: "Al-Gharbia",
     eastTantaAdministrativeLearning: "East Tanta Administrative Learning",
-    alRafiiSchools: "Al-Rafii Schools", educationalYear: "for the educational year:",
+    alRafiiSchools: "Al-Rafii Schools", gradeHeading: "{grade}",
+    educationalYear: "for the educational year: {year}",
     studentSignature: "student signature",
   },
   feedback: {
