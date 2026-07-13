@@ -20,6 +20,7 @@ export const requiredRemoteTableNames = [
   "sync_state",
   "app_settings",
   "sync_changes",
+  "applied_sync_commands",
 ] as const;
 
 export const academicYears = pgTable(
@@ -192,3 +193,12 @@ export const syncChanges = pgTable(
     ),
   ],
 );
+
+export const appliedSyncCommands = pgTable("applied_sync_commands", {
+  commandId: text("command_id").primaryKey(),
+  payloadHash: text("payload_hash").notNull(),
+  status: text("status").notNull(),
+  reasonCode: text("reason_code"),
+  message: text("message"),
+  appliedAt: text("applied_at").notNull(),
+});

@@ -38,7 +38,7 @@
 - Consumes: all nine `SyncCommand` discriminants and the current `sync_changes` payload shape.
 - Produces: `sync_api.sync_push(p_commands jsonb) returns jsonb`, `sync_api.sync_pull(p_since bigint) returns jsonb`, and `applied_sync_commands`.
 
-- [ ] **Step 1: Write failing schema and SQL tests**
+- [x] **Step 1: Write failing schema and SQL tests**
 
 Add static assertions for `sync_api`, `sync_private`, `student_book_sync_runtime`, `applied_sync_commands`, both procedure signatures, `SECURITY DEFINER`, fixed `search_path`, revoked `PUBLIC` execution, and all nine discriminants. Add a real-Postgres suite enabled by `HOSTLESS_TEST_DATABASE_URL` with these call shapes:
 
@@ -53,7 +53,7 @@ const [pullRow] = await sql`
 
 Cover accepted/rejected/replay behavior for every command, both deletion tombstones, pull pagination, stale rollover, wrong-grade issuance, insufficient stock, reversal, duplicate IDs, concurrent issue, and concurrent reversal.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -63,7 +63,7 @@ npm run test -w @app/sync-api -- --run tests/schema.test.ts
 
 Expected: FAIL because migration `0004` and `applied_sync_commands` do not exist.
 
-- [ ] **Step 3: Add the Drizzle table and migration metadata**
+- [x] **Step 3: Add the Drizzle table and migration metadata**
 
 Add:
 
@@ -80,7 +80,7 @@ export const appliedSyncCommands = pgTable("applied_sync_commands", {
 
 Add it to `requiredRemoteTableNames`, run `npm run db:generate -w @app/sync-api`, and require the tag `0004_hostless_direct_neon_sync`.
 
-- [ ] **Step 4: Implement the immutable SQL contract**
+- [x] **Step 4: Implement the immutable SQL contract**
 
 Migration `0004` must enable `pgcrypto`, create `sync_api` and `sync_private`, create `student_book_sync_runtime` as `NOLOGIN/NOSUPERUSER/NOCREATEDB/NOCREATEROLE/NOINHERIT`, and clear placeholder remote rows before exposing functions.
 
@@ -96,7 +96,7 @@ SET search_path = pg_catalog, public, sync_private
 
 Change function ownership to `student_book_sync_runtime`, revoke `PUBLIC` execution, grant runtime only required `public`/`sync_private` schema usage plus table/sequence `SELECT/INSERT/UPDATE`, and grant no client login privileges. The migration temporarily grants its executing owner membership in the runtime role only as needed to transfer function ownership, then revokes that membership.
 
-- [ ] **Step 5: Rehearse and verify GREEN on disposable PostgreSQL 17**
+- [x] **Step 5: Rehearse and verify GREEN on disposable PostgreSQL 17**
 
 Start a uniquely named PostgreSQL 17 container. Set `DATABASE_URL` and `HOSTLESS_TEST_DATABASE_URL` to it, apply the complete Drizzle history twice, then run:
 
@@ -107,7 +107,7 @@ npm run db:verify -w @app/sync-api
 
 Expected: all cases pass; verifier reports five migrations, both functions, runtime ownership, grants, and zero cutover rows. Stop/remove only that container.
 
-- [ ] **Step 6: Update handoff and commit**
+- [x] **Step 6: Update handoff and commit**
 
 ```powershell
 git add apps/sync-api AGENTS.md

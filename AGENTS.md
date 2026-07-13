@@ -229,9 +229,17 @@ Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
 - `latest.json` SHA-256: `d654df09e46a526630fc203524a503168c5f199b952dfe5284d95d1ad65056e4`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.3`, and exposed matching signed `windows-x86_64` and `windows-x86_64-nsis` targets.
 - The plaintext repository Variable copy of `DATABASE_URL` was removed while its Secret entry remained. Rotate the exposed Neon credential before any online-sync work.
 
+Hostless PostgreSQL procedure checkpoint (2026-07-13 Cairo):
+
+- Branch `codex/hostless-neon-sync` now contains immutable migration `0004_hostless_direct_neon_sync.sql` on top of the merged `v1.0.3` baseline.
+- The migration clears the approved placeholder remote rows, creates `applied_sync_commands`, installs fixed-search-path `sync_api.sync_push(jsonb)` and `sync_api.sync_pull(bigint)`, and moves their ownership plus private handlers to `student_book_sync_runtime`.
+- The push procedure covers all nine shared command discriminants, stable accepted/rejected replay, synchronized student/book tombstones, exact academic-year advancement, grade checks, semester inventory, issuance, reversal, advisory command locking, and row locks for concurrent stock mutations.
+- TDD RED first captured missing migration/table/function contracts. A real PostgreSQL failure then isolated an issue-selection operator-precedence defect; parenthesizing the JSON extractions made the same concurrent/lifecycle tests pass.
+- Disposable PostgreSQL 17 applied migrations `0000` through `0004` twice. The verifier reported five migrations, `grade_level` non-null, the grade index, both public procedures owned by `student_book_sync_runtime`, no public execution, and zero post-cutover rows at redacted disposable fingerprint `ad9dc258792f`.
+- Fresh Task 1 verification passed sync API 4 files / 25 tests with the real PostgreSQL integration suite enabled, plus sync API typecheck. The exact disposable container was removed afterward.
+
 ## Next Starting Point
 
-1. Obtain user review of `docs/superpowers/specs/2026-07-12-hostless-neon-sync-design.md`, which now replaces the paused Auth/RLS design with the approved single-school, no-login architecture on the merged `v1.0.3` baseline.
-2. After written-spec approval, replace the superseded hostless plan with a TDD plan for the restricted-role procedures, direct Neon client, one-time placeholder cutover, migrations, two-client verification, and release.
-3. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
-4. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.
+1. Execute Task 2 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: add the idempotent `student_book_sync_client` provisioning/rotation CLI and prove its negative privilege matrix on a fresh disposable PostgreSQL 17 target.
+2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
+3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.
