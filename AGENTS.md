@@ -283,6 +283,7 @@ Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
 - The URL-less production profile built and rendered maximized at 1920x1032 in Arabic with the initial academic-year dialog, confirming the preserved offline startup path. The offline-created initialization command was subsequently visible in the local outbox and drained after online startup.
 - The production restricted URL independently called `sync_api.sync_pull(bigint)` with no Hono process. The online production profile then built with only `student_book_sync_client`; bundle inspection found the restricted Neon endpoint and no `neondb_owner` credential.
 - The online executable SHA-256 is `6a44976c541fb41944fa445e612f5ce652fe0733f8114e9a7c18dcd23a249da5` before installer packaging. Local SQLite recorded pull cursor `1`, a fresh `last_synced_at`, no `last_error`, and the command as `synced`; the user independently confirmed the UI status changed to synchronized.
+- The first post-merge Windows run exposed one LF-only static SQL assertion against a CRLF checkout. The test now normalizes line endings before exact multiline checks; its focused 10-test suite and the complete merged 46-file suite passed afterward.
 
 ## Next Starting Point
 

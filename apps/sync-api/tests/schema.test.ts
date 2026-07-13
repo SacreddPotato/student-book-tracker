@@ -21,10 +21,10 @@ import { readSyncApiEnv } from "../src/env";
 
 describe("remote database schema", () => {
   it("installs the restricted hostless sync contract", async () => {
-    const migration = await readFile(
+    const migration = (await readFile(
       new URL("../drizzle/0004_hostless_direct_neon_sync.sql", import.meta.url),
       "utf8",
-    );
+    )).replace(/\r\n/g, "\n");
 
     expect(migration).toContain("CREATE EXTENSION IF NOT EXISTS pgcrypto");
     expect(migration).toContain("CREATE SCHEMA IF NOT EXISTS sync_api");
