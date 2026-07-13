@@ -339,8 +339,17 @@ Excel and startup-race final verification checkpoint (2026-07-13 Cairo):
 - `latest.json`: 1,354 bytes, SHA-256 `a6e25f3f05510f36a652e357986a0d9f76b0e75540869f6cdeb62a3ad3915287`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.5`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` installer targets.
 - This release required no database migration or credential change. The isolated feature worktree and merged feature branch were removed after successful post-merge verification.
 
+Excel table grid checkpoint (2026-07-13 Cairo):
+
+- Student Excel exports now merge the signature heading and every signature body cell through the final printable column, so narrow subject sets use the complete page width without exposing empty filler columns.
+- Thin borders frame every logical name, subject, and signature cell from the table heading through the final student row. The school/grade/logo header and spacer row remain unchanged.
+- TDD RED reproduced the absent signature merges and borders. GREEN serialization coverage passed the focused export suite (1 file / 8 tests) plus React typecheck for both narrow and wide subject sets.
+- A production-generated Arabic Preparatory 2 workbook opened read-only in Microsoft Excel with exact `F5:H5`, `F6:H6`, and `F7:H7` signature merges, blank signature values, `A1:H7` print area, landscape one-page-width fitting, correct `2025-2026` order, and a visually continuous row-separated grid.
+- Sequential final gates passed: legacy 18 files / 67 tests; React 29 passed files / 128 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace typecheck/lint/build; and all five rendered Chromium journeys.
+- At the user's request, desktop package and lockfile metadata advanced from `1.0.5` to `1.0.6`. This formatting-only release requires no database migration or credential change.
+
 ## Next Starting Point
 
-1. `v1.0.5` is complete; use it as the stable baseline for subsequent product work.
-2. Preserve the offline-first global dataset and the restricted `student_book_sync_client` transport.
-3. Keep owner database and management credentials out of the desktop; only the dedicated restricted pooled client URL belongs in trusted-client releases.
+1. Merge the verified `codex/excel-table-borders` candidate to `main` and rerun the merged test suite.
+2. Push `main`, wait for CI, then dispatch and independently verify the signed `v1.0.6` Windows release.
+3. Preserve the offline-first global dataset and restricted `student_book_sync_client`; no migration or credential change is required.
