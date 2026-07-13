@@ -1315,7 +1315,10 @@ BEGIN
 END
 $function$;
 --> statement-breakpoint
-GRANT USAGE ON SCHEMA public, sync_api, sync_private
+GRANT USAGE ON SCHEMA public
+TO student_book_sync_runtime;
+--> statement-breakpoint
+GRANT USAGE, CREATE ON SCHEMA sync_api, sync_private
 TO student_book_sync_runtime;
 --> statement-breakpoint
 GRANT SELECT, INSERT, UPDATE ON TABLE
@@ -1392,6 +1395,9 @@ OWNER TO student_book_sync_runtime;
 ALTER FUNCTION sync_api.sync_pull(bigint)
 OWNER TO student_book_sync_runtime;
 --> statement-breakpoint
+REVOKE CREATE ON SCHEMA sync_api, sync_private
+FROM student_book_sync_runtime;
+--> statement-breakpoint
 REVOKE ALL ON SCHEMA sync_private FROM PUBLIC;
 --> statement-breakpoint
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA sync_private FROM PUBLIC;
@@ -1401,12 +1407,3 @@ REVOKE ALL ON SCHEMA sync_api FROM PUBLIC;
 REVOKE ALL ON FUNCTION sync_api.sync_push(jsonb) FROM PUBLIC;
 --> statement-breakpoint
 REVOKE ALL ON FUNCTION sync_api.sync_pull(bigint) FROM PUBLIC;
---> statement-breakpoint
-DO $membership$
-BEGIN
-  EXECUTE format(
-    'REVOKE student_book_sync_runtime FROM %I',
-    current_user
-  );
-END
-$membership$;

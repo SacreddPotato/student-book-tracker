@@ -11,6 +11,9 @@ const fingerprint = createHash("sha256")
   .digest("hex")
   .slice(0, 12);
 const expectedFingerprint = process.env.EXPECTED_DATABASE_FINGERPRINT;
+if (process.env.NODE_ENV === "production" && !expectedFingerprint) {
+  throw new Error("EXPECTED_DATABASE_FINGERPRINT is required in production.");
+}
 if (expectedFingerprint && fingerprint !== expectedFingerprint) {
   throw new Error(`Database fingerprint mismatch: expected ${expectedFingerprint}, received ${fingerprint}.`);
 }

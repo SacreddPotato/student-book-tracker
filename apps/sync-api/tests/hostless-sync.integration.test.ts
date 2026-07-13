@@ -17,6 +17,7 @@ import {
 } from "vitest";
 
 const databaseUrl = process.env.HOSTLESS_TEST_DATABASE_URL;
+const clientDatabaseUrl = process.env.HOSTLESS_TEST_CLIENT_DATABASE_URL ?? databaseUrl;
 const describeWithPostgres = databaseUrl ? describe : describe.skip;
 const at = (second: number) => `2026-07-13T00:00:${String(second).padStart(2, "0")}.000Z`;
 type PullResponse = {
@@ -32,7 +33,8 @@ type PullResponse = {
 };
 
 describeWithPostgres("hostless sync PostgreSQL contract", () => {
-  const sql = postgres(databaseUrl!, { max: 8 });
+  const ownerSql = postgres(databaseUrl!, { max: 1 });
+  const sql = postgres(clientDatabaseUrl!, { max: 8 });
 
   beforeAll(async () => {
     const migrationSql = postgres(databaseUrl!, { max: 1 });
@@ -46,7 +48,7 @@ describeWithPostgres("hostless sync PostgreSQL contract", () => {
   });
 
   beforeEach(async () => {
-    await sql`TRUNCATE TABLE
+    await ownerSql`TRUNCATE TABLE
       inventory_transaction_items,
       student_books,
       inventory_transactions,
@@ -63,6 +65,7 @@ describeWithPostgres("hostless sync PostgreSQL contract", () => {
 
   afterAll(async () => {
     await sql.end({ timeout: 5 });
+    await ownerSql.end({ timeout: 5 });
   });
 
   async function push(commands: SyncCommand[]) {
@@ -288,7 +291,7 @@ describeWithPostgres("hostless sync PostgreSQL contract", () => {
     ])).flat();
 
     expect(results.map(({ status }) => status).sort()).toEqual(["accepted", "rejected"]);
-    const [book] = await sql<{ quantity: number }[]>`
+    const [book] = await ownerSql<{ quantity: number }[]>`
       SELECT first_semester_quantity AS quantity FROM books WHERE id = 'book-1'
     `;
     expect(book.quantity).toBe(0);

@@ -265,8 +265,19 @@ Local hostless-sync cutover checkpoint (2026-07-13 Cairo):
 - Direct Neon driver failures now become a credential-redacted `TypeError`, so the existing sync status correctly reports offline rather than exposing connection details.
 - TDD RED proved the absent migration and former 101-command single push. Fresh GREEN verification passed the required 4-file / 19-test regression set and the complete React suite (29 files / 115 tests), including React typecheck.
 
+Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
+
+- The project-scoped Neon API key and project ID remained in the ignored operator `.env`; they were used only to discover the designated production/development branches and obtain connection strings in process memory. No credential value was printed, committed, or copied into a repository Variable.
+- Migration `0004` now accommodates Neon's non-superuser owner model by temporarily granting the runtime role schema creation only while transferring function ownership, revoking it immediately afterward, and retaining non-inherited owner membership so future migrations can manage the functions. This is PostgreSQL privilege plumbing only; the application still has one unauthenticated global dataset with no user/tenant owner.
+- Restricted-role provisioning was rehearsed as a `CREATEROLE` non-superuser owner. It creates or rotates `student_book_sync_client` without a `DO`-block self-grant, verifies safe catalog attributes, revokes all inherited/direct access, and grants only connect, `sync_api` usage, and the two procedure executions.
+- Applied the complete five-migration history to production branch `br-round-flower-as37e98s` and development branch `br-super-salad-aswaapne`. Redacted owner/restricted fingerprints are production `dbaca31802f5` / `8479f751bcff` and development `53bd50038a42` / `7368381c29be`.
+- Both targets passed catalog and negative-permission verification: exact runtime-owned `SECURITY DEFINER` functions, no `PUBLIC` execution, no direct client table grants, push/pull callable, and direct table reads, private-function execution, and schema creation denied. Both targets were left with zero cutover rows.
+- Production GitHub Secrets now contain the rotated direct owner URL, expected owner fingerprint, and restricted pooled `NEON_SYNC_DATABASE_URL`. No owner URL or server shared secret is mapped into the desktop build.
+- A live development proof used two independent SQLite profiles through the restricted Neon HTTP connection. It exchanged academic-year initialization, grade-scoped book/stock/student data, issuance, reversal, both tombstones, an offline queued book, and year rollover; both devices drained their outboxes and converged to the same cursor. The development branch was cleaned afterward and the empty-target verifier passed.
+- Fresh focused verification passed sync API schema/integration tests (10 passed, 3 live-gated skipped), the complete sync API suite (27 passed, 4 live-gated skipped), sync API typecheck, desktop live integration typecheck, the enabled two-device Neon journey (1 passed in 7.28 seconds), and a fail-closed empty-target development verification.
+
 ## Next Starting Point
 
-1. Execute Task 5 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: harden redacted hostless verification, apply the five migrations to both rotated Neon targets, provision their restricted roles, and prove two-client convergence.
-2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
-3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.
+1. Execute Task 6 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md` for the next stable signed Windows release.
+2. After the protected workflow changes reach `main`, dispatch the production migration workflow idempotently and confirm fingerprint `dbaca31802f5` plus five migrations before tagging.
+3. Keep the owner `DATABASE_URL`, Neon management credentials, and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.

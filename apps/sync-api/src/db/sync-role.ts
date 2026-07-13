@@ -74,6 +74,7 @@ export async function provisionSyncRole(
   const restrictedUrl = isNeon
     ? buildRestrictedDatabaseUrl(options.ownerDatabaseUrl, options.password)
     : replaceCredentials(options.ownerDatabaseUrl, options.password);
+  let stage = "read-database";
   try {
     const [{ databaseName }] = await ownerSql<{ databaseName: string }[]>`
       SELECT current_database() AS "databaseName"
@@ -81,27 +82,64 @@ export async function provisionSyncRole(
     const quotedDatabase = quoteIdentifier(databaseName);
 
     await ownerSql.begin(async (transaction) => {
+      stage = "quote-password";
       const [{ passwordLiteral }] = await transaction<{ passwordLiteral: string }[]>`
         SELECT quote_literal(${options.password}) AS "passwordLiteral"
       `;
 
-      await transaction.unsafe(`
-        DO $role$
-        BEGIN
-          IF NOT EXISTS (
-            SELECT 1 FROM pg_roles WHERE rolname = '${syncClientRoleName}'
-          ) THEN
-            CREATE ROLE ${syncClientRoleName}
-              LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
-          END IF;
-        END
-        $role$
-      `);
+      stage = "create-client-role";
+      await transaction`
+        SELECT pg_advisory_xact_lock(hashtextextended(${syncClientRoleName}, 0))
+      `;
+      const [{ roleExists }] = await transaction<{ roleExists: boolean }[]>`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_roles WHERE rolname = ${syncClientRoleName}
+        ) AS "roleExists"
+      `;
+      if (!roleExists) {
+        await transaction.unsafe(`
+          CREATE ROLE ${syncClientRoleName}
+            LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
+        `);
+      }
+      stage = "alter-client-role";
       await transaction.unsafe(`
         ALTER ROLE ${syncClientRoleName}
-          WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
+          WITH LOGIN NOCREATEROLE NOINHERIT
           PASSWORD ${passwordLiteral}
       `);
+      stage = "verify-client-role-attributes";
+      const [attributes] = await transaction<{
+        superuser: boolean;
+        createDatabase: boolean;
+        createRole: boolean;
+        inherit: boolean;
+        login: boolean;
+        replication: boolean;
+        bypassRls: boolean;
+      }[]>`
+        SELECT
+          rolsuper AS superuser,
+          rolcreatedb AS "createDatabase",
+          rolcreaterole AS "createRole",
+          rolinherit AS inherit,
+          rolcanlogin AS login,
+          rolreplication AS replication,
+          rolbypassrls AS "bypassRls"
+        FROM pg_roles
+        WHERE rolname = ${syncClientRoleName}
+      `;
+      if (!attributes
+        || attributes.superuser
+        || attributes.createDatabase
+        || attributes.createRole
+        || attributes.inherit
+        || !attributes.login
+        || attributes.replication
+        || attributes.bypassRls) {
+        throw new Error("Restricted client role attributes are unsafe.");
+      }
+      stage = "revoke-runtime-membership";
       await transaction.unsafe(`
         DO $membership$
         BEGIN
@@ -118,49 +156,61 @@ export async function provisionSyncRole(
         END
         $membership$
       `);
+      stage = "revoke-table-privileges";
       await transaction.unsafe(`
         REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public
         FROM ${syncClientRoleName}
       `);
+      stage = "revoke-sequence-privileges";
       await transaction.unsafe(`
         REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public
         FROM ${syncClientRoleName}
       `);
+      stage = "revoke-private-function-privileges";
       await transaction.unsafe(`
         REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA sync_private
         FROM ${syncClientRoleName}
       `);
+      stage = "revoke-api-function-privileges";
       await transaction.unsafe(`
         REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA sync_api
         FROM ${syncClientRoleName}
       `);
+      stage = "revoke-schema-privileges";
       await transaction.unsafe(`
         REVOKE ALL PRIVILEGES ON SCHEMA public, sync_private, sync_api
         FROM ${syncClientRoleName}
       `);
+      stage = "revoke-database-create";
       await transaction.unsafe(`
         REVOKE CREATE ON DATABASE ${quotedDatabase}
         FROM ${syncClientRoleName}
       `);
+      stage = "grant-database-connect";
       await transaction.unsafe(`
         GRANT CONNECT ON DATABASE ${quotedDatabase}
         TO ${syncClientRoleName}
       `);
+      stage = "grant-api-schema-usage";
       await transaction.unsafe(`
         GRANT USAGE ON SCHEMA sync_api
         TO ${syncClientRoleName}
       `);
+      stage = "grant-push-execute";
       await transaction.unsafe(`
         GRANT EXECUTE ON FUNCTION sync_api.sync_push(jsonb)
         TO ${syncClientRoleName}
       `);
+      stage = "grant-pull-execute";
       await transaction.unsafe(`
         GRANT EXECUTE ON FUNCTION sync_api.sync_pull(bigint)
         TO ${syncClientRoleName}
       `);
     });
 
+    stage = "verify-restricted-role";
     const verification = await verifyRestrictedRole(restrictedUrl);
+    stage = "remove-probe";
     await ownerSql`
       DELETE FROM applied_sync_commands
       WHERE command_id = '__sync_role_probe__'
@@ -175,7 +225,7 @@ export async function provisionSyncRole(
       deniedChecks: verification.deniedChecks,
     };
   } catch {
-    throw new Error("Restricted sync role provisioning failed.");
+    throw new Error(`Restricted sync role provisioning failed at ${stage}.`);
   } finally {
     await ownerSql.end({ timeout: 5 });
   }

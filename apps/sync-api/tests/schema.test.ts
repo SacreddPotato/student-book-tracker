@@ -34,6 +34,13 @@ describe("remote database schema", () => {
     expect(migration).toContain("FUNCTION sync_api.sync_pull(p_since bigint)");
     expect(migration).toContain("SECURITY DEFINER");
     expect(migration).toContain("SET search_path = pg_catalog, public, sync_private");
+    expect(migration).toContain(
+      "GRANT USAGE, CREATE ON SCHEMA sync_api, sync_private\nTO student_book_sync_runtime",
+    );
+    expect(migration).toContain(
+      "REVOKE CREATE ON SCHEMA sync_api, sync_private\nFROM student_book_sync_runtime",
+    );
+    expect(migration).not.toContain("REVOKE student_book_sync_runtime FROM %I");
     expect(migration).toContain("REVOKE ALL ON FUNCTION sync_api.sync_push(jsonb) FROM PUBLIC");
     expect(migration).toContain("REVOKE ALL ON FUNCTION sync_api.sync_pull(bigint) FROM PUBLIC");
     for (const commandType of [
@@ -62,6 +69,31 @@ describe("remote database schema", () => {
     expect(verifier).toContain("sync_api.sync_pull(bigint)");
     expect(verifier).toContain("student_book_sync_runtime");
     expect(verifier).toContain("applied_sync_commands");
+  });
+
+  it("requires secret-backed production targeting and redacted hostless verification", async () => {
+    const workflow = await readFile(
+      new URL("../../../.github/workflows/migrate-production.yml", import.meta.url),
+      "utf8",
+    );
+    const packageJson = JSON.parse(await readFile(
+      new URL("../package.json", import.meta.url),
+      "utf8",
+    )) as { scripts: Record<string, string> };
+    const hostlessVerifier = await readFile(
+      new URL("../src/db/verify-hostless-sync.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(workflow).toContain(
+      "EXPECTED_DATABASE_FINGERPRINT: ${{ secrets.EXPECTED_DATABASE_FINGERPRINT }}",
+    );
+    expect(workflow).not.toContain("EXPECTED_DATABASE_FINGERPRINT: 8479f751bcff");
+    expect(packageJson.scripts["db:verify-hostless"])
+      .toBe("tsx src/db/verify-hostless-sync.ts");
+    expect(hostlessVerifier).toContain("NEON_SYNC_DATABASE_URL");
+    expect(hostlessVerifier).toContain("syncClientRoleName");
+    expect(hostlessVerifier).not.toContain("console.log(databaseUrl)");
   });
 
   it("migrates existing books to required deterministic grade scope", async () => {

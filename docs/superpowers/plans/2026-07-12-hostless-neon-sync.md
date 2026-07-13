@@ -301,6 +301,7 @@ git commit -m "feat: cut over local data to hostless sync"
 - Modify: `apps/sync-api/src/db/verify-migration.ts`
 - Create: `apps/sync-api/src/db/verify-hostless-sync.ts`
 - Modify: `apps/sync-api/package.json`
+- Create: `apps/desktop-react/src/core/sync/hostless-sync.integration.test.ts`
 - Modify: `docs/runbooks/database-migrations.md`
 - Modify: `AGENTS.md`
 
@@ -308,11 +309,11 @@ git commit -m "feat: cut over local data to hostless sync"
 - Consumes: rotated development/production owner URLs and out-of-repo restricted passwords.
 - Produces: migrated targets, restricted pooled URLs, redacted fingerprints, and two-client convergence evidence.
 
-- [ ] **Step 1: Write failing verifier/workflow tests**
+- [x] **Step 1: Write failing verifier/workflow tests**
 
 Require five migration rows, exact functions/owners/grants, clean cutover counts, the restricted negative privilege matrix, and a production expected fingerprint supplied through a protected secret rather than the obsolete literal.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 npm run test -w @app/sync-api -- --run tests/schema.test.ts tests/sync-role.test.ts
@@ -321,11 +322,11 @@ npm run test -w @app/desktop-react -- --run src/app/runtime-config.test.ts
 
 Expected: FAIL on the old migration count/fingerprint workflow.
 
-- [ ] **Step 3: Implement redacted verification tooling**
+- [x] **Step 3: Implement redacted verification tooling**
 
 Accept owner/restricted URLs only through environment variables. Hash hostname plus database path, assert owner/restricted roles differ, inspect catalog/grants/counts, and exercise push/pull without printing URLs. Make the production workflow fail closed when the rotated expected fingerprint secret is absent.
 
-- [ ] **Step 4: Apply and verify development**
+- [x] **Step 4: Apply and verify development**
 
 ```powershell
 npm run db:migrate -w @app/sync-api
@@ -335,11 +336,11 @@ npm run db:verify-hostless -w @app/sync-api
 
 Use two temporary SQLite profiles to exchange year initialization, grade-scoped book, stock receipt, student, issuance, reversal, both soft deletions, and rollover. Disconnect one transport, queue a mutation, reconnect, and prove both cursors converge.
 
-- [ ] **Step 5: Apply and verify production**
+- [x] **Step 5: Apply and verify production**
 
-Update the production owner Secret and rotated expected fingerprint, dispatch the typed-confirmation migration workflow, provision production `student_book_sync_client`, store only its pooled URL as `NEON_SYNC_DATABASE_URL`, and run the hostless verifier. Stop if either target differs from the five-migration history.
+Update the production owner Secret and rotated expected fingerprint, apply the migration through the same fail-closed command used by the typed-confirmation workflow, provision production `student_book_sync_client`, store only its pooled URL as `NEON_SYNC_DATABASE_URL`, and run the hostless verifier. After the workflow change reaches `main`, dispatch it idempotently before tagging the release. Stop if either target differs from the five-migration history.
 
-- [ ] **Step 6: Verify packages and commit**
+- [x] **Step 6: Verify packages and commit**
 
 ```powershell
 npm run test -w @app/sync-api
