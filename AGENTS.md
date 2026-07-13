@@ -231,7 +231,7 @@ Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
 
 ## Next Starting Point
 
-1. Replace the paused Neon Auth/RLS proposal with the user-approved single-school, no-login design on top of the merged `v1.0.3` baseline.
-2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Provision a separate restricted Neon login that can execute only the reviewed sync procedures; the user explicitly accepts compiling that restricted role URL into trusted-client releases.
-3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path while replacing the hosted Hono transport with direct Neon HTTP sync.
-4. Rehearse every new migration on disposable PostgreSQL 17, then apply the exact committed history intentionally to both rotated Neon targets before release.
+1. Obtain user review of `docs/superpowers/specs/2026-07-12-hostless-neon-sync-design.md`, which now replaces the paused Auth/RLS design with the approved single-school, no-login architecture on the merged `v1.0.3` baseline.
+2. After written-spec approval, replace the superseded hostless plan with a TDD plan for the restricted-role procedures, direct Neon client, one-time placeholder cutover, migrations, two-client verification, and release.
+3. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
+4. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.
