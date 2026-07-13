@@ -32,7 +32,7 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   const worksheet = workbook.addWorksheet("Students");
   const stage = stageForGrade(input.gradeLevel);
   const stageBooks = input.books
-    .filter((book) => !book.deletedAt && book.educationStage === stage)
+    .filter((book) => !book.deletedAt && book.gradeLevel === input.gradeLevel)
     .sort((left, right) => left.name.localeCompare(right.name));
   const gradeStudents = input.students
     .filter((student) => !student.deletedAt && student.gradeLevel === input.gradeLevel)

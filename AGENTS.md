@@ -64,6 +64,14 @@ Rust may require `$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"`.
 
 ## Current Implementation Status
 
+Completed and released as `v1.0.3` from merge `3a026687`:
+
+- Auto-approved design committed scope: per-grade book rows with multi-grade creation, stage-dependent student grade filters, synchronized soft deletion for students/books, and preserved historical audit records.
+- Existing stage-only book rows will keep their IDs, balances, and history while migration assigns the first grade of their stage; stock will not be cloned.
+- Hostless Neon sync is designed as a separate follow-up using Neon Data API, authentication, and RLS. This feature release must remain offline-functional and must not embed owner database credentials or the server shared secret.
+- Isolated baseline passed all 46 test files / 187 tests before implementation.
+- The detailed five-task TDD plan is at `docs/superpowers/plans/2026-07-12-grade-scoped-books-and-deletion.md`; all implementation, migration, verification, and release tasks are complete.
+
 Completed, released, and merged to `main`:
 
 - Shared semester, academic-year, promotion, and sync contracts.
@@ -154,11 +162,76 @@ Development Neon migration checkpoint (2026-07-11):
 - `academic_years`, books, students, transactions, items, student books, and `sync_changes` all contained zero rows after migration.
 - The expandable audit uses the existing transaction/item schema and requires no additional database migration.
 
+Grade-scoped contracts and schema checkpoint (2026-07-12):
+
+- Branch `codex/grade-scoped-delete` completed Task 1 from the grade-scoped books and deletion plan.
+- Shared issuance eligibility now requires matching education stage and grade; book upserts require `gradeLevel`; and the shared command union includes `DELETE_STUDENT` and `DELETE_BOOK` shapes.
+- Fresh SQLite databases create `books.grade_level TEXT NOT NULL` and the active-row `books_scope_grade_name_unique` index. Migration `003_grade_scoped_books` rebuilds the table so upgraded databases also enforce `NOT NULL`, deterministically maps `kg`/`primary`/`preparatory` rows to `kg1`/`primary1`/`preparatory1`, and preserves IDs, semester balances, timestamps, tombstones, and string-ID inventory references.
+- Postgres migration `0003_grade_scoped_books.sql`, its Drizzle journal entry, and snapshot are committed but have not been applied to either Neon branch. Drizzle reports no remaining schema diff.
+- The current stage-only React and fixture creation paths assign the first grade for compatibility; Task 2 replaces those adapters with the planned explicit multi-grade creation service.
+- Full package verification passed: shared 5 files / 26 tests, React 28 files / 82 tests, sync API 3 files / 16 tests, React and sync API typechecks, and the preserved Svelte rollback typecheck (0 errors / 0 warnings). The focused SQLite continuity suite passed 1 file / 2 tests, and Drizzle reported no remaining schema diff.
+- No secret values were read or exposed, and no remote database was mutated during this segment.
+
+Atomic local creation and deletion checkpoint (2026-07-12):
+
+- Task 2 now exposes exact grade-aware `BookInput`, atomic `saveBooks`, and synchronized `deleteStudent` / `deleteBook` APIs across the SQLite and fixture backends.
+- Multi-grade creation validates the complete grade selection before opening one local transaction, then creates one independent zero-stock book and `UPSERT_BOOK` outbox command per grade. Single-row edits preserve both semester balances and `createdAt` and cannot fan out.
+- Student deletion is limited to an active student in the current academic year. Student and book deletion use one timestamp for `deletedAt` / `updatedAt` and queue the matching tombstone command in the same transaction.
+- Normal student/book lists remain active-only. Log composition uses include-deleted repository lookups so tombstoned names remain visible in audit history.
+- The temporary `LegacyBookInput` / `saveBook` adapters have been removed; every active React book write now uses explicit grade-aware `saveBooks` input.
+- Required focused verification passed 3 files / 19 tests; React typecheck passed; the full React suite passed 28 files / 92 tests.
+- Task 2 received a fresh inline review and rerun of its required focused suite (3 files / 19 tests). The user paused the independent hostless-sync worktree and directed this feature branch to ship on its own as `v1.0.3`.
+
+Remote grade and tombstone checkpoint (2026-07-12):
+
+- The sync route now requires `UPSERT_BOOK.book.gradeLevel`, accepts `DELETE_STUDENT` / `DELETE_BOOK`, and rejects malformed grade-less book payloads.
+- Remote upserts validate that a book grade belongs to its education stage. Issuance requires both the student's stage and exact grade.
+- Student deletion requires the current academic year and matching active snapshot; book deletion preserves balances. Both commands set `deletedAt` / `updatedAt`, record the complete tombstone in `sync_changes`, and remain duplicate-safe.
+- Drizzle and memory stores implement active-only tombstone mutations; Postgres book conflict updates now include `gradeLevel`.
+- Pull regression coverage confirms tombstones disappear from active lists while include-deleted audit lookups retain names.
+- TDD RED observed four intended failures (wrong-grade issuance accepted, two missing tombstones, route 400). GREEN passed sync API 2 files / 13 tests, React sync engine 1 file / 5 tests, React typecheck, and sync API typecheck.
+
+Grade-aware React workflow checkpoint (2026-07-12):
+
+- Book creation now offers only grades in the chosen education stage and creates one independent zero-stock subject row for every selected grade. Editing remains a single-row grade-aware operation.
+- Book inventory rows expose grade, edit, stock, audit, and confirmed delete actions. Student filters show only grades in the selected stage; issuance and Excel export use the student's exact grade rather than stage-wide books.
+- Current-year students and global books have explicit destructive confirmation dialogs. Archived student snapshots remain read-only and expose no delete action; successful selected-student deletion clears draft issuance state only after persistence succeeds.
+- SQLite, fixture, UI, and export paths all enforce exact-grade eligibility. The temporary grade-less `saveBook` compatibility API was removed from services, backends, types, and tests.
+- TDD RED captured the seven missing rendered/export behaviors and the same-stage wrong-grade local issuance gap. Focused GREEN verification passed 6 files / 34 tests with React typecheck.
+
+Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
+
+- PostgreSQL 17 disposable rehearsal applied the complete four-migration Drizzle history twice successfully. A separate pre-`0003` upgrade rehearsal preserved representative KG, Primary, and Preparatory book IDs plus both semester balances while mapping them to `kg1`, `primary1`, and `preparatory1`.
+- Rehearsal inspection confirmed `books.grade_level` is `NOT NULL` and only `books_scope_grade_name_unique` remains. The temporary PostgreSQL container was stopped and removed.
+- Applied `0003_grade_scoped_books.sql` idempotently to the configured development Neon target and verified four migration rows, the non-null column, and the grade-scoped unique index at redacted fingerprint `7368381c29be`.
+- Added a manual production migration workflow and reusable verifier. The workflow requires typed confirmation, reads the database only from GitHub Secrets, locks execution to known production fingerprint `8479f751bcff`, and verifies the schema without printing the URL.
+- A plaintext repository Variable copy of `DATABASE_URL` had been reintroduced and was removed. The GitHub Secret remains; rotate the now-exposed Neon credential before online sync resumes. No database credential is bundled into the desktop.
+- Full pre-release gates passed at this checkpoint: 46 files / 211 tests, five Chromium journeys, workspace lint/typecheck/build, Rust database allowlist test, and `cargo check`.
+
+`v1.0.3` production candidate checkpoint (2026-07-12):
+
+- Release metadata moved directly from `1.0.1` to `1.0.3`; no `1.0.2` tag or release is created.
+- Built the exact production-identity executable with `VITE_SYNC_API_BASE_URL` absent. Windows ProductVersion and FileVersion both report `1.0.3`.
+- To avoid Windows resolving the shared production identity to the installed `v1.0.1` executable, the newly built binary was copied under a unique smoke-test filename and launched from the worktree. The underlying bytes were unchanged.
+- A clean restart rendered maximized at 1920x1032, Arabic, and explicitly offline. The custom maximize action also restored a normal window to the full workspace.
+- Live local SQLite/WebView exercise created one subject for Primary 1 and Primary 2 as two independent zero-stock rows, exposed grade and delete controls on each row, and restricted the student grade dropdown to the selected stage. Rendered tests cover both destructive confirmation flows and archived-year delete suppression.
+- The production smoke process was closed. Smoke data is placeholder-only under the user-approved local production database and can be removed through the new confirmed delete flow.
+- Final post-version verification passed sequentially: 46 files / 211 tests, workspace lint, workspace typecheck, five Chromium journeys, and all workspace builds. Test and lint must not be launched concurrently because both run `svelte-kit sync` against the preserved legacy frontend's generated `.svelte-kit` directory.
+
+`v1.0.3` release checkpoint (2026-07-13 Cairo):
+
+- Merge `3a02668793c78e88bcb46e49665bba3af1d3c14e` passed main CI run `29209522207`, including lint, typecheck, all 211 tests, five rendered Chromium journeys, and the workspace build.
+- Production migration workflow `29209627851` applied the committed Drizzle history and verified fingerprint `8479f751bcff`, four migration rows, `grade_level NOT NULL`, and `books_scope_grade_name_unique` without exposing the database URL.
+- Annotated tag `v1.0.3` points to the exact verified merge. Signed Windows release workflow `29209655973` passed source validation, release quality gates, optimized packaging, signature/updater verification, and publication.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.3`.
+- EXE: `Student.Book.Tracker_1.0.3_x64-setup.exe`, 4,418,030 bytes, SHA-256 `ed635537f27591738e01fcdcf0a4434a8d74ac992499e3f57de3f4a34750ad49`; downloaded ProductVersion and FileVersion both report `1.0.3`.
+- Updater signature SHA-256: `f3bcacbe5494196ba2041a1094e9be4d9dcdffd6458387ae44d68f9ad83e6ae0`.
+- `latest.json` SHA-256: `d654df09e46a526630fc203524a503168c5f199b952dfe5284d95d1ad65056e4`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.3`, and exposed matching signed `windows-x86_64` and `windows-x86_64-nsis` targets.
+- The plaintext repository Variable copy of `DATABASE_URL` was removed while its Secret entry remained. Rotate the exposed Neon credential before any online-sync work.
+
 ## Next Starting Point
 
-1. Merge Track A's grade/deletion work into `main`, then merge/rebase that updated `main` into the hostless sync implementation branch. Confirm `0003_grade_scoped_books` and the final shared command discriminants before editing.
-2. Execute Task 2 of the hostless plan before other auth work: prove the exact production Tauri origin with the development Neon branch, or prove the native-safe device-code/system-browser PKCE fallback. Commit `docs/runbooks/neon-desktop-auth-spike.md`; do not bypass the gate by enabling generic localhost access.
-3. Rotate the exposed Neon credential before applying any online-sync migration or provisioning. Keep database credentials, management keys, JWT secrets, and shared secrets server-only.
-4. Implement the scoped schema as `0004_hostless_neon_sync.sql` or later, rehearse it on disposable PostgreSQL 17, then apply intentionally to development Neon before production.
-5. Preserve full SQLite functionality when the paired public Auth/Data API origins are absent, unreachable, signed out, expired, unassigned, or scope-mismatched.
-6. Ship the grade/deletion and hostless sync work only as one combined, fully verified signed release.
+1. Replace the paused Neon Auth/RLS proposal with the user-approved single-school, no-login design on top of the merged `v1.0.3` baseline.
+2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Provision a separate restricted Neon login that can execute only the reviewed sync procedures; the user explicitly accepts compiling that restricted role URL into trusted-client releases.
+3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path while replacing the hosted Hono transport with direct Neon HTTP sync.
+4. Rehearse every new migration on disposable PostgreSQL 17, then apply the exact committed history intentionally to both rotated Neon targets before release.

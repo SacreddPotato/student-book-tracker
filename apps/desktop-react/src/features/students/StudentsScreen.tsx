@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useBackend, useI18n, useNavigation, useNotices } from "../../app/AppProviders";
 import { useAcademicYear } from "../../app/AcademicYearProvider";
 import { Button } from "../../components/ui/Button";
+import { DeleteConfirmationDialog } from "../../components/ui/DeleteConfirmationDialog";
 import { EmptyState, LoadingState, Alert } from "../../components/ui/Feedback";
 import { Field } from "../../components/ui/Field";
 import { SelectField } from "../../components/ui/Select";
@@ -34,6 +35,7 @@ export function StudentsScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<StudentRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
   const [draft, setDraft] = useState<Set<string>>(new Set());
   const [discardOpen, setDiscardOpen] = useState(false);
   const [issueError, setIssueError] = useState<string | null>(null);
@@ -87,6 +89,21 @@ export function StudentsScreen() {
     },
     onError: () => setIssueError(t("errors.issue")),
   });
+  const deleteMutation = useMutation({
+    mutationFn: () => backend.deleteStudent(deleteTarget!.id, currentYear!),
+    onSuccess: async () => {
+      const deletedId = deleteTarget!.id;
+      await queryClient.invalidateQueries({ queryKey: studentKeys.all });
+      if (selectedId === deletedId) {
+        setSelectedId(null);
+        setDraft(new Set());
+        setIssueError(null);
+      }
+      setDeleteTarget(null);
+      notices.announce(t("feedback.studentDeleted"));
+    },
+    onError: () => notices.announce(t("errors.delete"), "error"),
+  });
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase();
@@ -96,9 +113,12 @@ export function StudentsScreen() {
       && (!needle || student.name.toLocaleLowerCase().includes(needle) || student.governmentId.includes(needle)));
   }, [grade, search, stage, studentsQuery.data]);
 
+  const visibleGradeLevels = stage === "all"
+    ? Object.values(gradeLevelsByStage).flat()
+    : gradeLevelsByStage[stage];
   const gradeOptions = [
     { value: "all", label: t("students.allGrades") },
-    ...Object.values(gradeLevelsByStage).flat().map((value) => ({ value, label: t(`grades.${value}`) })),
+    ...visibleGradeLevels.map((value) => ({ value, label: t(`grades.${value}`) })),
   ];
   const stageOptions = [
     { value: "all", label: t("students.allStages") },
@@ -192,7 +212,7 @@ export function StudentsScreen() {
       {failed ? <Alert>{t("errors.studentsLoad")}</Alert> : loading ? <LoadingState label={t("common.loading")} /> : !(studentsQuery.data?.length) ? <EmptyState title={t("students.empty")} /> : (
         <div className="students-layout">
           <div className="student-table-region">
-            {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={editStudent} readOnly={archived} />
+            {filtered.length ? <StudentTable students={filtered} selectedId={selectedId} onSelect={selectStudent} onEdit={editStudent} onDelete={setDeleteTarget} readOnly={archived} />
               : <EmptyState title={t("students.noResults")} />}
           </div>
           <StudentIssuancePanel
@@ -210,6 +230,7 @@ export function StudentsScreen() {
         </div>
       )}
       {!archived ? <StudentEditorSheet open={editorOpen} student={editing} saving={saveMutation.isPending} error={editorError} onOpenChange={setEditorOpen} onSave={(input) => saveMutation.mutate(input)} /> : null}
+      {!archived ? <DeleteConfirmationDialog open={Boolean(deleteTarget)} title={t("students.deleteTitle")} description={t("students.deleteDescription")} entityName={deleteTarget?.name ?? ""} saving={deleteMutation.isPending} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} onConfirm={() => { if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(); }} /> : null}
       <DiscardDraftDialog open={discardOpen} onCancel={() => resolveDiscard(false)} onDiscard={() => resolveDiscard(true)} />
     </section>
   );

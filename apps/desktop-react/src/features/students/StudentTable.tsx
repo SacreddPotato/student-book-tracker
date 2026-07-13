@@ -1,4 +1,4 @@
-import { Pencil, UserRoundCheck } from "lucide-react";
+import { Pencil, Trash2, UserRoundCheck } from "lucide-react";
 
 import { useI18n } from "../../app/AppProviders";
 import { Badge } from "../../components/ui/Badge";
@@ -6,11 +6,12 @@ import { Button } from "../../components/ui/Button";
 import { DataTable, TableActions } from "../../components/ui/DataTable";
 import type { StudentRow } from "../../core/db/repositories/students";
 
-export function StudentTable({ students, selectedId, onSelect, onEdit, readOnly = false }: {
+export function StudentTable({ students, selectedId, onSelect, onEdit, onDelete, readOnly = false }: {
   students: StudentRow[];
   selectedId: string | null;
   onSelect(student: StudentRow): void;
   onEdit(student: StudentRow): void;
+  onDelete(student: StudentRow): void;
   readOnly?: boolean;
 }) {
   const { t } = useI18n();
@@ -37,6 +38,9 @@ export function StudentTable({ students, selectedId, onSelect, onEdit, readOnly 
                 </Button>
                 {!readOnly ? <Button size="small" intent="quiet" aria-label={`${t("students.edit")} ${student.name}`} onClick={() => onEdit(student)}>
                   <Pencil size={16} aria-hidden="true" />
+                </Button> : null}
+                {!readOnly ? <Button size="small" intent="quiet" aria-label={`${t("students.delete")} ${student.name}`} onClick={() => onDelete(student)}>
+                  <Trash2 size={16} aria-hidden="true" />
                 </Button> : null}
               </TableActions>
             </td>

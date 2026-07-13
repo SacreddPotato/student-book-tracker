@@ -67,6 +67,7 @@ export const books = pgTable(
     scopeId: text("scope_id").notNull().default("global"),
     name: text("name").notNull(),
     educationStage: text("education_stage").notNull(),
+    gradeLevel: text("grade_level").notNull(),
     firstSemesterQuantity: integer("first_semester_quantity").notNull().default(0),
     secondSemesterQuantity: integer("second_semester_quantity").notNull().default(0),
     createdAt: text("created_at").notNull(),
@@ -74,8 +75,8 @@ export const books = pgTable(
     deletedAt: text("deleted_at"),
   },
   (table) => [
-    uniqueIndex("books_scope_stage_name_unique")
-      .on(table.scopeId, table.educationStage, table.name)
+    uniqueIndex("books_scope_grade_name_unique")
+      .on(table.scopeId, table.gradeLevel, table.name)
       .where(sql`${table.deletedAt} IS NULL`),
     check("books_first_semester_quantity_nonnegative", sql`${table.firstSemesterQuantity} >= 0`),
     check("books_second_semester_quantity_nonnegative", sql`${table.secondSemesterQuantity} >= 0`),

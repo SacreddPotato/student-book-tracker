@@ -13,7 +13,13 @@ const students: StudentRow[] = [{
 }];
 const books: BookRow[] = [{
   id: "book-1", scopeId: "global", name: "Primary Math",
-  educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 2, createdAt: now,
+  educationStage: "primary", gradeLevel: "primary1",
+  firstSemesterQuantity: 2, secondSemesterQuantity: 2, createdAt: now,
+  updatedAt: now, deletedAt: null,
+}, {
+  id: "book-primary2", scopeId: "global", name: "Primary 2 Math",
+  educationStage: "primary", gradeLevel: "primary2",
+  firstSemesterQuantity: 2, secondSemesterQuantity: 2, createdAt: now,
   updatedAt: now, deletedAt: null,
 }];
 
@@ -45,6 +51,7 @@ describe("student Excel export", () => {
     expect(worksheet.getCell("A1").value).toBe("Al-Gharbia");
     expect(worksheet.getCell(6, 1).value).toBe("Mona Ahmed");
     expect(worksheet.getCell(6, 2).value).toBe("2");
+    expect(worksheet.getCell(5, 3).value).toBe("student signature");
   });
 
   it("uses an RTL worksheet in Arabic", () => {

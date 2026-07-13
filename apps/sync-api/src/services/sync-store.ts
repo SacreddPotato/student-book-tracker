@@ -30,9 +30,11 @@ export interface SyncStoreTransaction {
   getTransactionForUpdate(transactionId: string): Promise<InventoryTransactionRecord | null>;
   getTransactionItems(transactionId: string): Promise<InventoryTransactionItemRecord[]>;
   upsertStudent(record: StudentRecord): Promise<StudentRecord>;
+  markStudentDeleted(studentId: string, deletedAt: string): Promise<StudentRecord>;
   upsertBook(
     record: Omit<BookRecord, "firstSemesterQuantity" | "secondSemesterQuantity">,
   ): Promise<BookRecord>;
+  markBookDeleted(bookId: string, deletedAt: string): Promise<BookRecord>;
   updateBook(record: BookRecord): Promise<BookRecord>;
   insertTransaction(record: InventoryTransactionRecord): Promise<void>;
   insertTransactionItems(records: InventoryTransactionItemRecord[]): Promise<void>;
@@ -175,6 +177,16 @@ class DrizzleSyncStoreTransaction implements SyncStoreTransaction {
     return student;
   }
 
+  async markStudentDeleted(studentId: string, deletedAt: string): Promise<StudentRecord> {
+    const [student] = await this.database
+      .update(students)
+      .set({ deletedAt, updatedAt: deletedAt })
+      .where(and(eq(students.id, studentId), isNull(students.deletedAt)))
+      .returning();
+    if (!student) throw new Error(`Active student not found: ${studentId}`);
+    return student;
+  }
+
   async upsertBook(
     record: Omit<BookRecord, "firstSemesterQuantity" | "secondSemesterQuantity">,
   ): Promise<BookRecord> {
@@ -186,11 +198,22 @@ class DrizzleSyncStoreTransaction implements SyncStoreTransaction {
         set: {
           name: record.name,
           educationStage: record.educationStage,
+          gradeLevel: record.gradeLevel,
           updatedAt: record.updatedAt,
           deletedAt: null,
         },
       })
       .returning();
+    return book;
+  }
+
+  async markBookDeleted(bookId: string, deletedAt: string): Promise<BookRecord> {
+    const [book] = await this.database
+      .update(books)
+      .set({ deletedAt, updatedAt: deletedAt })
+      .where(and(eq(books.id, bookId), isNull(books.deletedAt)))
+      .returning();
+    if (!book) throw new Error(`Active book not found: ${bookId}`);
     return book;
   }
 

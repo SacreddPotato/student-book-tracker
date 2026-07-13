@@ -47,6 +47,12 @@ export async function applyCommand(
         case "UPSERT_BOOK":
           await applyUpsertBook(transaction, command);
           break;
+        case "DELETE_STUDENT":
+          await applyDeleteStudent(transaction, command);
+          break;
+        case "DELETE_BOOK":
+          await applyDeleteBook(transaction, command);
+          break;
         case "ADD_BOOK_STOCK":
           await applyAddBookStock(transaction, command);
           break;
@@ -181,16 +187,44 @@ async function applyUpsertBook(
   transaction: SyncStoreTransaction,
   command: Extract<SyncCommand, { type: "UPSERT_BOOK" }>,
 ) {
+  if (!isGradeAllowedForStage(command.book.educationStage, command.book.gradeLevel)) {
+    reject("VALIDATION_FAILED", "Book grade does not belong to the education stage.");
+  }
   const book = await transaction.upsertBook({
     id: command.book.id,
     scopeId: "global",
     name: command.book.name,
     educationStage: command.book.educationStage,
+    gradeLevel: command.book.gradeLevel,
     createdAt: command.occurredAt,
     updatedAt: command.occurredAt,
     deletedAt: null,
   });
   await recordChanges(transaction, command, [["books", book.id, book]]);
+}
+
+async function applyDeleteStudent(
+  transaction: SyncStoreTransaction,
+  command: Extract<SyncCommand, { type: "DELETE_STUDENT" }>,
+) {
+  await assertCurrentAcademicYear(transaction, command.academicYear);
+  const student = await transaction.getStudent(command.studentId);
+  if (!student) reject("UNKNOWN_STUDENT", `Unknown student: ${command.studentId}`);
+  if (student.academicYear !== command.academicYear) {
+    reject("ACADEMIC_YEAR_MISMATCH", "Student is not enrolled in the current academic year.");
+  }
+  const deleted = await transaction.markStudentDeleted(student.id, command.occurredAt);
+  await recordChanges(transaction, command, [["students", deleted.id, deleted]]);
+}
+
+async function applyDeleteBook(
+  transaction: SyncStoreTransaction,
+  command: Extract<SyncCommand, { type: "DELETE_BOOK" }>,
+) {
+  const [book] = await transaction.getBooksForUpdate([command.bookId]);
+  if (!book) reject("UNKNOWN_BOOK", `Unknown book: ${command.bookId}`);
+  const deleted = await transaction.markBookDeleted(book.id, command.occurredAt);
+  await recordChanges(transaction, command, [["books", deleted.id, deleted]]);
 }
 
 async function applyAddBookStock(
@@ -256,8 +290,9 @@ async function applyIssueBooksToStudent(
     reject("UNKNOWN_BOOK", `Unknown book: ${bookIds.find((id) => !found.has(id))}`);
   }
   const booksById = new Map(books.map((book) => [book.id, book]));
-  if (books.some((book) => book.educationStage !== student.educationStage)) {
-    reject("VALIDATION_FAILED", "Books must match the student's education stage.");
+  if (books.some((book) => book.educationStage !== student.educationStage
+    || book.gradeLevel !== student.gradeLevel)) {
+    reject("VALIDATION_FAILED", "Books must match the student's education stage and grade.");
   }
   const empty = command.bookSelections.find((selection) =>
     quantityFor(booksById.get(selection.bookId)!, selection.semester) <= 0);

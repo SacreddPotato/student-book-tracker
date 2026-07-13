@@ -86,7 +86,19 @@ const syncCommandSchema = z.discriminatedUnion("type", [
       id: z.string().trim().min(1),
       name: z.string().trim().min(1),
       educationStage: educationStageSchema,
+      gradeLevel: gradeLevelSchema,
     }),
+  }),
+  z.object({
+    ...commandBase,
+    type: z.literal("DELETE_STUDENT"),
+    studentId: z.string().trim().min(1),
+    academicYear: academicYearSchema,
+  }),
+  z.object({
+    ...commandBase,
+    type: z.literal("DELETE_BOOK"),
+    bookId: z.string().trim().min(1),
   }),
   z.object({
     ...commandBase,

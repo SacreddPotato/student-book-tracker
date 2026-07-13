@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestDatabase, type TestSqliteDatabase } from "../db/test-database";
 import { runMigrations } from "../db/migrations";
 import { createInitialAcademicYear, listAcademicYears } from "../db/repositories/academic-years";
-import { getBookById, upsertBook } from "../db/repositories/books";
+import { getBookById, listBookRecords, upsertBook } from "../db/repositories/books";
 import { countOutboxRowsByStatus } from "../db/repositories/outbox";
-import { listStudents } from "../db/repositories/students";
+import { listStudentRecords, listStudents } from "../db/repositories/students";
 import {
   listActiveStudentBookRows,
   listInventoryTransactionItems,
@@ -48,7 +48,7 @@ describe("SyncEngine", () => {
     await createInitialAcademicYear(database, "2025-2026", now);
     await upsertBook(database, {
       id: "book-1", scopeId: "global", name: "Primary Math",
-      educationStage: "primary", firstSemesterQuantity: 2,
+      educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 2,
       secondSemesterQuantity: 0, createdAt: now,
       updatedAt: now, deletedAt: null,
     });
@@ -151,7 +151,7 @@ describe("SyncEngine", () => {
           { sequence: 3, commandId: "remote-1", entityTable: "books",
             entityId: "book-1", createdAt: now, payloadJson: JSON.stringify({
               id: "book-1", scopeId: "global", name: "Remote Math",
-              educationStage: "primary", firstSemesterQuantity: 9,
+              educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 9,
               secondSemesterQuantity: 4, createdAt: now,
               updatedAt: now, deletedAt: null,
             }) },
@@ -198,5 +198,44 @@ describe("SyncEngine", () => {
     ]);
     expect(await listInventoryTransactionItems(database, "remote-transaction")).toHaveLength(1);
     expect(await listActiveStudentBookRows(database, "2025-2026", "student-1")).toHaveLength(1);
+  });
+
+  it("applies pulled tombstones while retaining deleted records for audit names", async () => {
+    const deletedAt = "2026-07-08T11:00:00.000Z";
+    await new SyncEngine({
+      database,
+      client: client({ pull: vi.fn()
+        .mockResolvedValueOnce({
+          nextCursor: "2",
+          changes: [
+            { sequence: 1, commandId: "delete-student", entityTable: "students",
+              entityId: "student-1", createdAt: deletedAt, payloadJson: JSON.stringify({
+                id: "student-1", scopeId: "global", name: "Deleted Student",
+                governmentId: "1", educationStage: "primary", gradeLevel: "primary1",
+                academicYear: "2025-2026", previousStudentId: null, createdAt: now,
+                updatedAt: deletedAt, deletedAt,
+              }) },
+            { sequence: 2, commandId: "delete-book", entityTable: "books",
+              entityId: "book-1", createdAt: deletedAt, payloadJson: JSON.stringify({
+                id: "book-1", scopeId: "global", name: "Primary Math",
+                educationStage: "primary", gradeLevel: "primary1",
+                firstSemesterQuantity: 2, secondSemesterQuantity: 0,
+                createdAt: now, updatedAt: deletedAt, deletedAt,
+              }) },
+          ],
+        })
+        .mockResolvedValueOnce({ changes: [], nextCursor: "2" }) }),
+      store: createExternalStore(initialSyncStatus),
+      now: () => deletedAt,
+    }).sync();
+
+    expect(await listStudents(database, "2025-2026")).toEqual([]);
+    expect(await getBookById(database, "book-1")).toBeNull();
+    expect(await listStudentRecords(database, "2025-2026")).toEqual([
+      expect.objectContaining({ name: "Deleted Student", deletedAt }),
+    ]);
+    expect(await listBookRecords(database)).toEqual([
+      expect.objectContaining({ name: "Primary Math", deletedAt }),
+    ]);
   });
 });

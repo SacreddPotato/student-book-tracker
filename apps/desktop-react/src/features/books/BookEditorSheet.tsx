@@ -1,8 +1,9 @@
-import { educationStages, type EducationStage } from "@app/shared";
+import { educationStages, gradeLevelsByStage, type EducationStage, type GradeLevel } from "@app/shared";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useI18n } from "../../app/AppProviders";
 import { Button } from "../../components/ui/Button";
+import { Checkbox } from "../../components/ui/Checkbox";
 import { Alert } from "../../components/ui/Feedback";
 import { Field } from "../../components/ui/Field";
 import { SelectField } from "../../components/ui/Select";
@@ -17,14 +18,25 @@ export function BookEditorSheet({ open, book, saving, error, onOpenChange, onSav
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [stage, setStage] = useState<EducationStage>("primary");
+  const [selectedGrades, setSelectedGrades] = useState<Set<GradeLevel>>(new Set(["primary1"]));
   useEffect(() => {
     if (!open) return;
     setName(book?.name ?? "");
-    setStage(book?.educationStage ?? "primary");
+    const nextStage = book?.educationStage ?? "primary";
+    setStage(nextStage);
+    setSelectedGrades(new Set([book?.gradeLevel ?? gradeLevelsByStage[nextStage][0]]));
   }, [book, open]);
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (name.trim()) onSave({ id: book?.id, name, educationStage: stage });
+    if (name.trim() && selectedGrades.size) {
+      onSave({ id: book?.id, name, educationStage: stage, gradeLevels: [...selectedGrades] });
+    }
+  }
+  const gradeOptions = gradeLevelsByStage[stage];
+  function changeStage(value: string) {
+    const nextStage = value as EducationStage;
+    setStage(nextStage);
+    setSelectedGrades(new Set([gradeLevelsByStage[nextStage][0]]));
   }
   return (
     <Sheet open={open} onOpenChange={(next) => { if (!saving) onOpenChange(next); }} title={book ? t("books.edit") : t("books.add")} description={t("books.description")}
@@ -32,7 +44,31 @@ export function BookEditorSheet({ open, book, saving, error, onOpenChange, onSav
       <form id="book-editor" className="book-editor" onSubmit={submit}>
         {error ? <Alert>{error}</Alert> : null}
         <Field label={t("fields.bookName")} value={name} onChange={(event) => setName(event.target.value)} required autoFocus />
-        <SelectField label={t("fields.educationStage")} value={stage} options={educationStages.map((value) => ({ value, label: t(`stages.${value}`) }))} onValueChange={(value) => setStage(value as EducationStage)} />
+        <SelectField label={t("fields.educationStage")} value={stage} options={educationStages.map((value) => ({ value, label: t(`stages.${value}`) }))} onValueChange={changeStage} />
+        {book ? (
+          <SelectField
+            label={t("fields.gradeLevel")}
+            value={[...selectedGrades][0]}
+            options={gradeOptions.map((value) => ({ value, label: t(`grades.${value}`) }))}
+            onValueChange={(value) => setSelectedGrades(new Set([value as GradeLevel]))}
+          />
+        ) : (
+          <fieldset className="book-editor-grades">
+            <legend>{t("books.gradeSelection")}</legend>
+            {gradeOptions.map((value) => (
+              <Checkbox
+                key={value}
+                label={t(`grades.${value}`)}
+                checked={selectedGrades.has(value)}
+                onCheckedChange={(checked) => setSelectedGrades((current) => {
+                  const next = new Set(current);
+                  if (checked) next.add(value); else next.delete(value);
+                  return next;
+                })}
+              />
+            ))}
+          </fieldset>
+        )}
       </form>
     </Sheet>
   );

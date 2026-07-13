@@ -14,7 +14,7 @@ describe("LogsScreen", () => {
     const user = userEvent.setup();
     const backend = createFixtureBackend({
       academicYears: [{ academicYear: "2025-2026", status: "current", createdAt: now, archivedAt: null }],
-      books: [{ id: "book-1", scopeId: "global", name: "Primary Math", educationStage: "primary", firstSemesterQuantity: 2, secondSemesterQuantity: 0, createdAt: now, updatedAt: now, deletedAt: null }],
+      books: [{ id: "book-1", scopeId: "global", name: "Primary Math", educationStage: "primary", gradeLevel: "primary1", firstSemesterQuantity: 2, secondSemesterQuantity: 0, createdAt: now, updatedAt: now, deletedAt: null }],
       transactions: [{ id: "tx-1", scopeId: "global", academicYear: "2025-2026", type: "stock_increase", studentId: null, receiptNumber: "00041", receiptDate: "2026-01-14", reversedTransactionId: null, reversedByTransactionId: null, deviceId: "fixture", commandId: "command-1", occurredAt: now, createdAt: now }],
       items: [{ id: "item-1", transactionId: "tx-1", bookId: "book-1", semester: "first", quantityDelta: 2, quantityAfter: 2, createdAt: now }],
     });
