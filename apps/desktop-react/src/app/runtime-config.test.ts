@@ -7,14 +7,12 @@ import previewTauri from "../../src-tauri/tauri.conf.json";
 import { resolveRuntimeConfig } from "./runtime-config";
 
 describe("resolveRuntimeConfig", () => {
-  it("starts the local API with the default desktop development command", () => {
+  it("starts the desktop without requiring the local API", () => {
     const rootPackage = JSON.parse(
       readFileSync(resolve(process.cwd(), "../../package.json"), "utf8"),
     ) as { scripts: Record<string, string> };
 
-    expect(rootPackage.scripts["dev:desktop"]).toContain("concurrently");
-    expect(rootPackage.scripts["dev:desktop"]).toContain("dev:api");
-    expect(rootPackage.scripts["dev:desktop"]).toContain("dev:desktop:react");
+    expect(rootPackage.scripts["dev:desktop"]).toBe("npm run dev:desktop:react");
   });
 
   it("keeps the release workflow on the production React identity", () => {
@@ -26,6 +24,11 @@ describe("resolveRuntimeConfig", () => {
     expect(releaseWorkflow).toContain("apps/desktop-react/package.json");
     expect(releaseWorkflow).toContain("projectPath: apps/desktop-react");
     expect(releaseWorkflow).toContain("tauri.production.conf.json");
+    expect(releaseWorkflow).toContain(
+      "VITE_NEON_SYNC_DATABASE_URL: ${{ secrets.NEON_SYNC_DATABASE_URL }}",
+    );
+    expect(releaseWorkflow).not.toContain("VITE_SYNC_API_BASE_URL");
+    expect(releaseWorkflow).not.toContain("VITE_SYNC_API_SHARED_SECRET");
     expect(productionTauri.identifier).toBe("com.studentbooktracker.app");
     expect(JSON.stringify(productionTauri)).toContain(
       "releases/latest/download/latest.json",
@@ -89,7 +92,8 @@ describe("resolveRuntimeConfig", () => {
       DEV: false,
       PROD: true,
       VITE_DESKTOP_PROFILE: "production",
-      VITE_SYNC_API_BASE_URL: "https://sync.example.test",
+      VITE_NEON_SYNC_DATABASE_URL:
+        "postgresql://student_book_sync_client:restricted@ep-example-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
     });
 
     expect(config.databaseUrl).toBe("sqlite:student-book-tracker.db");
@@ -113,7 +117,7 @@ describe("resolveRuntimeConfig", () => {
     expect(config).toMatchObject({
       profile: "production",
       databaseUrl: "sqlite:student-book-tracker.db",
-      syncApiBaseUrl: null,
+      neonSyncDatabaseUrl: null,
       updaterEnabled: true,
     });
   });
@@ -128,14 +132,33 @@ describe("resolveRuntimeConfig", () => {
     ).toThrow("Unknown desktop profile");
   });
 
-  it("rejects a production database URL before it reaches fetch", () => {
-    expect(() =>
-      resolveRuntimeConfig({
-        DEV: false,
-        PROD: true,
-        VITE_DESKTOP_PROFILE: "production",
-        VITE_SYNC_API_BASE_URL: "postgresql://secret",
-      }),
-    ).toThrow("HTTP or HTTPS");
+  it.each([
+    ["wrong protocol", "https://student_book_sync_client:pw@ep-test-pooler.us-east-2.aws.neon.tech/neondb"],
+    ["non-Neon host", "postgresql://student_book_sync_client:pw@example.test/neondb"],
+    ["non-pooler endpoint", "postgresql://student_book_sync_client:pw@ep-test.us-east-2.aws.neon.tech/neondb"],
+    ["owner username", "postgresql://neondb_owner:pw@ep-test-pooler.us-east-2.aws.neon.tech/neondb"],
+    ["missing password", "postgresql://student_book_sync_client@ep-test-pooler.us-east-2.aws.neon.tech/neondb"],
+    ["missing database", "postgresql://student_book_sync_client:pw@ep-test-pooler.us-east-2.aws.neon.tech"],
+  ])("rejects %s", (_label, databaseUrl) => {
+    expect(() => resolveRuntimeConfig({
+      VITE_NEON_SYNC_DATABASE_URL: databaseUrl,
+    })).toThrow("Neon sync database URL");
+  });
+
+  it("accepts only the restricted pooled Neon URL and never leaks its password", () => {
+    const databaseUrl =
+      "postgres://student_book_sync_client:p%40ssword@ep-test-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require";
+
+    expect(resolveRuntimeConfig({ VITE_NEON_SYNC_DATABASE_URL: databaseUrl }))
+      .toMatchObject({ neonSyncDatabaseUrl: databaseUrl });
+
+    const malformed = databaseUrl.replace("ep-test-pooler", "ep-test");
+    try {
+      resolveRuntimeConfig({ VITE_NEON_SYNC_DATABASE_URL: malformed });
+      throw new Error("Expected invalid URL to fail.");
+    } catch (error) {
+      expect(String(error)).not.toContain("p@ssword");
+      expect(String(error)).not.toContain("p%40ssword");
+    }
   });
 });

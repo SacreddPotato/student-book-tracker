@@ -33,4 +33,5 @@ jobs:
         run: npm run db:verify -w @app/sync-api
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          EXPECTED_DATABASE_FINGERPRINT: 8479f751bcff
+          EXPECTED_DATABASE_FINGERPRINT: ${{ secrets.EXPECTED_DATABASE_FINGERPRINT }}
+          NODE_ENV: production

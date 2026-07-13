@@ -44,9 +44,16 @@ const outboxSelect = `SELECT id, command_type AS commandType,
   payload_json AS payloadJson, status, attempts, last_error AS lastError,
   created_at AS createdAt, updated_at AS updatedAt FROM sync_outbox`;
 
-export function listPendingOutboxRows(database: SqlDatabase): Promise<OutboxRow[]> {
+export function listPendingOutboxRows(
+  database: SqlDatabase,
+  limit = 100,
+): Promise<OutboxRow[]> {
+  if (!Number.isSafeInteger(limit) || limit <= 0) {
+    throw new TypeError("Outbox batch limit must be a positive integer.");
+  }
   return database.select(
-    `${outboxSelect} WHERE status = 'pending' ORDER BY created_at`,
+    `${outboxSelect} WHERE status = 'pending' ORDER BY created_at, id LIMIT $1`,
+    [limit],
   );
 }
 

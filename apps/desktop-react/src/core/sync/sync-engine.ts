@@ -63,11 +63,14 @@ export class SyncEngine {
   async sync(): Promise<void> {
     await this.refresh("syncing", null);
     try {
-      const pending = await listPendingOutboxRows(this.options.database);
-      const commands = await this.prepareCommands(pending);
-      if (commands.length) {
-        const results = await this.options.client.push(commands);
-        await this.applyPushResults(pending, results);
+      while (true) {
+        const pending = await listPendingOutboxRows(this.options.database);
+        if (!pending.length) break;
+        const prepared = await this.prepareCommands(pending);
+        if (prepared.commands.length) {
+          const results = await this.options.client.push(prepared.commands);
+          await this.applyPushResults(prepared.rows, results);
+        }
       }
       await this.pullChanges();
       const rejected = await countOutboxRowsByStatus(this.options.database, "rejected");
@@ -85,12 +88,17 @@ export class SyncEngine {
     }
   }
 
-  private async prepareCommands(rows: OutboxRow[]): Promise<SyncCommand[]> {
+  private async prepareCommands(rows: OutboxRow[]): Promise<{
+    rows: OutboxRow[];
+    commands: SyncCommand[];
+  }> {
+    const preparedRows: OutboxRow[] = [];
     const commands: SyncCommand[] = [];
     for (const row of rows) {
       try {
         const command = JSON.parse(row.payloadJson) as SyncCommand;
         commands.push(await normaliseCommand(this.options.database, command));
+        preparedRows.push(row);
       } catch (error) {
         await runLocalTransaction(this.options.database, (database) =>
           updateOutboxStatus(database, {
@@ -103,16 +111,23 @@ export class SyncEngine {
         );
       }
     }
-    return commands;
+    return { rows: preparedRows, commands };
   }
 
   private async applyPushResults(rows: OutboxRow[], results: SyncCommandResult[]) {
     const byId = new Map(rows.map((row) => [row.id, row]));
     const resultIds = new Set(results.map(({ commandId }) => commandId));
+    if (resultIds.size !== results.length) {
+      throw new Error("Duplicate command in sync results.");
+    }
+    const unknown = results.find(({ commandId }) => !byId.has(commandId));
+    if (unknown) throw new Error(`Unknown sync result: ${unknown.commandId}`);
+    const missing = rows.find((row) => !resultIds.has(row.id));
+    if (missing) throw new Error(`Missing sync result: ${missing.id}`);
+
     await runLocalTransaction(this.options.database, async (database) => {
       for (const result of results) {
-        const row = byId.get(result.commandId);
-        if (!row) throw new Error(`Unknown sync result: ${result.commandId}`);
+        const row = byId.get(result.commandId)!;
         const accepted = result.status === "accepted" || result.status === "duplicate";
         await updateOutboxStatus(database, {
           id: row.id,
@@ -123,8 +138,6 @@ export class SyncEngine {
         });
       }
     });
-    const missing = rows.find((row) => !resultIds.has(row.id) && isValidCommand(row.payloadJson));
-    if (missing) throw new Error(`Missing sync result: ${missing.id}`);
   }
 
   private async pullChanges() {
@@ -296,10 +309,6 @@ function isStudentBook(value: unknown): value is StudentBookRow {
 function formatRejected(result: SyncCommandResult) {
   return [result.reasonCode, result.message].filter(Boolean).join(": ")
     || "Sync command rejected.";
-}
-function isValidCommand(json: string) {
-  try { return typeof (JSON.parse(json) as { id?: unknown }).id === "string"; }
-  catch { return false; }
 }
 function isOfflineError(error: unknown) {
   return (error instanceof TypeError && !/database|transaction|sqlite|locked/i.test(error.message))

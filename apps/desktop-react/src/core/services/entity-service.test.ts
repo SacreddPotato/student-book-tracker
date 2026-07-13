@@ -173,7 +173,8 @@ describe("entity service", () => {
         updatedAt: fixedNow,
       }),
     ]);
-    expect((await listPendingOutboxRows(database)).at(-1)).toEqual(
+    expect((await listPendingOutboxRows(database)).find(({ id }) => id === "delete-command"))
+      .toEqual(
       expect.objectContaining({ id: "delete-command", commandType: "DELETE_STUDENT" }),
     );
   });
@@ -216,7 +217,8 @@ describe("entity service", () => {
         updatedAt: fixedNow,
       }),
     ]);
-    expect((await listPendingOutboxRows(database)).at(-1)).toEqual(
+    expect((await listPendingOutboxRows(database)).find(({ id }) => id === "delete-command"))
+      .toEqual(
       expect.objectContaining({ id: "delete-command", commandType: "DELETE_BOOK" }),
     );
   });

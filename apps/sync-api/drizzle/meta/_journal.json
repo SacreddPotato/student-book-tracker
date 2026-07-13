@@ -29,6 +29,13 @@
       "when": 1783886537616,
       "tag": "0003_grade_scoped_books",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783936374008,
+      "tag": "0004_hostless_direct_neon_sync",
+      "breakpoints": true
     }
   ]
 }

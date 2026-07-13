@@ -1,4 +1,5 @@
 import type { SqlDatabase } from "./types";
+import { runLocalTransaction } from "./local-transaction";
 import { schemaStatements } from "./schema";
 
 export type Migration = {
@@ -61,6 +62,21 @@ export const migrations: Migration[] = [
         WHERE deleted_at IS NULL`,
     ],
   },
+  {
+    id: "004_hostless_sync_cutover",
+    statements: [
+      "DELETE FROM student_books",
+      "DELETE FROM inventory_transaction_items",
+      "DELETE FROM inventory_transactions",
+      "DELETE FROM students",
+      "DELETE FROM books",
+      "DELETE FROM academic_years",
+      "DELETE FROM sync_outbox",
+      "DELETE FROM sync_state",
+      `DELETE FROM app_settings
+        WHERE key = 'sync.acknowledged-conflict-ids'`,
+    ],
+  },
 ];
 
 export async function runMigrations(database: SqlDatabase): Promise<void> {
@@ -76,19 +92,14 @@ export async function runMigrations(database: SqlDatabase): Promise<void> {
 
   for (const migration of migrations) {
     if (appliedIds.has(migration.id)) continue;
-    await database.execute("BEGIN IMMEDIATE");
-    try {
+    await runLocalTransaction(database, async (transaction) => {
       for (const statement of migration.statements) {
-        await database.execute(statement);
+        await transaction.execute(statement);
       }
-      await database.execute(
+      await transaction.execute(
         "INSERT INTO local_schema_migrations (id, applied_at) VALUES ($1, $2)",
         [migration.id, new Date().toISOString()],
       );
-      await database.execute("COMMIT");
-    } catch (error) {
-      await database.execute("ROLLBACK");
-      throw error;
-    }
+    });
   }
 }

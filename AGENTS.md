@@ -40,10 +40,10 @@ Update this file after every completed implementation segment. Keep current stat
 From the repository root:
 
 ```powershell
-npm run dev:desktop          # local sync API + React/Tauri preview
+npm run dev:desktop          # React/Tauri preview; direct Neon when configured, otherwise local-only
 npm run dev:desktop:react    # desktop only; API already running
 npm run dev:desktop:legacy   # preserved rollback frontend
-npm run dev:api
+npm run dev:api              # optional preserved Hono API development
 npm run test
 npm run test:e2e
 npm run typecheck
@@ -112,6 +112,18 @@ Offline startup recovery checkpoint (2026-07-12):
 - The exact production-profile executable was built with the sync URL removed, inspected through its production WebView, and exercised through initial academic-year creation. The UI stayed Arabic, maximized, and explicitly offline.
 - Package version `1.0.1` was merged to `main`, tagged, published as a signed Windows release, and independently verified against the GitHub asset digests and global updater feed.
 - Accidental repository Variable copies of `DATABASE_URL` and `SYNC_API_SHARED_SECRET` were removed after confirming their Secret entries remained. Rotate the exposed Neon credential before future online-sync work. Only a public deployed HTTPS API origin belongs in `SYNC_API_BASE_URL` as a repository Variable.
+
+Hostless Neon sync design checkpoint (2026-07-12):
+
+- Track B architecture and TDD planning are complete on `codex/hostless-neon-sync`; no production code or migration was created in this segment.
+- Approved design: keep SQLite/outbox/pull-cursor/conflict behavior, replace the normal hosted Hono transport with Neon Auth plus branch-level Neon Data API RPCs, expose only `sync_identity`, `sync_push`, and `sync_pull`, and derive the one active school `scope_id` inside PostgreSQL from `auth.user_id()` membership under forced RLS.
+- `apps/sync-api` remains an explicit operator diagnostic/rollback adapter over the same SQL functions and is removed from normal desktop startup/runtime selection.
+- Public release configuration becomes paired `NEON_AUTH_URL` and `NEON_DATA_API_URL` repository Variables mapped to `VITE_NEON_AUTH_URL` and `VITE_NEON_DATA_API_URL`. Owner URLs, management keys, JWT secrets, shared sync secrets, user credentials, and session tokens remain prohibited from desktop configuration.
+- Track A's grade/deletion branch merges first and owns `0003_grade_scoped_books`; hostless schema implementation must merge/rebase updated `main` first and begin at `0004` or later. Track A and Track B ship in one combined release.
+- Before auth implementation, a blocking production-profile Tauri spike must prove the exact WebView origin (`http://tauri.localhost` unless runtime evidence differs) can complete authentication, restart/session restoration, token refresh, sign out, and an authenticated Data API call without generic localhost access. If embedded Neon Auth is unsupported, prove a no-client-secret device-code or system-browser PKCE JWT flow whose JWKS works with the Data API.
+- Design: `docs/superpowers/specs/2026-07-12-hostless-neon-sync-design.md`.
+- TDD plan: `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`.
+- Planning verification passed: official Neon Data API/Auth documentation was refreshed on 2026-07-12; current client/engine/routes/schema/release paths were inspected; spec and plan placeholder, consistency, scope, type/interface, and `git diff --check` reviews passed.
 
 Release checkpoint (2026-07-12):
 
@@ -217,8 +229,63 @@ Grade-scoped migration rehearsal and development checkpoint (2026-07-12):
 - `latest.json` SHA-256: `d654df09e46a526630fc203524a503168c5f199b952dfe5284d95d1ad65056e4`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.3`, and exposed matching signed `windows-x86_64` and `windows-x86_64-nsis` targets.
 - The plaintext repository Variable copy of `DATABASE_URL` was removed while its Secret entry remained. Rotate the exposed Neon credential before any online-sync work.
 
+Hostless PostgreSQL procedure checkpoint (2026-07-13 Cairo):
+
+- Branch `codex/hostless-neon-sync` now contains immutable migration `0004_hostless_direct_neon_sync.sql` on top of the merged `v1.0.3` baseline.
+- The migration clears the approved placeholder remote rows, creates `applied_sync_commands`, installs fixed-search-path `sync_api.sync_push(jsonb)` and `sync_api.sync_pull(bigint)`, and moves their ownership plus private handlers to `student_book_sync_runtime`.
+- The push procedure covers all nine shared command discriminants, stable accepted/rejected replay, synchronized student/book tombstones, exact academic-year advancement, grade checks, semester inventory, issuance, reversal, advisory command locking, and row locks for concurrent stock mutations.
+- TDD RED first captured missing migration/table/function contracts. A real PostgreSQL failure then isolated an issue-selection operator-precedence defect; parenthesizing the JSON extractions made the same concurrent/lifecycle tests pass.
+- Disposable PostgreSQL 17 applied migrations `0000` through `0004` twice. The verifier reported five migrations, `grade_level` non-null, the grade index, both public procedures owned by `student_book_sync_runtime`, no public execution, and zero post-cutover rows at redacted disposable fingerprint `ad9dc258792f`.
+- Fresh Task 1 verification passed sync API 4 files / 25 tests with the real PostgreSQL integration suite enabled, plus sync API typecheck. The exact disposable container was removed afterward.
+
+Restricted Neon client-role checkpoint (2026-07-13 Cairo):
+
+- `sync-role.ts` derives only a pooled `student_book_sync_client` URL from an owner Neon URL, preserves database/TLS parameters, and redacts credentials from all reports and errors.
+- Provisioning is idempotent and fixes the login role at `LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT`. It revokes inherited/table/sequence/private-function privileges, then grants only database connect, `sync_api` schema usage, and execution of the exact push/pull procedures.
+- A fresh PostgreSQL 17 permission matrix proved push/pull access while direct select, insert, update, delete, private-function execution, schema creation, and role creation all failed through the restricted connection.
+- The `db:provision-sync-role` CLI requires the owner URL plus a generated client-role password, prints only a redacted JSON report, supports a mode-0600 pooled URL output file for operator handoff, and emits no PostgreSQL privilege warnings.
+- `docs/runbooks/database-migrations.md` documents migration, restricted-role rotation, redacted verification, and the explicitly accepted extractable-client-credential threat model.
+- Fresh Task 2 verification passed the live role suite (1 file / 5 tests), the normal sync API suite (4 files / 26 tests with four live checks skipped), and sync API typecheck. The exact disposable container was removed afterward.
+
+Direct desktop Neon transport checkpoint (2026-07-13 Cairo):
+
+- React runtime configuration now accepts only `VITE_NEON_SYNC_DATABASE_URL` with PostgreSQL protocol, a pooled `*.neon.tech` endpoint, a nonempty database/password, and exact username `student_book_sync_client`. Blank configuration remains intentionally offline, and invalid configuration errors never echo the URL or password.
+- `NeonDirectSyncClient` calls only `sync_api.sync_push($1::jsonb)` and `sync_api.sync_pull($1::bigint)` through the pinned `@neondatabase/serverless@1.1.0` HTTP driver. It validates complete push/pull response shapes and hides driver errors that could contain connection details.
+- Tauri initializes local SQLite before constructing the optional Neon client. The unavailable client still queues all local mutations without a network request, preserving offline-first startup and the Rust-backed local transaction path.
+- The default desktop development command no longer launches Hono. `dev:api` and `FetchSyncApiClient` remain available for isolated server/rollback tests, but are outside the production runtime.
+- Windows release builds receive only `secrets.NEON_SYNC_DATABASE_URL` as `VITE_NEON_SYNC_DATABASE_URL`; the old API URL/shared-secret build variables are removed. The release runbook documents that this restricted credential is intentionally extractable on trusted machines.
+- TDD RED captured the missing direct transport and runtime fields. Fresh GREEN verification passed the focused 3-file / 27-test suite, the complete React suite (29 files / 111 tests), React typecheck, and the React production web build.
+
+Local hostless-sync cutover checkpoint (2026-07-13 Cairo):
+
+- SQLite migration `004_hostless_sync_cutover` clears the user-approved placeholder sync universe exactly once: issued-book rows, transaction items/headers, students, books, academic years, outbox rows, sync cursor/error state, and only the conflict-acknowledgement setting. Unrelated preferences and schema/indexes remain intact.
+- All migration statement batches now use `runLocalTransaction`; Tauri therefore executes them through the existing Rust-backed atomic transaction command instead of JavaScript `BEGIN`/`COMMIT`. Fresh databases run the empty cutover harmlessly, and mutations made after its migration record are never cleared.
+- Pending outbox reads are deterministic and capped at 100 with `ORDER BY created_at, id`. One sync request repeatedly pushes complete bounded batches, atomically validates/applies each result set, and pulls only after the pending queue drains.
+- Missing, duplicate, or unknown remote results are rejected before any status mutation. A first-batch transport failure leaves all 101 test commands pending.
+- Direct Neon driver failures now become a credential-redacted `TypeError`, so the existing sync status correctly reports offline rather than exposing connection details.
+- TDD RED proved the absent migration and former 101-command single push. Fresh GREEN verification passed the required 4-file / 19-test regression set and the complete React suite (29 files / 115 tests), including React typecheck.
+
+Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
+
+- The project-scoped Neon API key and project ID remained in the ignored operator `.env`; they were used only to discover the designated production/development branches and obtain connection strings in process memory. No credential value was printed, committed, or copied into a repository Variable.
+- Migration `0004` now accommodates Neon's non-superuser owner model by temporarily granting the runtime role schema creation only while transferring function ownership, revoking it immediately afterward, and retaining non-inherited owner membership so future migrations can manage the functions. This is PostgreSQL privilege plumbing only; the application still has one unauthenticated global dataset with no user/tenant owner.
+- Restricted-role provisioning was rehearsed as a `CREATEROLE` non-superuser owner. It creates or rotates `student_book_sync_client` without a `DO`-block self-grant, verifies safe catalog attributes, revokes all inherited/direct access, and grants only connect, `sync_api` usage, and the two procedure executions.
+- Applied the complete five-migration history to production branch `br-round-flower-as37e98s` and development branch `br-super-salad-aswaapne`. Redacted owner/restricted fingerprints are production `dbaca31802f5` / `8479f751bcff` and development `53bd50038a42` / `7368381c29be`.
+- Both targets passed catalog and negative-permission verification: exact runtime-owned `SECURITY DEFINER` functions, no `PUBLIC` execution, no direct client table grants, push/pull callable, and direct table reads, private-function execution, and schema creation denied. Both targets were left with zero cutover rows.
+- Production GitHub Secrets now contain the rotated direct owner URL, expected owner fingerprint, and restricted pooled `NEON_SYNC_DATABASE_URL`. No owner URL or server shared secret is mapped into the desktop build.
+- A live development proof used two independent SQLite profiles through the restricted Neon HTTP connection. It exchanged academic-year initialization, grade-scoped book/stock/student data, issuance, reversal, both tombstones, an offline queued book, and year rollover; both devices drained their outboxes and converged to the same cursor. The development branch was cleaned afterward and the empty-target verifier passed.
+- Fresh focused verification passed sync API schema/integration tests (10 passed, 3 live-gated skipped), the complete sync API suite (27 passed, 4 live-gated skipped), sync API typecheck, desktop live integration typecheck, the enabled two-device Neon journey (1 passed in 7.28 seconds), and a fail-closed empty-target development verification.
+
+`v1.0.4` hostless release candidate checkpoint (2026-07-13 Cairo):
+
+- Release metadata advanced from `1.0.3` to `1.0.4`. The exact production-identity native executable reports ProductVersion and FileVersion `1.0.4`.
+- Sequential pre-release gates passed: legacy 18 files / 67 tests, React 29 files / 115 tests with the live-only suite gated, sync API 4 files / 27 tests with the live PostgreSQL suite gated, shared 5 files / 26 tests, workspace lint/typecheck/build, five Chromium journeys, the Rust database allowlist test, and `cargo check`.
+- The URL-less production profile built and rendered maximized at 1920x1032 in Arabic with the initial academic-year dialog, confirming the preserved offline startup path. The offline-created initialization command was subsequently visible in the local outbox and drained after online startup.
+- The production restricted URL independently called `sync_api.sync_pull(bigint)` with no Hono process. The online production profile then built with only `student_book_sync_client`; bundle inspection found the restricted Neon endpoint and no `neondb_owner` credential.
+- The online executable SHA-256 is `6a44976c541fb41944fa445e612f5ce652fe0733f8114e9a7c18dcd23a249da5` before installer packaging. Local SQLite recorded pull cursor `1`, a fresh `last_synced_at`, no `last_error`, and the command as `synced`; the user independently confirmed the UI status changed to synchronized.
+
 ## Next Starting Point
 
-1. Rotate the exposed Neon credential before resuming online-sync work; keep `DATABASE_URL` and `SYNC_API_SHARED_SECRET` exclusively in server-side secret stores.
-2. Resume `codex/hostless-neon-sync` only as a separate follow-up. Re-review its authentication/RLS design before implementation and preserve offline SQLite behavior.
-3. Keep the public desktop free of owner database credentials and shared server secrets. Only a public authenticated sync origin belongs in desktop build configuration.
+1. Commit and integrate the `v1.0.4` candidate, wait for main CI, then dispatch the protected production migration workflow idempotently and confirm fingerprint `dbaca31802f5` plus five migrations before tagging.
+2. Tag the exact verified merge as `v1.0.4`, wait for the signed Windows release, verify installer/updater artifacts, and record the final release handoff without moving the tag.
+3. Keep the owner `DATABASE_URL`, Neon management credentials, and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.

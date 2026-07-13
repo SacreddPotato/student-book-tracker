@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createSyncApiClient, FetchSyncApiClient } from "./api-client";
+import type { NeonQuery } from "./neon-query";
 
 describe("FetchSyncApiClient", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -63,29 +64,34 @@ describe("FetchSyncApiClient", () => {
     );
   });
 
-  it("creates the fetch client when a sync URL is configured", async () => {
-    const request = vi.fn(async () => new Response(JSON.stringify({
-      changes: [], nextCursor: "0",
-    }), { status: 200, headers: { "content-type": "application/json" } }));
+  it("creates the direct Neon client when a restricted database URL is configured", async () => {
+    const query = mockNeonQuery([{
+      payload: { changes: [], nextCursor: "0" },
+    }]);
+    const createQuery = vi.fn(() => query);
     const client = createSyncApiClient({
-      apiBaseUrl: "https://sync.example.test",
-      transportToken: null,
-    }, request);
+      neonDatabaseUrl:
+        "postgresql://student_book_sync_client:restricted@ep-example-pooler.us-east-2.aws.neon.tech/neondb",
+    }, createQuery);
 
     await expect(client.pull(null)).resolves.toEqual({ changes: [], nextCursor: "0" });
-    expect(request).toHaveBeenCalledOnce();
+    expect(createQuery).toHaveBeenCalledOnce();
+    expect(query).toHaveBeenCalledOnce();
   });
 
   it("creates an unavailable client without making a request when sync is unconfigured", async () => {
-    const request = vi.fn();
+    const createQuery = vi.fn();
     const client = createSyncApiClient({
-      apiBaseUrl: null,
-      transportToken: null,
-    }, request as typeof fetch);
+      neonDatabaseUrl: null,
+    }, createQuery);
 
     await expect(client.pull(null)).rejects.toEqual(
       new TypeError("Sync API is not configured for this build."),
     );
-    expect(request).not.toHaveBeenCalled();
+    expect(createQuery).not.toHaveBeenCalled();
   });
 });
+
+function mockNeonQuery(rows: Record<string, unknown>[]): NeonQuery {
+  return vi.fn(async () => rows) as unknown as NeonQuery;
+}
