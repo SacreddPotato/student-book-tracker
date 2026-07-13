@@ -76,8 +76,8 @@ React/Tauri UI
   -> local SQLite repositories and services (always available)
   -> local sync_outbox and sync_state
   -> SyncEngine
-  -> NeonDataApiSyncClient
-       -> Neon Auth runtime session
+  -> AuthTokenProvider (embedded Neon Auth or proven native JWT flow)
+  -> NeonDataApiSyncClient (injects Bearer token per request)
        -> HTTPS POST /rpc/sync_identity
        -> HTTPS POST /rpc/sync_push
        -> HTTPS POST /rpc/sync_pull
@@ -90,43 +90,39 @@ Only `sync_api` is an exposed Data API schema. Domain tables remain in `public`;
 
 The normal desktop path uses RPCs only. It does not use PostgREST table CRUD. This prevents a modified client from bypassing inventory rules with direct updates while retaining PostgREST's authenticated, connectionless transport.
 
+Authentication and transport are separate. Every supported identity adapter implements `AuthTokenProvider.getAccessToken({ forceRefresh })`. `NeonDataApiSyncClient` obtains that token immediately before each RPC, adds `Authorization: Bearer <token>`, retries exactly once with `forceRefresh: true` after a 401, and then reports authentication-required. Tokens never appear in observable account state, SQLite, logs, notices, or errors.
+
 ## Provisioning and Configuration
 
 ### One-time Neon prerequisites per branch
 
-Development and production branches are provisioned independently:
+Development and production branches are provisioned independently, in this binding order:
 
-1. Rotate the previously exposed Neon database credential before any online-sync work.
-2. Merge Track A into `main`, then merge or rebase updated `main` into the sync implementation branch. Confirm `0003_grade_scoped_books` is present and reserve `0004_hostless_neon_sync.sql` (or a later number if main advanced).
-3. Apply the complete Drizzle migration history through the owner `DATABASE_URL` from an untracked environment. The owner URL is used only by migration and catalog-inspection tooling.
-4. Enable Neon Auth for the branch/database.
-5. Enable the Data API with Neon Auth as its JWT provider.
-6. Configure the Data API to expose only `sync_api`, use the default `authenticated` JWT role, allow only the exact preview and production Tauri WebView origins, and set a finite maximum response row count of at least 200.
-7. Refresh the Data API schema cache after migration.
-8. Create each school scope and add an explicit membership row for each Neon Auth user. Self-signup never creates a membership and therefore never grants data access.
-9. Run the Data API Advisors and the repository's branch integration suite before that endpoint is eligible for release.
+0. Merge Track A into `main`, merge/rebase that updated `main` into the implementation branch, and verify `0003_grade_scoped_books` plus the final command union.
+1. Rotate the previously exposed owner credential immediately. Verify the old credential is rejected and the replacement can make a read-only connection; record only redacted target fingerprints. No owner URL, Neon Auth, Data API, schema-cache, branch-user, or other Neon operation may occur before this verification.
+2. Run the self-contained desktop-auth origin spike below against a disposable audited probe branch/schema.
+3. Apply the complete Drizzle migration history through the rotated owner `DATABASE_URL` from an untracked environment. The owner URL is used only by migration, reconciliation, and catalog-inspection tooling.
+4. Enable the selected JWT identity provider and Data API for the branch/database.
+5. Configure the Data API to expose only `sync_api`, use the selected authenticated JWT role, allow only the exact preview and production Tauri WebView origins, and set a finite maximum response row count of at least 200.
+6. Refresh the Data API schema cache after migrations `0004`, `0005`, and `0006` are applied.
+7. Create each school scope and add an explicit membership row for each application or diagnostic service user. Self-signup never creates a membership and therefore never grants data access.
+8. Run the Data API Advisors and the repository's branch integration suite before that endpoint is eligible for release.
 
 ### Mandatory desktop-auth origin spike
 
-Before implementation commits depend on Neon Auth, build a minimal production-profile Tauri probe and record its actual origin. The expected Windows origin is `http://tauri.localhost` unless the checked-in Tauri configuration and runtime probe prove otherwise. Against the non-production Neon branch, the probe must complete email/password sign-in, an authenticated Data API RPC, process restart with session restoration, token refresh, sign out, and any redirect flow intended for production. Generic **Allow Localhost** is disabled during the proof; only the exact origin is trusted/allowed.
+After credential rotation, the spike pins and installs the candidate identity SDK before using it. It creates a disposable branch or database, enables the candidate identity provider and Data API, and applies an audited, temporary `auth_probe` schema containing only `auth_probe.whoami()`. That security-invoker RPC returns `auth.user_id()` and requires no application migration, membership table, or future `sync_identity` function. Only `auth_probe` is exposed for the probe. The probe branch/schema is deleted after evidence is captured.
 
-The result is committed to `docs/runbooks/neon-desktop-auth-spike.md`. If Neon Auth accepts the exact origin and session lifecycle, implementation continues with `@neondatabase/neon-js`. If it does not, the spike must prove one native-safe fallback before implementation continues: a system-browser authorization-code-with-PKCE/loopback flow or a device-authorization flow from an identity provider whose JWKS can be configured on the Neon Data API. Neon Auth may remain the provider only if its current official documentation supports that native flow; otherwise use an external JWT provider permitted by this design. The fallback must keep tokens in runtime/secure session storage, preserve `sub`-based RLS, and require no bundled client secret. Failing both embedded and native-safe paths blocks implementation and release.
+The spike then builds a minimal production-profile Tauri executable and records its actual origin. The expected Windows origin is `http://tauri.localhost` unless checked-in configuration and runtime evidence prove otherwise. With generic **Allow Localhost** disabled, the probe must complete sign-in, an authenticated `auth_probe.whoami` call, process restart with session restoration, forced token refresh, sign out, and every redirect intended for production.
+
+The result is committed to `docs/runbooks/neon-desktop-auth-spike.md`, including the exact SDK version and cleanup evidence. If Neon Auth accepts the exact origin and lifecycle, the selected mode is `embedded-neon`. If not, the same disposable probe must prove either a system-browser authorization-code-with-PKCE/loopback flow or a device-authorization flow from an identity provider whose JWKS is configured on the Data API. The native flow must use a public client, no bundled client secret, and a stable JWT `sub`. Failing both embedded and native-safe paths blocks implementation and release.
 
 ### Configuration names
 
-The only release-compiled sync values are public origins:
+All release-compiled values are public. Common values are `VITE_SYNC_AUTH_MODE` (`embedded-neon`, `native-pkce`, or `device-code`) and `VITE_NEON_DATA_API_URL`. Embedded Neon adds `VITE_NEON_AUTH_URL`. Native modes instead require `VITE_SYNC_AUTH_ISSUER`, `VITE_SYNC_AUTH_CLIENT_ID`, `VITE_SYNC_AUTH_AUDIENCE`, and `VITE_SYNC_AUTH_REDIRECT_URI`; audience may be an explicitly empty public string only when the selected provider documents that behavior. GitHub repository Variables use the same names without `VITE_`.
 
-- `VITE_NEON_AUTH_URL`
-- `VITE_NEON_DATA_API_URL`
+Runtime configuration is a discriminated union, so a native build cannot silently construct an email/password adapter and an embedded build cannot omit its Neon Auth URL. Missing mode plus missing endpoints intentionally creates the unavailable/offline client. Partial, malformed, credential-bearing, non-HTTPS, or mode-inconsistent values are caught configuration errors. No mode includes a client secret.
 
-GitHub repository Variables are named:
-
-- `NEON_AUTH_URL`
-- `NEON_DATA_API_URL`
-
-The Windows release workflow maps those Variables to the two `VITE_*` values. Both must be absent or both must be non-empty HTTPS origins. Missing values intentionally create the unavailable/offline sync client. A partial pair or malformed/non-HTTPS value is a caught startup configuration error. The production app never receives `DATABASE_URL`, `neondb_owner`, a Neon management API key, a JWT signing secret, `SYNC_API_SHARED_SECRET`, user email/password, or a session token as build configuration.
-
-`apps/sync-api` keeps its server-only `DATABASE_URL` and `SYNC_API_SHARED_SECRET` for explicit operator diagnostics. It is not started by `npm run dev:desktop` and is not selected by `createTauriBackend`.
+The production app never receives `DATABASE_URL`, `neondb_owner`, a Neon management API key, a JWT signing secret, `SYNC_API_SHARED_SECRET`, user email/password, or a session/access/refresh token as build configuration. `apps/sync-api` keeps `SYNC_API_SHARED_SECRET` only as its inbound diagnostic-route guard; it authenticates outbound through a dedicated runtime service account and does not use `DATABASE_URL` or owner bypass during diagnostic requests.
 
 ## Identity, Membership, and Scope Derivation
 
@@ -144,9 +140,15 @@ Membership rows are managed only by owner/operator tooling. The `authenticated` 
 
 ## Remote Schema and RLS
 
-Migration `0004_hostless_neon_sync.sql` is created only after Track A's `0003` has landed. It must account for the final grade-scoped book model and deletion command set from Track A.
+Hostless database work is split into immutable migrations created only after Track A's `0003` lands:
 
-The migration performs these changes:
+- `0004_hostless_neon_scope_rls.sql`: schemas, scope/membership/applied-command tables, final scoped keys, grants, forced RLS, and private helpers;
+- `0005_hostless_neon_identity_pull.sql`: `sync_identity` and `sync_pull`;
+- `0006_hostless_neon_push.sql`: private command handlers and `sync_push`.
+
+Each migration is completed, tested, and committed once. Later tasks never edit a committed migration; corrections use the next migration number. The series must account for Track A's final grade-scoped book model and deletion commands.
+
+Migration `0004` performs these changes:
 
 - creates `sync_api` and `sync_private` schemas;
 - creates scopes, memberships, and applied-command tables;
@@ -158,7 +160,7 @@ The migration performs these changes:
 - enables and forces RLS on every remotely synchronized domain table, `sync_changes`, and `applied_sync_commands`;
 - gives `authenticated` the minimum `SELECT`/`INSERT`/`UPDATE` privileges required by the RPC implementation, with no hard deletes;
 - gives `anonymous` no privileges and revokes default public function execution;
-- grants `authenticated` only the reviewed RPC entry points and required private helpers;
+- grants `authenticated` only the reviewed RPC entry points introduced by later migrations and required private helpers;
 - backfills legacy rows to the explicit `global` scope but creates no user membership automatically.
 
 The common domain policy is:
@@ -181,11 +183,13 @@ Returns exactly one object:
   "userId": "auth-subject",
   "scopeId": "school-scope",
   "scopeName": "School name",
-  "role": "owner"
+  "role": "owner",
+  "remoteChangeCount": 0,
+  "remoteMaxCursor": "0"
 }
 ```
 
-It derives the user and scope inside PostgreSQL. It is called after sign-in and before a sync transport becomes eligible.
+It derives the user and scope inside PostgreSQL. Remote count/cursor metadata is used only by the local upgrade/reconciliation gate; it does not authorize cursor retention. The function is called after sign-in and before a sync transport becomes eligible.
 
 ### `sync_push(p_commands jsonb)`
 
@@ -230,27 +234,32 @@ If no row is returned, `nextCursor` equals the supplied cursor. The global `bigs
 1. Bootstrap resolves runtime configuration inside the existing caught asynchronous path.
 2. SQLite opens and migrates before any network dependency is awaited.
 3. The workspace renders from SQLite in every auth/network state.
-4. When both public origins exist, `@neondatabase/neon-js` restores its cached runtime session and refreshes it when online. Tokens remain in the SDK/WebView session store; they are never copied into SQLite, `app_settings`, logs, notices, crash text, or release configuration.
+4. When configuration is complete, the selected adapter restores its runtime session and implements `AuthTokenProvider.getAccessToken({ forceRefresh })`. Tokens remain inside the adapter's runtime/secure session store; they are never copied into observable account state, SQLite, `app_settings`, logs, notices, crash text, or release configuration.
 5. The app calls `sync_identity`. If offline, local work continues and sync reports offline. If signed out, local work continues and sync reports authentication required.
 
-The app stores only a non-secret local binding in `app_settings`:
+Local SQLite migration `003_remote_scope_cursor` adds `remote_scope_id` beside `pull_cursor` in `sync_state`, plus `remote_scope_name` and `reconciled_at`. Scope and cursor are always updated atomically. The app never retains a legacy cursor merely because the new identity says `global`.
 
-```json
-{
-  "scopeId": "school-scope",
-  "scopeName": "School name",
-  "boundAt": "2026-07-12T12:00:00.000Z"
-}
-```
+### SQLite/outbox/cursor upgrade matrix
 
-An empty local database can bind automatically after the first authenticated identity call. A database containing domain rows or outbox commands requires an explicit **Link this device data** confirmation in Settings. If a later login resolves to another scope, sync is blocked as `scope-mismatch`; local data is neither uploaded nor erased. Signing out clears the Neon session but deliberately keeps SQLite and the scope binding. Local confidentiality remains the Windows user-profile boundary.
+| Local state | Remote scope | Required action |
+|---|---|---|
+| Pristine: no domain rows, no outbox rows, no cursor | Empty or nonempty | Bind `remote_scope_id`, set cursor to `0`, and pull full history. |
+| Nonempty local, any pending/synced outbox, no prior verified scope | Empty | Block normal sync and run the owner-side `reconcile-local-sqlite` import against the closed SQLite file. The import atomically seeds the empty remote scope, records every imported outbox command ID as applied, emits a complete change stream, then writes returned scope/cursor locally. It is idempotent after a crash. |
+| Nonempty local with drained or pending outbox and legacy cursor | Migrated `global` scope | Retain the cursor only after `reconcile-local-sqlite --mode verify-continuity` proves the local synced command IDs and cursor exist in that exact remote scope. The tool writes scope and reconciliation receipt atomically; otherwise sync stays blocked. |
+| Nonempty local without verified continuity | Nonempty remote scope | Do not merge automatically and do not reset the cursor. Require an operator snapshot/import reconciliation into an empty scope or a verified-equivalent continuity run. |
+| Any bound local state | Different authenticated scope | Report `scope-mismatch`; never push, pull, reset, import, or overwrite binding. |
+| Rejected outbox conflicts | Any compatible scope | Preserve rejected status and acknowledgements; reconciliation never converts a rejection to accepted. |
+
+The owner-side reconciliation tool lives in `apps/sync-api` and is never bundled. It requires the rotated owner URL and an explicit closed SQLite path, uses a remote transaction plus a durable reconciliation receipt, prints only redacted fingerprints/counts, and can be rerun safely. Until reconciliation passes, the desktop stays fully usable offline but sync reports `reconciliation-required`.
 
 ### Login UX
 
 Settings gains a Sync Account card and Sync Status gains a navigation action:
 
 - unconfigured: explains that the release has no sync transport and remains offline-capable;
-- signed out: email/password form with `rememberMe: true`, no public scope selector, and no production self-enrollment;
+- signed out with `embedded-neon` capability: email/password form with `rememberMe: true`, no public scope selector, and no production self-enrollment;
+- signed out with `native-pkce` capability: one **Sign in in browser** action and no password fields;
+- signed out with `device-code` capability: one **Get device code** action, verification URL/code display, and no password fields;
 - resolving identity: busy state;
 - membership missing/revoked: signed-in account shown with an operator-contact message and no sync;
 - link required: shows the resolved school and an explicit confirmation;
@@ -280,41 +289,42 @@ Provisioning creates Auth users and membership rows out-of-band. A successfully 
 
 ## Rollback and Diagnostic Service
 
-`apps/sync-api` remains buildable and tested but is removed from normal desktop startup and release configuration. Its Hono routes become an explicit operator diagnostic adapter over the same committed PostgreSQL sync functions, using a server-only `SYNC_API_SCOPE_ID` and the existing server-only shared secret. This keeps one source of remote command behavior.
+`apps/sync-api` remains buildable and tested but is removed from normal desktop startup and release configuration. Its Hono routes keep the inbound `SYNC_API_SHARED_SECRET` guard, then authenticate outbound to the Data API as one dedicated identity-provider service account. That account has one non-revoked membership with role `diagnostic`; RLS derives its scope from JWT `sub` exactly as for desktop users. The service stores its Auth URL, Data API URL, account identifier, and account credential/refresh material only in server secrets.
 
-The diagnostic adapter is not a public multi-tenant production transport and its secret is never shipped in the desktop. Restoring a hosted sync service for clients would require a separate authenticated deployment decision.
+The diagnostic adapter calls the same public `sync_identity`, `sync_push`, and `sync_pull` RPCs through `AuthTokenProvider`. It has no `DATABASE_URL` at runtime, no owner/BYPASSRLS role, no scope parameter or `SYNC_API_SCOPE_ID`, and no private scope-explicit wrapper. A deployment serves exactly the service account's one scope. Negative tests prove it cannot read or mutate a second scope. Restoring a hosted multi-scope service would require a separate authenticated design.
 
 Application rollback is configuration-first: remove both public Neon Variables or release the previous offline-safe client. The app immediately returns to local-only operation while outbox rows remain queued. Database rollback is forward-only: leave `0004` schema, RLS, and functions in place rather than dropping security objects or data. If a function defect exists, deploy a later corrective migration. Neon branch restore is an operator disaster-recovery tool, not the normal rollback mechanism.
 
 ## Migration and Release Sequence
 
-1. Track A merges first into `main`, including `0003_grade_scoped_books` and its final shared deletion/grade command contract.
-2. Before hostless implementation begins, merge or rebase updated `main` into the sync branch and run the full baseline gates.
-3. Generate hostless schema changes as `0004` or later; never rewrite `0003`.
-4. Rehearse the full migration chain on disposable PostgreSQL 17, including catalog/RLS/grant assertions.
-5. Rotate the exposed Neon database credential.
-6. Apply through `0004` to the development Neon branch, provision Auth/Data API, refresh schema cache, create two users in two scopes, and pass integration tests.
+0. Track A merges first into `main`; merge/rebase updated `main` into Track B and verify `0003_grade_scoped_books` plus the final shared command union.
+1. Rotate and verify the owner credential before any other Neon or owner-URL operation. Preserve redacted evidence that the old credential fails and the replacement performs a read-only probe.
+2. Execute and clean up the self-contained disposable origin/auth probe. Pin the selected identity SDK/provider and block desktop integration until the embedded or native-safe path passes.
+3. Create and commit immutable migrations `0004` scope/RLS, `0005` identity/pull, and `0006` push. Never edit a committed migration.
+4. Rehearse `0000` through `0006` on disposable PostgreSQL 17, including catalog/RLS/grant assertions and exhaustive SQL command cases.
+5. Apply through `0006` to the development Neon branch, provision identity/Data API, refresh schema cache, create two users in two scopes, and pass integration tests.
+6. Reconcile every nonempty legacy SQLite database through verified continuity or explicit empty-scope import before enabling normal sync.
 7. Merge Track B after combined grade/deletion plus hostless tests pass. Do not publish either branch independently; they form one combined release candidate.
-8. Apply the same migration history intentionally to production Neon, provision production Auth/Data API and memberships, refresh cache, and run read-only catalog plus two-scope smoke checks.
-9. Set only `NEON_AUTH_URL` and `NEON_DATA_API_URL` repository Variables.
-10. Build the exact production-profile executable, prove offline boot with both values absent, then prove login/push/pull/offline-restart with the configured build.
+8. Apply the same migration history intentionally to production Neon, provision production identity/Data API and memberships, refresh cache, and run read-only catalog plus two-scope smoke checks.
+9. Set only the public Variables required by the selected auth-mode discriminant.
+10. Build the exact production-profile executable, prove offline boot with auth configuration absent, then prove login/push/pull/reconciliation/offline restart with the configured build.
 11. Publish the signed combined release only after the global updater feed and installer checks pass.
 
 ## Testing Strategy
 
 ### Local and mock contract tests
 
-- runtime configuration: both URLs absent, both HTTPS, partial pair, malformed, credentials in URL, and production offline boot;
-- auth controller: cached signed-in session, signed-out, offline refresh, invalid credentials, sign out, missing membership, link required, and scope mismatch;
-- Neon RPC client: exact RPC names/arguments, result parsing, 401 mapping, Data API error mapping, malformed payload rejection, no network calls when unconfigured;
+- runtime configuration: unconfigured, embedded Neon, native PKCE, and device-code discriminants; required issuer/client/audience/redirect values; malformed, credential-bearing, mode-inconsistent, and production offline cases;
+- auth controller: capability-specific sign-in, cached signed-in session, signed-out, offline refresh, invalid credentials, sign out, missing membership, reconciliation required, and scope mismatch;
+- token provider/RPC client: `getAccessToken({ forceRefresh })`, exact Authorization injection, one forced-refresh retry after 401, exact RPC names/arguments, malformed payload rejection, and no request when unconfigured;
 - SyncEngine: 100-command batching, accepted/duplicate/rejected status, pending preservation on unexpected RPC error, auth-required phase, scope mismatch, and cursor loops;
-- scope binding: auto-bind only for a pristine database, explicit bind for existing local data, never overwrite a different scope;
+- local upgrade: every SQLite/outbox/cursor matrix row, atomic scope-plus-cursor persistence, blocked nonempty unverified state, idempotent empty-scope import receipt, and verified legacy-global cursor retention;
 - rendered Settings and Sync Status journeys in Arabic and English;
-- a fake PostgREST RPC contract that exercises every final `SyncCommand["type"]` after Track A merges.
+- a fake PostgREST RPC contract driven by one exhaustive `Record<SyncCommand["type"], HandlerDescriptor>`; no separately maintained literal manifest.
 
 ### Migration and SQL tests
 
-- `0004` follows `0003` in the Drizzle journal and does not modify Track A's migration;
+- immutable `0004`, `0005`, and `0006` follow `0003` in the Drizzle journal; later tasks never mutate an earlier committed migration;
 - all synchronized tables have `relrowsecurity` and `relforcerowsecurity` enabled;
 - anonymous has no table/function access;
 - authenticated has no membership mutation privilege and cannot reach domain tables through the exposed schema;
@@ -324,11 +334,14 @@ Application rollback is configuration-first: remove both public Neon Variables o
 - unexpected errors roll back the entire RPC;
 - concurrent duplicate commands mutate once and return accepted/duplicate;
 - concurrent issue commands cannot drive stock below zero;
-- grade/deletion behavior from Track A emits and pulls the expected snapshots.
+- grade/deletion behavior from Track A emits and pulls the expected snapshots;
+- an exhaustive `Record<SyncCommand["type"], SqlContractCase>` executes at least one accepted SQL case for every runtime discriminant and fails TypeScript compilation when the union grows.
 
 ### Neon branch integration tests
 
-A non-production branch test uses real Neon Auth and the branch Data API with two users assigned to different scopes. It proves:
+A protected integration orchestrator creates a disposable Neon child branch. Its exact CI/server-only inputs are `NEON_TEST_API_KEY`, `NEON_TEST_PROJECT_ID`, `NEON_TEST_PARENT_BRANCH_ID`, `NEON_TEST_DATABASE_NAME`, and `NEON_TEST_ROLE_NAME`. It obtains the child owner URL and public Auth/Data API URLs at runtime, never exports the owner URL to desktop build steps, creates random in-memory test passwords, and redacts credentials/tokens. In a `finally` block it deletes the child branch; branch deletion removes the temporary Auth/Data API configuration, users, memberships, and test rows. A cleanup failure fails the job and prints only project/branch IDs.
+
+The disposable branch test uses two users assigned to different scopes and proves:
 
 - each user resolves only its membership;
 - user A cannot pull, identify, update, or reference user B rows;
@@ -340,7 +353,11 @@ A non-production branch test uses real Neon Auth and the branch Data API with tw
 - schema-cache refresh exposes the three functions after migration;
 - disabling/removing desktop transport leaves SQLite startup and mutations functional.
 
-Owner URLs, Neon management keys, and test account credentials exist only in local untracked files or protected CI/environment secrets. Test output redacts tokens, URLs with credentials, and user passwords.
+Owner URLs and Neon management keys exist only in local untracked files or protected CI environment secrets. Test account passwords exist only in process memory. Test output redacts tokens, URLs with credentials, and user passwords.
+
+### Release-workflow parser test
+
+`apps/desktop-react/tests/release-workflow-config.test.ts` reads `.github/workflows/release-windows.yml` as text. It asserts the selected auth-mode public mappings and `VITE_NEON_DATA_API_URL`, and rejects `DATABASE_URL`, `SYNC_API_SHARED_SECRET`, `NEON_TEST_API_KEY`, `NEON_API_KEY`, JWT signing-secret names, and diagnostic account secrets anywhere in the Tauri build step. The implementation plan runs this named test once before the workflow edit to prove RED and once after to prove GREEN.
 
 ## Observability and Error Handling
 
@@ -361,9 +378,10 @@ PostgreSQL rejected results use the existing stable reason codes. Authorization 
 
 ## Risks and Required Gates
 
-1. **Beta platform surface:** pin an exact compatible `@neondatabase/neon-js` version and revalidate official docs before implementation and before release.
-2. **Tauri WebView origin:** Task 2 owns the production-origin spike for `http://tauri.localhost` (unless runtime evidence differs) and must prove either embedded Neon Auth or a native device-code/external-browser JWT flow before implementation proceeds. Generic localhost access is not an acceptable workaround.
-3. **SQL/TypeScript parity:** the branch integration matrix must enumerate every final shared command type; a missing case blocks release.
-4. **RLS mistakes:** catalog assertions, two-user negative tests, Data API Advisors, and public-schema exclusion are mandatory.
-5. **Credential hygiene:** rotate the exposed Neon credential before provisioning; no secret may appear in a `VITE_*` variable or release artifact.
-6. **Migration order:** Track A owns `0003`; hostless work starts at `0004` or later after rebasing/merging main.
+1. **Credential boundary:** Task 0 rotates and verifies the owner credential immediately after Track A integration. Every other Neon/owner-URL operation depends on that evidence.
+2. **Beta platform surface:** the self-contained origin spike pins the candidate identity SDK, revalidates official docs, and uses only a disposable audited probe surface.
+3. **Tauri WebView origin:** Task 2 owns the production-origin spike for `http://tauri.localhost` (unless runtime evidence differs) and must prove either embedded Neon Auth or a native device-code/external-browser JWT flow before implementation proceeds. Generic localhost access is not an acceptable workaround.
+4. **SQL/TypeScript parity:** one exhaustive runtime descriptor record and one exhaustive SQL-case record must cover every final shared command type; a missing case is a compile/test failure.
+5. **RLS mistakes:** catalog assertions, two-user negative tests, service-account cross-scope denial, Data API Advisors, and public-schema exclusion are mandatory.
+6. **Local continuity:** nonempty SQLite never resets or retains a cursor by assumption. It stays offline until verified continuity or explicit empty-scope import succeeds.
+7. **Migration immutability:** Track A owns `0003`; Track B commits `0004`, `0005`, and `0006` once each and fixes defects only with a later migration.
