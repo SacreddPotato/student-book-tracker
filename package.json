@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:desktop": "concurrently --kill-others --names api,desktop \"npm run dev:api\" \"npm run dev:desktop:react\"",
+    "dev:desktop": "npm run dev:desktop:react",
     "dev:desktop:react": "npm run tauri -w @app/desktop-react -- dev",
     "dev:desktop:legacy": "npm run tauri -w @app/desktop -- dev",
     "dev:api": "npm run dev -w @app/sync-api",
@@ -15,8 +15,5 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "npm run lint --workspaces",
     "test:e2e": "npm run test:e2e -w @app/desktop-react"
-  },
-  "devDependencies": {
-    "concurrently": "^9.2.4"
   }
 }

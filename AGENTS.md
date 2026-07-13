@@ -40,10 +40,10 @@ Update this file after every completed implementation segment. Keep current stat
 From the repository root:
 
 ```powershell
-npm run dev:desktop          # local sync API + React/Tauri preview
+npm run dev:desktop          # React/Tauri preview; direct Neon when configured, otherwise local-only
 npm run dev:desktop:react    # desktop only; API already running
 npm run dev:desktop:legacy   # preserved rollback frontend
-npm run dev:api
+npm run dev:api              # optional preserved Hono API development
 npm run test
 npm run test:e2e
 npm run typecheck
@@ -247,8 +247,17 @@ Restricted Neon client-role checkpoint (2026-07-13 Cairo):
 - `docs/runbooks/database-migrations.md` documents migration, restricted-role rotation, redacted verification, and the explicitly accepted extractable-client-credential threat model.
 - Fresh Task 2 verification passed the live role suite (1 file / 5 tests), the normal sync API suite (4 files / 26 tests with four live checks skipped), and sync API typecheck. The exact disposable container was removed afterward.
 
+Direct desktop Neon transport checkpoint (2026-07-13 Cairo):
+
+- React runtime configuration now accepts only `VITE_NEON_SYNC_DATABASE_URL` with PostgreSQL protocol, a pooled `*.neon.tech` endpoint, a nonempty database/password, and exact username `student_book_sync_client`. Blank configuration remains intentionally offline, and invalid configuration errors never echo the URL or password.
+- `NeonDirectSyncClient` calls only `sync_api.sync_push($1::jsonb)` and `sync_api.sync_pull($1::bigint)` through the pinned `@neondatabase/serverless@1.1.0` HTTP driver. It validates complete push/pull response shapes and hides driver errors that could contain connection details.
+- Tauri initializes local SQLite before constructing the optional Neon client. The unavailable client still queues all local mutations without a network request, preserving offline-first startup and the Rust-backed local transaction path.
+- The default desktop development command no longer launches Hono. `dev:api` and `FetchSyncApiClient` remain available for isolated server/rollback tests, but are outside the production runtime.
+- Windows release builds receive only `secrets.NEON_SYNC_DATABASE_URL` as `VITE_NEON_SYNC_DATABASE_URL`; the old API URL/shared-secret build variables are removed. The release runbook documents that this restricted credential is intentionally extractable on trusted machines.
+- TDD RED captured the missing direct transport and runtime fields. Fresh GREEN verification passed the focused 3-file / 27-test suite, the complete React suite (29 files / 111 tests), React typecheck, and the React production web build.
+
 ## Next Starting Point
 
-1. Execute Task 3 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: add the validated pooled Neon runtime configuration and direct desktop push/pull transport.
+1. Execute Task 4 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: add the one-time local SQLite cutover reset and bounded 100-command sync batching.
 2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
 3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.

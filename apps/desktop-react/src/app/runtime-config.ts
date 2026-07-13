@@ -4,8 +4,7 @@ export type RuntimeConfig = {
   profile: DesktopProfile;
   databaseUrl: string;
   databaseFile: string;
-  syncApiBaseUrl: string | null;
-  syncApiSharedSecret?: string;
+  neonSyncDatabaseUrl: string | null;
   updaterEnabled: boolean;
 };
 
@@ -17,15 +16,12 @@ export function resolveRuntimeConfig(env: Record<string, unknown>): RuntimeConfi
   }
 
   const production = rawProfile === "production";
-  const configuredSyncApiBaseUrl = env.VITE_SYNC_API_BASE_URL == null
+  const configuredNeonSyncDatabaseUrl = env.VITE_NEON_SYNC_DATABASE_URL == null
     ? ""
-    : String(env.VITE_SYNC_API_BASE_URL).trim();
-  const syncApiBaseUrl = configuredSyncApiBaseUrl
-    || (production ? null : "http://127.0.0.1:8787");
-
-  if (syncApiBaseUrl && !/^https?:\/\//.test(syncApiBaseUrl)) {
-    throw new Error("Sync API base URL must use HTTP or HTTPS.");
-  }
+    : String(env.VITE_NEON_SYNC_DATABASE_URL).trim();
+  const neonSyncDatabaseUrl = configuredNeonSyncDatabaseUrl
+    ? validateRestrictedNeonUrl(configuredNeonSyncDatabaseUrl)
+    : null;
 
   const databaseFile = production
     ? "student-book-tracker.db"
@@ -35,10 +31,33 @@ export function resolveRuntimeConfig(env: Record<string, unknown>): RuntimeConfi
     profile: rawProfile,
     databaseFile,
     databaseUrl: `sqlite:${databaseFile}`,
-    syncApiBaseUrl,
-    syncApiSharedSecret: env.VITE_SYNC_API_SHARED_SECRET
-      ? String(env.VITE_SYNC_API_SHARED_SECRET)
-      : undefined,
+    neonSyncDatabaseUrl,
     updaterEnabled: production,
   };
+}
+
+function validateRestrictedNeonUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const protocolValid = url.protocol === "postgres:" || url.protocol === "postgresql:";
+    const host = url.hostname.toLowerCase();
+    const endpoint = host.split(".")[0] ?? "";
+    const username = decodeURIComponent(url.username);
+    const database = decodeURIComponent(url.pathname.replace(/^\//, ""));
+
+    if (!protocolValid
+      || !host.endsWith(".neon.tech")
+      || !endpoint.endsWith("-pooler")
+      || username !== "student_book_sync_client"
+      || url.password.length === 0
+      || database.length === 0) {
+      throw new Error("invalid");
+    }
+
+    return value;
+  } catch {
+    throw new Error(
+      "Neon sync database URL must use the restricted student_book_sync_client role and a pooled Neon endpoint.",
+    );
+  }
 }

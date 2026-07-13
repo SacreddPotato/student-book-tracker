@@ -4,7 +4,9 @@
 
 The updater uses a public verification key embedded in `apps/desktop-react/src-tauri/tauri.production.conf.json`. Its matching private key is stored only as the GitHub Actions secret `TAURI_SIGNING_PRIVATE_KEY`; it must be retained for the lifetime of every installed app.
 
-The desktop release workflow receives only that signing key and the optional public `SYNC_API_BASE_URL` repository variable. It must never receive `DATABASE_URL`, `SYNC_API_SHARED_SECRET`, a GitHub personal token, or `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` unless the updater key was actually generated with a password. In particular, do not provide `VITE_SYNC_API_SHARED_SECRET`: `VITE_*` values are compiled into the desktop bundle.
+The desktop release workflow receives that signing key and the `NEON_SYNC_DATABASE_URL` GitHub Actions secret. This URL must belong to the pooled `student_book_sync_client` role provisioned by `npm run db:provision-sync-role -w @app/sync-api`; the build rejects owner-role, non-Neon, and non-pooler URLs. It must never receive `DATABASE_URL`, `SYNC_API_SHARED_SECRET`, a GitHub personal token, or `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` unless the updater key was actually generated with a password.
+
+`NEON_SYNC_DATABASE_URL` is compiled into the desktop bundle and is therefore extractable. This project intentionally accepts that tradeoff for trusted client machines. The restricted role can call only `sync_api.sync_push(jsonb)` and `sync_api.sync_pull(bigint)`; it cannot directly read or mutate tables or create database objects. Rotate it independently of the owner credential using the database migration runbook.
 
 ## Normal release
 

@@ -1,5 +1,8 @@
 import type { SyncCommand, SyncCommandResult } from "@app/shared";
 
+import { NeonDirectSyncClient } from "./neon-direct-client";
+import { createNeonQuery, type NeonQueryFactory } from "./neon-query";
+
 export type PulledChange = {
   sequence: number;
   commandId: string;
@@ -19,8 +22,7 @@ export type SyncClientConfig = {
   transportToken: string | null;
 };
 export type SyncClientFactoryConfig = {
-  apiBaseUrl: string | null;
-  transportToken: string | null;
+  neonDatabaseUrl: string | null;
 };
 type FetchLike = typeof fetch;
 
@@ -36,13 +38,10 @@ class UnavailableSyncApiClient implements SyncApiClient {
 
 export function createSyncApiClient(
   config: SyncClientFactoryConfig,
-  request: FetchLike = fetch,
+  queryFactory: NeonQueryFactory = createNeonQuery,
 ): SyncApiClient {
-  return config.apiBaseUrl
-    ? new FetchSyncApiClient({
-      apiBaseUrl: config.apiBaseUrl,
-      transportToken: config.transportToken,
-    }, request)
+  return config.neonDatabaseUrl
+    ? new NeonDirectSyncClient(queryFactory(config.neonDatabaseUrl))
     : new UnavailableSyncApiClient();
 }
 

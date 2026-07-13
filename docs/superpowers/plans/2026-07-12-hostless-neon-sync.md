@@ -202,7 +202,7 @@ git commit -m "feat: provision restricted Neon sync role"
 - Consumes: `VITE_NEON_SYNC_DATABASE_URL` and Task 1 results.
 - Produces: `NeonDirectSyncClient`, `createNeonQuery(databaseUrl)`, and `RuntimeConfig.neonSyncDatabaseUrl`.
 
-- [ ] **Step 1: Write failing config/client/workflow tests**
+- [x] **Step 1: Write failing config/client/workflow tests**
 
 Cover absent configuration, valid pooled URL, wrong protocol, non-Neon host, non-pooler endpoint, missing password/database, and any username other than `student_book_sync_client`. Errors redact passwords.
 
@@ -217,7 +217,7 @@ export type NeonQuery = <T extends Record<string, unknown>>(
 
 Assert push uses `SELECT sync_api.sync_push($1::jsonb) AS payload` and pull uses `SELECT sync_api.sync_pull($1::bigint) AS payload`. Reject malformed payloads. Assert release maps `secrets.NEON_SYNC_DATABASE_URL` only into `VITE_NEON_SYNC_DATABASE_URL`.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 npm run test -w @app/desktop-react -- --run src/app/runtime-config.test.ts src/core/sync/api-client.test.ts src/core/sync/neon-direct-client.test.ts
@@ -225,7 +225,7 @@ npm run test -w @app/desktop-react -- --run src/app/runtime-config.test.ts src/c
 
 Expected: FAIL because direct transport/config fields do not exist.
 
-- [ ] **Step 3: Implement transport and runtime wiring**
+- [x] **Step 3: Implement transport and runtime wiring**
 
 Pin `@neondatabase/serverless` to exact version `1.1.0` in both sync-api and desktop-react. Wrap `neon(databaseUrl).query(text, parameters)` behind `NeonQuery`. Implement:
 
@@ -239,7 +239,7 @@ export class NeonDirectSyncClient implements SyncApiClient {
 
 Parse full result shapes instead of casting. Keep `FetchSyncApiClient` only for preserved Hono tests. Runtime config accepts null or a pooled Neon URL with exact username `student_book_sync_client`. Build the client only after SQLite initialization. Remove desktop release use of `VITE_SYNC_API_BASE_URL` and `VITE_SYNC_API_SHARED_SECRET`.
 
-- [ ] **Step 4: Verify GREEN and commit**
+- [x] **Step 4: Verify GREEN and commit**
 
 ```powershell
 npm run test -w @app/desktop-react -- --run src/app/runtime-config.test.ts src/core/sync/api-client.test.ts src/core/sync/neon-direct-client.test.ts

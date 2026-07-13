@@ -156,8 +156,7 @@ export async function createTauriBackend(): Promise<AppBackend> {
   const runtimeConfig = resolveRuntimeConfig(import.meta.env);
   const database = await initializeLocalDatabase(runtimeConfig);
   const client = createSyncApiClient({
-    apiBaseUrl: runtimeConfig.syncApiBaseUrl,
-    transportToken: runtimeConfig.syncApiSharedSecret ?? null,
+    neonDatabaseUrl: runtimeConfig.neonSyncDatabaseUrl,
   });
   const updater = createUpdaterController({
     currentVersion: desktopPackage.version,
