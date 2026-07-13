@@ -286,8 +286,18 @@ Rotated Neon hostless verification checkpoint (2026-07-13 Cairo):
 - The first post-merge Windows run exposed one LF-only static SQL assertion against a CRLF checkout. The test now normalizes line endings before exact multiline checks; its focused 10-test suite and the complete merged 46-file suite passed afterward.
 - Main CI `29248517488` passed, but the first protected migration confirmation correctly stopped before tagging because the schema verifier still treated a now-live production target as required-empty. Empty-row enforcement is now opt-in through `REQUIRE_EMPTY_SYNC_TARGET=1`; schema/fingerprint/function verification remains mandatory. RED reproduced the failure, and GREEN passed the focused 10 tests, complete sync API suite (27 passed / 4 live-gated), and sync API typecheck.
 
+`v1.0.4` release checkpoint (2026-07-13 Cairo):
+
+- Stable tag `v1.0.4` points to exact main commit `3ed55c44e85669bfdce44c46898b3fae9132b965`. Main CI run `29248914994` passed lint, typecheck, all workspace tests, five rendered Chromium journeys, and the workspace build.
+- Protected production migration run `29249152101` applied the committed history idempotently and passed the rotated fingerprint/schema/function verification against the live production target.
+- Signed Windows release workflow `29249211290` passed source/version validation, complete quality gates, optimized native packaging, installer/signature/updater verification, and publication.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.4`.
+- EXE: `Student.Book.Tracker_1.0.4_x64-setup.exe`, 4,456,748 bytes, SHA-256 `c29c3c34432e011211cb915631bcd1d6b44f5661b1395519fb766abb8a4e8f7a`; downloaded ProductVersion and FileVersion both report `1.0.4`.
+- Updater signature: 436 bytes, SHA-256 `392320a269945a6b485128b96f6beec03e849605bb6937f387807521f2450d2e`.
+- `latest.json`: 1,354 bytes, SHA-256 `635d836298c514dd25888dde0a0a2bf3b2e566cb170f23bd22ec0ef0b9604196`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.4`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
+
 ## Next Starting Point
 
-1. Commit and integrate the `v1.0.4` candidate, wait for main CI, then dispatch the protected production migration workflow idempotently and confirm fingerprint `dbaca31802f5` plus five migrations before tagging.
-2. Tag the exact verified merge as `v1.0.4`, wait for the signed Windows release, verify installer/updater artifacts, and record the final release handoff without moving the tag.
+1. `v1.0.4` is complete; use it as the stable baseline for subsequent product work.
+2. Keep production schema verification live-data-safe. Use `REQUIRE_EMPTY_SYNC_TARGET=1` only for disposable or explicitly cleared targets, never for normal production migrations.
 3. Keep the owner `DATABASE_URL`, Neon management credentials, and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.

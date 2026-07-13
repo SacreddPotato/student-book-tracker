@@ -385,10 +385,10 @@ Build with `VITE_NEON_SYNC_DATABASE_URL` absent. Launch a uniquely named copy, v
 
 Build with the verified restricted production URL. Verify sync without any Hono process, outbox drain, second-profile pull, and artifact scan absence of `neondb_owner`, the owner target fingerprint, and `SYNC_API_SHARED_SECRET`.
 
-- [ ] **Step 4: Version, commit, integrate, and release**
+- [x] **Step 4: Version, commit, integrate, and release**
 
 Set the next stable patch version, commit the candidate, merge into main, wait for CI, tag the exact passing merge, and wait for signed Windows release publication. Download installer/signature/latest.json and verify hashes, ProductVersion/FileVersion, signatures, updater targets, and global `releases/latest`.
 
-- [ ] **Step 5: Record final handoff**
+- [x] **Step 5: Record final handoff**
 
 Update `AGENTS.md` with exact test counts, merge/tag/workflow IDs, release URL, asset hashes, live redacted fingerprints, and next starting point. Commit/push the handoff without moving the release tag.
