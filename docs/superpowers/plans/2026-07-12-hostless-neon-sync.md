@@ -131,7 +131,7 @@ git commit -m "feat: add atomic hostless sync procedures"
 - Consumes: owner `DATABASE_URL`, fixed role `student_book_sync_client`, and migration `0004`.
 - Produces: `provisionSyncRole({ ownerDatabaseUrl, password })` and `db:provision-sync-role`.
 
-- [ ] **Step 1: Write failing provisioning tests**
+- [x] **Step 1: Write failing provisioning tests**
 
 Assert exact role naming, pooled restricted URL construction, password redaction, distinct owner/restricted usernames, and grants limited to:
 
@@ -144,7 +144,7 @@ GRANT EXECUTE ON FUNCTION sync_api.sync_pull(bigint) TO student_book_sync_client
 
 The live test calls both functions as the restricted login and proves table reads/writes, `CREATE`, role creation, and `sync_private` execution fail.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 npm run test -w @app/sync-api -- --run tests/sync-role.test.ts
@@ -152,7 +152,7 @@ npm run test -w @app/sync-api -- --run tests/sync-role.test.ts
 
 Expected: FAIL because `sync-role.ts` is missing.
 
-- [ ] **Step 3: Implement provisioning**
+- [x] **Step 3: Implement provisioning**
 
 Export:
 
@@ -170,7 +170,7 @@ export type ProvisioningReport = {
 
 The CLI requires `DATABASE_URL` and `NEON_SYNC_ROLE_PASSWORD`, never logs either, exits nonzero on privilege leakage, and prints only the report. URL construction replaces credentials, preserves host/database/TLS parameters, and requires a pooled Neon hostname.
 
-- [ ] **Step 4: Verify GREEN and commit**
+- [x] **Step 4: Verify GREEN and commit**
 
 ```powershell
 npm run test -w @app/sync-api -- --run tests/sync-role.test.ts

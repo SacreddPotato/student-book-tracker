@@ -238,8 +238,17 @@ Hostless PostgreSQL procedure checkpoint (2026-07-13 Cairo):
 - Disposable PostgreSQL 17 applied migrations `0000` through `0004` twice. The verifier reported five migrations, `grade_level` non-null, the grade index, both public procedures owned by `student_book_sync_runtime`, no public execution, and zero post-cutover rows at redacted disposable fingerprint `ad9dc258792f`.
 - Fresh Task 1 verification passed sync API 4 files / 25 tests with the real PostgreSQL integration suite enabled, plus sync API typecheck. The exact disposable container was removed afterward.
 
+Restricted Neon client-role checkpoint (2026-07-13 Cairo):
+
+- `sync-role.ts` derives only a pooled `student_book_sync_client` URL from an owner Neon URL, preserves database/TLS parameters, and redacts credentials from all reports and errors.
+- Provisioning is idempotent and fixes the login role at `LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT`. It revokes inherited/table/sequence/private-function privileges, then grants only database connect, `sync_api` schema usage, and execution of the exact push/pull procedures.
+- A fresh PostgreSQL 17 permission matrix proved push/pull access while direct select, insert, update, delete, private-function execution, schema creation, and role creation all failed through the restricted connection.
+- The `db:provision-sync-role` CLI requires the owner URL plus a generated client-role password, prints only a redacted JSON report, supports a mode-0600 pooled URL output file for operator handoff, and emits no PostgreSQL privilege warnings.
+- `docs/runbooks/database-migrations.md` documents migration, restricted-role rotation, redacted verification, and the explicitly accepted extractable-client-credential threat model.
+- Fresh Task 2 verification passed the live role suite (1 file / 5 tests), the normal sync API suite (4 files / 26 tests with four live checks skipped), and sync API typecheck. The exact disposable container was removed afterward.
+
 ## Next Starting Point
 
-1. Execute Task 2 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: add the idempotent `student_book_sync_client` provisioning/rotation CLI and prove its negative privilege matrix on a fresh disposable PostgreSQL 17 target.
+1. Execute Task 3 in `docs/superpowers/plans/2026-07-12-hostless-neon-sync.md`: add the validated pooled Neon runtime configuration and direct desktop push/pull transport.
 2. Keep the owner `DATABASE_URL` and `SYNC_API_SHARED_SECRET` out of the desktop. Only the dedicated `student_book_sync_client` pooled URL may be compiled into trusted-client releases.
 3. Preserve offline-first SQLite behavior and the existing Rust-backed local transaction path throughout implementation.

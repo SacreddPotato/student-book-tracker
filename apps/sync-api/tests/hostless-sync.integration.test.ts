@@ -35,9 +35,14 @@ describeWithPostgres("hostless sync PostgreSQL contract", () => {
   const sql = postgres(databaseUrl!, { max: 8 });
 
   beforeAll(async () => {
-    await migrate(drizzle(sql), {
-      migrationsFolder: resolve(process.cwd(), "drizzle"),
-    });
+    const migrationSql = postgres(databaseUrl!, { max: 1 });
+    try {
+      await migrate(drizzle(migrationSql), {
+        migrationsFolder: resolve(process.cwd(), "drizzle"),
+      });
+    } finally {
+      await migrationSql.end({ timeout: 5 });
+    }
   });
 
   beforeEach(async () => {
@@ -61,8 +66,9 @@ describeWithPostgres("hostless sync PostgreSQL contract", () => {
   });
 
   async function push(commands: SyncCommand[]) {
+    const parameter = sql.json(commands);
     const [row] = await sql<{ payload: { results: SyncCommandResult[] } }[]>`
-      SELECT sync_api.sync_push(${JSON.stringify(commands)}::jsonb) AS payload
+      SELECT sync_api.sync_push(${parameter}::jsonb) AS payload
     `;
     return row.payload.results;
   }
