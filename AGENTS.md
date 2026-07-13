@@ -329,8 +329,18 @@ Excel and startup-race final verification checkpoint (2026-07-13 Cairo):
 - The candidate contains only the verified Excel export and first-run synchronization refinements. It adds no schema migration and requires no database or credential mutation.
 - The branch remains ready for a verified merge to `main`, main CI, and the signed Windows release workflow. Do not move the `v1.0.5` tag away from the exact main commit validated by that workflow.
 
+`v1.0.5` release checkpoint (2026-07-13 Cairo):
+
+- Merge `be890334c66e251a7f0e43821de69c19fdf537ca` passed local post-merge tests and main CI run `29255806734`, including lint, typecheck, all workspace tests, five rendered Chromium journeys, and the workspace build.
+- Signed Windows release workflow `29256097528` validated that exact merge, created annotated tag `v1.0.5`, repeated the complete quality gates, built the signed installer/updater artifacts, verified them, and published the release.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.5`.
+- EXE: `Student.Book.Tracker_1.0.5_x64-setup.exe`, 4,457,890 bytes, SHA-256 `aec93a60ab426ab6209996ff7fbb7fe6b5378e30c1c5032fbf9fa9279dcad629`; downloaded ProductVersion and FileVersion both report `1.0.5`.
+- Updater signature: 436 bytes, SHA-256 `bfb25343849daa763963cde438a3953fa08053f64765c2d5f331f6167f5e2aab`.
+- `latest.json`: 1,354 bytes, SHA-256 `a6e25f3f05510f36a652e357986a0d9f76b0e75540869f6cdeb62a3ad3915287`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.5`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` installer targets.
+- This release required no database migration or credential change. The isolated feature worktree and merged feature branch were removed after successful post-merge verification.
+
 ## Next Starting Point
 
-1. Merge branch `codex/excel-sync-refinement` to `main`, rerun the merged test suite, push, and wait for main CI.
-2. Dispatch the signed Windows workflow for `1.0.5`, then verify the published installer, updater signature, and global latest feed before recording the release checkpoint.
-3. Preserve the offline-first global dataset and the restricted `student_book_sync_client` transport; this refinement requires no database migration or credential change.
+1. `v1.0.5` is complete; use it as the stable baseline for subsequent product work.
+2. Preserve the offline-first global dataset and the restricted `student_book_sync_client` transport.
+3. Keep owner database and management credentials out of the desktop; only the dedicated restricted pooled client URL belongs in trusted-client releases.
