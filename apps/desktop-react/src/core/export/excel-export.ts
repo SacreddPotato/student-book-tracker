@@ -60,6 +60,24 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
     readingOrder,
     wrapText: true,
   };
+  const tableBorder: Partial<ExcelJS.Borders> = {
+    top: { style: "thin" },
+    bottom: { style: "thin" },
+    left: { style: "thin" },
+    right: { style: "thin" },
+  };
+  const signatureColumn = stageBooks.length + 2;
+  const tableCell = (row: number, column: number) => {
+    const cell = worksheet.getCell(row, column);
+    cell.border = tableBorder;
+    return cell;
+  };
+  const signatureCell = (row: number) => {
+    if (signatureColumn < headerColumnCount) {
+      worksheet.mergeCells(row, signatureColumn, row, headerColumnCount);
+    }
+    return tableCell(row, signatureColumn);
+  };
 
   worksheet.views = [{ rightToLeft: input.language === "ar" }];
   worksheet.columns = [
@@ -99,34 +117,40 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   };
 
   const headerRow = 5;
-  worksheet.getCell(headerRow, 1).value = t("export.name");
-  worksheet.getCell(headerRow, 1).alignment = centeredAlignment;
+  const nameHeader = tableCell(headerRow, 1);
+  nameHeader.value = t("export.name");
+  nameHeader.alignment = centeredAlignment;
   stageBooks.forEach((book, index) => {
-    worksheet.getCell(headerRow, index + 2).value = book.name;
-    worksheet.getCell(headerRow, index + 2).alignment = centeredAlignment;
+    const subjectHeader = tableCell(headerRow, index + 2);
+    subjectHeader.value = book.name;
+    subjectHeader.alignment = centeredAlignment;
   });
-  worksheet.getCell(headerRow, stageBooks.length + 2).value = t("export.studentSignature");
-  worksheet.getCell(headerRow, stageBooks.length + 2).alignment = centeredAlignment;
+  const signatureHeader = signatureCell(headerRow);
+  signatureHeader.value = t("export.studentSignature");
+  signatureHeader.alignment = centeredAlignment;
   worksheet.getRow(headerRow).font = { bold: true };
 
   gradeStudents.forEach((student, studentIndex) => {
     const row = headerRow + studentIndex + 1;
     const issued = new Set((input.issuedBookSelectionsByStudentId[student.id] ?? [])
       .map(({ bookId, semester }) => `${bookId}:${semester}`));
-    worksheet.getCell(row, 1).value = student.name;
-    worksheet.getCell(row, 1).alignment = textAlignment;
+    const studentName = tableCell(row, 1);
+    studentName.value = student.name;
+    studentName.alignment = textAlignment;
     stageBooks.forEach((book, bookIndex) => {
       const first = issued.has(`${book.id}:first`);
       const second = issued.has(`${book.id}:second`);
-      worksheet.getCell(row, bookIndex + 2).value = first && second
+      const stateCell = tableCell(row, bookIndex + 2);
+      stateCell.value = first && second
         ? "2"
         : first || second
           ? "1"
             : "0";
-      worksheet.getCell(row, bookIndex + 2).alignment = centeredAlignment;
+      stateCell.alignment = centeredAlignment;
     });
-    worksheet.getCell(row, stageBooks.length + 2).value = "";
-    worksheet.getCell(row, stageBooks.length + 2).alignment = centeredAlignment;
+    const studentSignature = signatureCell(row);
+    studentSignature.value = "";
+    studentSignature.alignment = centeredAlignment;
   });
 
   worksheet.pageSetup.orientation = "landscape";

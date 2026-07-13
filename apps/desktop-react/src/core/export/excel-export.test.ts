@@ -25,6 +25,15 @@ const books: BookRow[] = [{
   updatedAt: now, deletedAt: null,
 }];
 
+function expectThinBorder(cell: ExcelJS.Cell) {
+  expect(cell.border).toMatchObject({
+    top: { style: "thin" },
+    bottom: { style: "thin" },
+    left: { style: "thin" },
+    right: { style: "thin" },
+  });
+}
+
 describe("student Excel export", () => {
   it("centers the full Arabic grade and selected academic year in a two-line header", () => {
     const preparatoryStudent: StudentRow = {
@@ -139,6 +148,59 @@ describe("student Excel export", () => {
     expect(worksheet.getCell("B6").alignment).toMatchObject({
       horizontal: "center", readingOrder: "rtl", vertical: "middle",
     });
+  });
+
+  it("extends a bordered table through the full printable width", async () => {
+    const workbook = buildStudentsWorkbook({
+      students: [students[0], { ...students[0], id: "student-2", name: "Omar Ali" }],
+      books: [books[0]],
+      gradeLevel: "primary1",
+      academicYear: "2025-2026",
+      language: "en",
+      issuedBookSelectionsByStudentId: {},
+      translate: (key) => key,
+    });
+    const data = await workbook.xlsx.writeBuffer();
+    const restored = new ExcelJS.Workbook();
+    await restored.xlsx.load(data);
+    const worksheet = restored.getWorksheet("Students")!;
+
+    expect(worksheet.model.merges).toEqual(expect.arrayContaining([
+      "C5:H5", "C6:H6", "C7:H7",
+    ]));
+    for (const address of ["A5", "B5", "C5", "A6", "B6", "C6", "A7", "B7", "C7"]) {
+      expectThinBorder(worksheet.getCell(address));
+    }
+    expect(worksheet.getCell("A4").border).toBeUndefined();
+  });
+
+  it("borders a wide table without a redundant signature merge", async () => {
+    const manyBooks = Array.from({ length: 8 }, (_, index): BookRow => ({
+      ...books[0],
+      id: `book-${index + 1}`,
+      name: `Book ${index + 1}`,
+    }));
+    const workbook = buildStudentsWorkbook({
+      students,
+      books: manyBooks,
+      gradeLevel: "primary1",
+      academicYear: "2025-2026",
+      language: "en",
+      issuedBookSelectionsByStudentId: {},
+      translate: (key) => key === "export.studentSignature" ? "student signature" : key,
+    });
+    const data = await workbook.xlsx.writeBuffer();
+    const restored = new ExcelJS.Workbook();
+    await restored.xlsx.load(data);
+    const worksheet = restored.getWorksheet("Students")!;
+
+    expect(worksheet.model.merges).not.toContain("J5:J5");
+    expect(worksheet.getCell("J5").value).toBe("student signature");
+    for (let column = 1; column <= 10; column += 1) {
+      expectThinBorder(worksheet.getCell(5, column));
+      expectThinBorder(worksheet.getCell(6, column));
+    }
+    expect(worksheet.pageSetup.printArea).toBe("A1:J6");
   });
 
   it("keeps a wide subject header symmetric and configures one-page-width printing", () => {
