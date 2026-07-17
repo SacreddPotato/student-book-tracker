@@ -366,9 +366,10 @@ Protected deletion and book audit export checkpoint (2026-07-17 Cairo):
 - Export rows include active selected books and positive, unreversed stock-receipt items whose receipt date is on or after the Cairo-local creation date of the current academic-year row. Subjects are not emitted as grouping rows. A single selected subject receives a subject-specific audit title; multiple subjects receive `Book Inventory Audit`.
 - English and Arabic production-generated XLSX files were reopened from disk and rendered. Both preserved the unified table, quantities, dates/receipt IDs, exact grade labels, localized semester suffixes, landscape one-page-width print setup, and calculated print area. Arabic preserved RTL worksheet/cell direction. Formula-error scans returned no matches.
 - Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 134 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. This feature requires no database migration or credential change.
+- Local `main` fast-forwarded to verified implementation commit `b477560` without fetching, pushing, tagging, or starting a release. The complete post-merge workspace test suite passed with the same 254 passed / 5 live-gated skipped tests.
 
 ## Next Starting Point
 
-1. Review and integrate branch `codex/protected-delete-book-export`, whose implementation commits are `7fc8d2f`, `c786b1e`, and `98ca70c` on top of the approved specification and plan.
-2. No database migration or Neon operation is needed; the next release task begins with merge/rebase verification and version selection.
+1. Wait for the user's explicit approval before selecting a version, creating a tag, pushing `main`, or starting a release for the protected deletion and book audit export.
+2. Local `main` already contains the verified implementation. No database migration or Neon operation is needed.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
