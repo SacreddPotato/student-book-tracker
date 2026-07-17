@@ -358,8 +358,17 @@ Excel table grid checkpoint (2026-07-13 Cairo):
 - `latest.json`: 1,354 bytes, SHA-256 `0e46ea68ab174694b6383fcc5ffef06eb4be81c21873b1f2e47a8162aa686087`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.6`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
 - The isolated worktree and merged feature branch were removed. No database migration or credential change was needed.
 
+Protected deletion and book audit export checkpoint (2026-07-17 Cairo):
+
+- Branch `codex/protected-delete-book-export` adds a minimal password field to the shared student/book deletion dialog. Delete confirmation remains disabled until a password is entered, accepts only the exact case-sensitive password `az2006`, shows a localized inline error for a wrong value, and resets the password/error whenever the dialog is reopened or targets another entity. The password is intentionally client-side and adds no authentication or backend architecture.
+- The Books screen now offers an inventory export dialog with all unique subject names selected by default. Users may export every subject or any non-empty subset; export failures stay visible in the open dialog and a successful export downloads exactly once as `book-inventory-audit-<academic-year>.xlsx`.
+- Book exports use one `Book Inventory` worksheet and one five-column table: Book, Grade, Quantity, Receipt date, and Receipt ID. Every qualifying receipt item is one row; the semester is a localized suffix on the book name, and grade uses the exact grade label such as `1st Primary` rather than the stage.
+- Export rows include active selected books and positive, unreversed stock-receipt items whose receipt date is on or after the Cairo-local creation date of the current academic-year row. Subjects are not emitted as grouping rows. A single selected subject receives a subject-specific audit title; multiple subjects receive `Book Inventory Audit`.
+- English and Arabic production-generated XLSX files were reopened from disk and rendered. Both preserved the unified table, quantities, dates/receipt IDs, exact grade labels, localized semester suffixes, landscape one-page-width print setup, and calculated print area. Arabic preserved RTL worksheet/cell direction. Formula-error scans returned no matches.
+- Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 134 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. This feature requires no database migration or credential change.
+
 ## Next Starting Point
 
-1. `v1.0.6` is complete; use it as the stable baseline for subsequent product work.
-2. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport.
-3. Keep owner database and management credentials out of the desktop; only the dedicated restricted pooled client URL belongs in trusted-client releases.
+1. Review and integrate branch `codex/protected-delete-book-export`, whose implementation commits are `7fc8d2f`, `c786b1e`, and `98ca70c` on top of the approved specification and plan.
+2. No database migration or Neon operation is needed; the next release task begins with merge/rebase verification and version selection.
+3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
