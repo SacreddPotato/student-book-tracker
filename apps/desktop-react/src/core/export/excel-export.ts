@@ -1,6 +1,8 @@
 import ExcelJS from "exceljs";
-import type { GradeLevel } from "@app/shared";
+import type { BookSemester, GradeLevel } from "@app/shared";
 
+import type { AcademicYearRow } from "../db/repositories/academic-years";
+import type { LogEntry } from "../backend/types";
 import type { BookRow } from "../db/repositories/books";
 import type { StudentRow } from "../db/repositories/students";
 
@@ -22,6 +24,26 @@ export type StudentsWorkbookInput = {
     Array<{ bookId: string; semester: "first" | "second" }>
   >;
   translate: TranslateExport;
+};
+
+export type BooksWorkbookInput = {
+  books: BookRow[];
+  logs: LogEntry[];
+  academicYear: AcademicYearRow;
+  selectedSubjects: string[];
+  language: ExportLanguage;
+  translate: TranslateExport;
+};
+
+export type BookReceiptExportRow = {
+  itemId: string;
+  bookId: string;
+  bookName: string;
+  gradeLevel: GradeLevel;
+  semester: BookSemester;
+  quantity: number;
+  receiptDate: string;
+  receiptNumber: string;
 };
 
 function formatAcademicYear(academicYear: string, language: ExportLanguage): string {
@@ -164,10 +186,142 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   return workbook;
 }
 
-export async function downloadStudentsWorkbook(
-  workbook: ExcelJS.Workbook,
-  fileName = "student-book-export.xlsx",
-) {
+function cairoDateKey(utcIso: string): string {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "Africa/Cairo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(utcIso));
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+function bookReceiptRows(input: BooksWorkbookInput): BookReceiptExportRow[] {
+  const selectedSubjects = new Set(input.selectedSubjects);
+  const activeBooks = new Map(input.books
+    .filter((book) => !book.deletedAt && selectedSubjects.has(book.name))
+    .map((book) => [book.id, book]));
+  const cutoff = cairoDateKey(input.academicYear.createdAt);
+  const rows = input.logs.flatMap((log): BookReceiptExportRow[] => {
+    if (log.type !== "stock_increase"
+      || log.reversedByTransactionId
+      || !log.receiptNumber
+      || !log.receiptDate
+      || log.receiptDate < cutoff) return [];
+    return log.items.flatMap((item): BookReceiptExportRow[] => {
+      const book = activeBooks.get(item.bookId);
+      if (!book || item.quantityDelta <= 0) return [];
+      return [{
+        itemId: item.id,
+        bookId: book.id,
+        bookName: book.name,
+        gradeLevel: book.gradeLevel,
+        semester: item.semester,
+        quantity: item.quantityDelta,
+        receiptDate: log.receiptDate!,
+        receiptNumber: log.receiptNumber!,
+      }];
+    });
+  });
+  const semesterOrder: Record<BookSemester, number> = { first: 0, second: 1 };
+  return rows.sort((left, right) => left.receiptDate.localeCompare(right.receiptDate)
+    || left.receiptNumber.localeCompare(right.receiptNumber)
+    || left.bookName.localeCompare(right.bookName)
+    || semesterOrder[left.semester] - semesterOrder[right.semester]
+    || left.gradeLevel.localeCompare(right.gradeLevel)
+    || left.itemId.localeCompare(right.itemId));
+}
+
+export function buildBooksWorkbook(input: BooksWorkbookInput): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Book Inventory");
+  const t = input.translate;
+  const readingOrder = input.language === "ar" ? "rtl" : "ltr";
+  const textAlignment: Partial<ExcelJS.Alignment> = {
+    horizontal: input.language === "ar" ? "right" : "left",
+    vertical: "middle",
+    readingOrder,
+    wrapText: true,
+  };
+  const centeredAlignment: Partial<ExcelJS.Alignment> = {
+    horizontal: "center",
+    vertical: "middle",
+    readingOrder,
+    wrapText: true,
+  };
+  const tableBorder: Partial<ExcelJS.Borders> = {
+    top: { style: "thin" },
+    bottom: { style: "thin" },
+    left: { style: "thin" },
+    right: { style: "thin" },
+  };
+  const selectedSubjects = [...new Set(input.selectedSubjects)];
+  const title = selectedSubjects.length === 1
+    ? t("export.subjectInventoryAudit", { subject: selectedSubjects[0] })
+    : t("export.bookInventoryAudit");
+
+  worksheet.views = [{ rightToLeft: input.language === "ar" }];
+  worksheet.columns = [
+    { width: 32 }, { width: 22 }, { width: 14 }, { width: 20 }, { width: 20 },
+  ];
+  worksheet.mergeCells("B1:D1");
+  worksheet.mergeCells("B2:D2");
+  worksheet.mergeCells("E1:E3");
+  worksheet.getCell("A1").value = t("export.alGharbia");
+  worksheet.getCell("A2").value = t("export.eastTantaAdministrativeLearning");
+  worksheet.getCell("A3").value = t("export.alRafiiSchools");
+  for (let row = 1; row <= 3; row += 1) worksheet.getCell(row, 1).alignment = textAlignment;
+  worksheet.getCell("B1").value = title;
+  worksheet.getCell("B1").font = { bold: true, size: 14 };
+  worksheet.getCell("B1").alignment = centeredAlignment;
+  worksheet.getCell("B2").value = t("export.educationalYear", {
+    year: formatAcademicYear(input.academicYear.academicYear, input.language),
+  });
+  worksheet.getCell("B2").font = { bold: true, size: 12 };
+  worksheet.getCell("B2").alignment = centeredAlignment;
+  worksheet.getCell("E1").border = tableBorder;
+
+  const headerRow = 5;
+  const headings = ["book", "grade", "quantity", "receiptDate", "receiptId"];
+  headings.forEach((key, index) => {
+    const cell = worksheet.getCell(headerRow, index + 1);
+    cell.value = t(`export.${key}`);
+    cell.alignment = centeredAlignment;
+    cell.border = tableBorder;
+  });
+  worksheet.getRow(headerRow).font = { bold: true };
+
+  const rows = bookReceiptRows(input);
+  rows.forEach((row, index) => {
+    const excelRow = headerRow + index + 1;
+    const term = t(row.semester === "first" ? "export.firstTerm" : "export.secondTerm");
+    const values: Array<string | number> = [
+      `${row.bookName} ${term}`,
+      t(`grades.${row.gradeLevel}`),
+      row.quantity,
+      row.receiptDate,
+      row.receiptNumber,
+    ];
+    values.forEach((value, columnIndex) => {
+      const cell = worksheet.getCell(excelRow, columnIndex + 1);
+      cell.value = value;
+      cell.alignment = columnIndex === 0 ? textAlignment : centeredAlignment;
+      cell.border = tableBorder;
+    });
+  });
+
+  worksheet.pageSetup.orientation = "landscape";
+  worksheet.pageSetup.fitToPage = true;
+  worksheet.pageSetup.fitToWidth = 1;
+  worksheet.pageSetup.fitToHeight = 0;
+  worksheet.pageSetup.horizontalCentered = true;
+  const lastRow = headerRow + rows.length;
+  worksheet.pageSetup.printArea = `A1:E${lastRow}`;
+  return workbook;
+}
+
+async function downloadWorkbook(workbook: ExcelJS.Workbook, fileName: string) {
   const data = await workbook.xlsx.writeBuffer();
   const blob = new Blob([data as BlobPart], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -178,4 +332,18 @@ export async function downloadStudentsWorkbook(
   anchor.download = fileName;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadStudentsWorkbook(
+  workbook: ExcelJS.Workbook,
+  fileName = "student-book-export.xlsx",
+) {
+  await downloadWorkbook(workbook, fileName);
+}
+
+export async function downloadBooksWorkbook(
+  workbook: ExcelJS.Workbook,
+  fileName = "book-inventory-audit.xlsx",
+) {
+  await downloadWorkbook(workbook, fileName);
 }
