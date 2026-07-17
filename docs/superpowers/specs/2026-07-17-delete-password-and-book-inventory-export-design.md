@@ -26,12 +26,13 @@ The hardcoded password is an accidental-action safeguard, not authentication or 
 
 ### Export interaction
 
-Add an Export button beside Add Book in the Books workspace header. It opens a compact dialog containing a checkbox list derived from active book names:
+Add an Export button beside Add Book in the Books workspace header. It opens a compact dialog containing a checkbox list derived from active grade-specific book rows:
 
-- Subject identity is the exact trimmed `BookRow.name`; duplicate names across grades appear once in the selector.
-- All available subjects are selected whenever the dialog opens.
-- The user may select any combination of subjects. Selecting one subject includes every active grade-specific book row with that exact name.
-- Export is disabled when there is no current academic year, no active subject, no selected subject, or an export is already running.
+- Selection identity is the stable `BookRow.id`. Every active subject-and-grade pair appears independently, so `Maths — 1st Primary`, `Maths — 2nd Primary`, and `Maths — 3rd Primary` are separate options even though they share the same stored name.
+- Each option label combines the stored book name with the localized exact grade label. The label is presentation-only and does not alter the book record.
+- All available subject-grade options are selected whenever the dialog opens.
+- The user may select any combination of subject-grade options. Selecting one includes only the active book row with that ID.
+- Export is disabled when there is no current academic year, no active subject-grade option, no selected option, or an export is already running.
 - The dialog remains open if data loading or workbook generation fails and shows the existing localized export error treatment. A successful download closes it and announces the existing export-success notice.
 - Workbook code remains lazy-loaded so opening the Books screen does not eagerly load ExcelJS.
 
@@ -47,7 +48,7 @@ From the current academic year's logs, include only transactions that meet every
 - `reversedByTransactionId === null`;
 - `receiptNumber` and `receiptDate` are present;
 - `receiptDate` is on or after the current academic-year creation date;
-- the transaction item belongs to an active book whose exact name is selected.
+- the transaction item belongs to an active book whose stable ID is selected.
 
 Each qualifying stock-receipt item produces exactly one report row. A receipt that added 25 copies appears once with quantity `25`; it is not expanded into 25 rows and is not aggregated with another receipt. Deleted books, reversed stock receipts, receipts before the cutoff, issuance rows, and reversal rows are omitted.
 
@@ -59,8 +60,8 @@ Create one worksheet and preserve the student export's established workbook conv
 
 Replace the student export's grade title with:
 
-- localized `Book Inventory Audit` when all subjects or more than one subject is selected;
-- localized `{subject} Inventory Audit` when exactly one subject is selected, retaining the stored subject name verbatim.
+- localized `Book Inventory Audit` when more than one subject-grade option is selected;
+- localized `{subject} — {grade} Inventory Audit` when exactly one option is selected, retaining the stored subject name and using the localized exact grade label. For example: `Maths — 1st Primary Inventory Audit`.
 
 Below the shared institutional header, render one continuous bordered table with these columns:
 
@@ -84,7 +85,7 @@ An eligible subject with no qualifying receipts produces no body rows; the workb
 ## Implementation Boundaries and Interfaces
 
 - Keep `buildStudentsWorkbook` behavior unchanged. Extract private shared header/style helpers inside the export module only where this prevents the student and book exports from drifting.
-- Add an exported, framework-neutral `buildBooksWorkbook(input)` function and explicit input/receipt-row types in the existing Excel export module. Its input contains active books, current-year logs, the complete current academic-year row, selected subject names, language, and translator.
+- Keep the exported, framework-neutral `buildBooksWorkbook(input)` function and explicit input/receipt-row types in the existing Excel export module. Change its selection input from subject names to stable selected book IDs; it continues to receive active books, current-year logs, the complete current academic-year row, language, and translator.
 - Add a book-workbook download wrapper or generalize the existing browser download helper without changing the student-export filename or call behavior.
 - Add a focused Books export dialog component; keep data loading, busy/error state, notices, and lazy module import coordinated by `BooksScreen`.
 - Add localized English and Arabic strings for password label/error, export dialog copy, report titles, term suffixes, and receipt columns.
@@ -116,12 +117,12 @@ An eligible subject with no qualifying receipts produces no body rows; the workb
 
 ### Export tests
 
-- The selector defaults to all unique active book names, supports multiple selections, includes all grades for a selected name, and blocks an empty selection.
+- The selector defaults to every active subject-grade row, displays localized `subject — exact grade` labels, supports multiple selections, keeps duplicate names in different grades independent, and blocks an empty selection.
 - Receipt-date filtering uses the Cairo-local calendar date of the current-year creation timestamp, includes that date, and excludes earlier receipts.
 - Reversed stock receipts, deleted books, issuance/reversal logs, and unselected subjects are excluded.
 - A quantity of 25 creates one row containing `25`, its receipt date, and receipt ID.
 - Every Grade cell displays the translated exact `gradeLevel` (for example, `1st Primary`) rather than the broader education stage (`Primary`).
-- Exactly one selected subject produces the subject-specific title; multiple/all selections produce the general title.
+- Exactly one selected subject-grade option produces a title containing both its stored subject name and localized exact grade; multiple/all selections produce the general title.
 - First- and second-semester receipts occupy one unified table, and each Book cell has exactly the appropriate localized `First Term` or `Second Term` suffix with no separate semester column.
 - The unified table has the required columns, deterministic ordering, continuous borders, correct print area, landscape one-page-width setup, and no subject summaries or signature column.
 - Arabic serialization preserves RTL view, reading order, academic-year digit order, localized headings, and Arabic term suffixes.
