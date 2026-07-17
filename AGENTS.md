@@ -361,15 +361,24 @@ Excel table grid checkpoint (2026-07-13 Cairo):
 Protected deletion and book audit export checkpoint (2026-07-17 Cairo):
 
 - Branch `codex/protected-delete-book-export` adds a minimal password field to the shared student/book deletion dialog. Delete confirmation remains disabled until a password is entered, accepts only the exact case-sensitive password `az2006`, shows a localized inline error for a wrong value, and resets the password/error whenever the dialog is reopened or targets another entity. The password is intentionally client-side and adds no authentication or backend architecture.
-- The Books screen now offers an inventory export dialog with all unique subject names selected by default. Users may export every subject or any non-empty subset; export failures stay visible in the open dialog and a successful export downloads exactly once as `book-inventory-audit-<academic-year>.xlsx`.
+- The Books screen offers an inventory export dialog with every active subject-and-grade book row selected by default. Users may export every row or any non-empty subset; export failures stay visible in the open dialog and a successful export downloads exactly once as `book-inventory-audit-<academic-year>.xlsx`.
 - Book exports use one `Book Inventory` worksheet and one five-column table: Book, Grade, Quantity, Receipt date, and Receipt ID. Every qualifying receipt item is one row; the semester is a localized suffix on the book name, and grade uses the exact grade label such as `1st Primary` rather than the stage.
 - Export rows include active selected books and positive, unreversed stock-receipt items whose receipt date is on or after the Cairo-local creation date of the current academic-year row. Subjects are not emitted as grouping rows. A single selected subject receives a subject-specific audit title; multiple subjects receive `Book Inventory Audit`.
 - English and Arabic production-generated XLSX files were reopened from disk and rendered. Both preserved the unified table, quantities, dates/receipt IDs, exact grade labels, localized semester suffixes, landscape one-page-width print setup, and calculated print area. Arabic preserved RTL worksheet/cell direction. Formula-error scans returned no matches.
 - Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 134 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. This feature requires no database migration or credential change.
 - Local `main` fast-forwarded to verified implementation commit `b477560` without fetching, pushing, tagging, or starting a release. The complete post-merge workspace test suite passed with the same 254 passed / 5 live-gated skipped tests.
 
+Grade-aware book audit selection correction (2026-07-17 Cairo):
+
+- Root cause: the export dialog deduplicated choices by `BookRow.name`, and the workbook accepted selected names, so identically named subjects in Primary 1, 2, and 3 could only be exported together.
+- Selection now uses stable `BookRow.id` values. The dialog renders one localized `{subject} — {exact grade}` checkbox per active book row, selects every option on open, and submits IDs in display order. Duplicate names across grades remain independent.
+- Workbook receipt filtering now matches exact selected book IDs. One selected option receives a title containing both subject and localized grade, such as `Maths — 1st Primary Inventory Audit`; multiple selections retain the general `Book Inventory Audit` title.
+- TDD RED reproduced the collapsed two-checkbox UI and missing `selectedBookIds` workbook contract. GREEN passed the combined Books/export suite (2 files / 19 tests) plus React typecheck.
+- Production-generated English and Arabic workbooks contained Primary 1 and Primary 2 source receipts but selected only Primary 1. Disk reload and render confirmed only Primary 1 rows, exact subject-grade titles, both semester suffixes, RTL behavior, borders, print layout, and no formula-error cells.
+- Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. No database migration, Neon operation, credential change, tag, or push is required.
+
 ## Next Starting Point
 
 1. Wait for the user's explicit approval before selecting a version, creating a tag, pushing `main`, or starting a release for the protected deletion and book audit export.
-2. Local `main` already contains the verified implementation. No database migration or Neon operation is needed.
+2. Merge the verified grade-aware correction into local `main`; no database migration or Neon operation is needed.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
