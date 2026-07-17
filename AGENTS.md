@@ -376,9 +376,10 @@ Grade-aware book audit selection correction (2026-07-17 Cairo):
 - TDD RED reproduced the collapsed two-checkbox UI and missing `selectedBookIds` workbook contract. GREEN passed the combined Books/export suite (2 files / 19 tests) plus React typecheck.
 - Production-generated English and Arabic workbooks contained Primary 1 and Primary 2 source receipts but selected only Primary 1. Disk reload and render confirmed only Primary 1 rows, exact subject-grade titles, both semester suffixes, RTL behavior, borders, print layout, and no formula-error cells.
 - Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. No database migration, Neon operation, credential change, tag, or push is required.
+- Local `main` fast-forwarded to verified correction commit `38a83fa` without fetching, tagging, or pushing. The complete post-merge suite passed with 255 tests and the same five live-gated skips; the isolated correction branch and worktree were removed.
 
 ## Next Starting Point
 
 1. Wait for the user's explicit approval before selecting a version, creating a tag, pushing `main`, or starting a release for the protected deletion and book audit export.
-2. Merge the verified grade-aware correction into local `main`; no database migration or Neon operation is needed.
+2. Local `main` contains the verified grade-aware correction; no database migration or Neon operation is needed.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
