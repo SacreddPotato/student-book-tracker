@@ -75,6 +75,8 @@ Every qualifying receipt item occupies one table row. Do not add a separate seme
 
 The suffix is a presentation-only value; it does not rename the book or alter stored data. Do not add subject summary rows, subject grouping headings, totals, student data, or signature columns.
 
+The Grade cell must use the book's exact `gradeLevel` translated through the existing grade labels, such as `1st Primary`, `2nd Primary`, or their Arabic equivalents. It must never use the broader `educationStage` label such as plain `Primary` or `Preparatory`.
+
 The print area spans the unified table through its final receipt row. Fit to one page wide but allow vertical continuation onto additional printed pages so large reports remain legible. Arabic retains worksheet RTL rendering while preserving the same logical column order and localized cell alignment.
 
 An eligible subject with no qualifying receipts produces no body rows; the workbook is still valid and downloadable with its header and column headings. Use the filename `book-inventory-audit-<academic-year>.xlsx`.
@@ -118,6 +120,7 @@ An eligible subject with no qualifying receipts produces no body rows; the workb
 - Receipt-date filtering uses the Cairo-local calendar date of the current-year creation timestamp, includes that date, and excludes earlier receipts.
 - Reversed stock receipts, deleted books, issuance/reversal logs, and unselected subjects are excluded.
 - A quantity of 25 creates one row containing `25`, its receipt date, and receipt ID.
+- Every Grade cell displays the translated exact `gradeLevel` (for example, `1st Primary`) rather than the broader education stage (`Primary`).
 - Exactly one selected subject produces the subject-specific title; multiple/all selections produce the general title.
 - First- and second-semester receipts occupy one unified table, and each Book cell has exactly the appropriate localized `First Term` or `Second Term` suffix with no separate semester column.
 - The unified table has the required columns, deterministic ordering, continuous borders, correct print area, landscape one-page-width setup, and no subject summaries or signature column.
