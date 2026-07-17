@@ -1,0 +1,137 @@
+# Delete Password and Book Inventory Export Design
+
+## Summary
+
+Add two small features to the active React desktop application:
+
+1. Require the exact case-sensitive password `az2006` before either a student or book deletion can be submitted.
+2. Add a Books-screen Excel export that audits current-academic-year stock receipts in separate first- and second-semester grids on one worksheet.
+
+Both features stay local to the React UI and existing Excel/log data paths. They require no SQLite or Postgres migration, no sync-protocol change, and no server or credential work.
+
+## Password-Protected Deletion
+
+The existing `DeleteConfirmationDialog` remains the single confirmation surface for current-year student deletion and active book deletion. Add one masked password field inside that dialog rather than introducing another modal, settings page, or authentication layer.
+
+- The accepted value is the exact, case-sensitive string `az2006`.
+- The password is checked in the React dialog before `onConfirm` is called. A wrong value keeps the dialog open, makes no backend call, and shows a localized inline error.
+- The field starts empty every time the dialog opens and is cleared when the dialog closes, the deletion target changes, or a deletion succeeds. The password is never stored, remembered, logged, synchronized, or sent to the backend.
+- The destructive action is disabled while the field is empty or while the existing deletion mutation is pending. Pressing Enter from the password field follows the same validation and submission path as the Delete button.
+- Cancel, Escape, close-button, focus trapping, focus restoration, entity name, destructive styling, busy state, and existing deletion error notices remain unchanged.
+- This guard applies only to the two operations that use `DeleteConfirmationDialog`: deleting students and deleting books. Transaction reversal and academic-year advancement are unchanged.
+
+The hardcoded password is an accidental-action safeguard, not authentication or a security boundary. Because it is shipped in the desktop client, a determined user can extract it from the application bundle.
+
+## Book Inventory Audit Export
+
+### Export interaction
+
+Add an Export button beside Add Book in the Books workspace header. It opens a compact dialog containing a checkbox list derived from active book names:
+
+- Subject identity is the exact trimmed `BookRow.name`; duplicate names across grades appear once in the selector.
+- All available subjects are selected whenever the dialog opens.
+- The user may select any combination of subjects. Selecting one subject includes every active grade-specific book row with that exact name.
+- Export is disabled when there is no current academic year, no active subject, no selected subject, or an export is already running.
+- The dialog remains open if data loading or workbook generation fails and shows the existing localized export error treatment. A successful download closes it and announces the existing export-success notice.
+- Workbook code remains lazy-loaded so opening the Books screen does not eagerly load ExcelJS.
+
+The export uses the existing `AppBackend.listLogs(currentAcademicYear)` and active `listBooks()` results. Do not add a dedicated database query or change `AppBackend` for this feature.
+
+### Receipt eligibility and row construction
+
+Determine the start date by converting the current academic-year row's UTC `createdAt` timestamp to its `Africa/Cairo` calendar date in `YYYY-MM-DD` form. A receipt dated on that same Cairo calendar date is included; therefore the comparison is `receiptDate >= currentYearCreatedDate`.
+
+From the current academic year's logs, include only transactions that meet every condition:
+
+- `type === "stock_increase"`;
+- `reversedByTransactionId === null`;
+- `receiptNumber` and `receiptDate` are present;
+- `receiptDate` is on or after the current academic-year creation date;
+- the transaction item belongs to an active book whose exact name is selected.
+
+Each qualifying stock-receipt item produces exactly one report row. A receipt that added 25 copies appears once with quantity `25`; it is not expanded into 25 rows and is not aggregated with another receipt. Deleted books, reversed stock receipts, receipts before the cutoff, issuance rows, and reversal rows are omitted.
+
+Within each semester, sort rows by receipt date ascending, then receipt ID, book name, grade, and stable item ID. This makes the audit chronological and deterministic.
+
+### Workbook layout
+
+Create one worksheet and preserve the student export's established workbook conventions: localized school labels, logo placeholder, academic-year line, Arabic RTL behavior, fonts, alignments, thin table borders, landscape orientation, centered printing, and one-page-width fitting.
+
+Replace the student export's grade title with:
+
+- localized `Book Inventory Audit` when all subjects or more than one subject is selected;
+- localized `{subject} Inventory Audit` when exactly one subject is selected, retaining the stored subject name verbatim.
+
+Below the shared institutional header, render two independent five-column tables side by side with one blank spacer column:
+
+| First-semester grid | Second-semester grid |
+| --- | --- |
+| Book | Book |
+| Grade | Grade |
+| Quantity | Quantity |
+| Receipt date | Receipt date |
+| Receipt ID | Receipt ID |
+
+Each grid has its localized semester name merged across its five columns, followed by the localized column-heading row and its receipt rows. Do not add subject summary rows, subject grouping headings, totals, student data, or signature columns. The book name appears only as part of each individual receipt row.
+
+In English/LTR display, the first-semester grid appears on the left and the second-semester grid on the right. In Arabic/RTL display, worksheet RTL rendering places the first-semester grid on the right and the second-semester grid on the left. The print area spans both grids and ends at the longer grid's final row. Fit to one page wide but allow vertical continuation onto additional printed pages so large reports remain legible.
+
+An eligible subject with no qualifying receipts produces no body rows in its semester grid; the workbook is still valid and downloadable with its headers. Use the filename `book-inventory-audit-<academic-year>.xlsx`.
+
+## Implementation Boundaries and Interfaces
+
+- Keep `buildStudentsWorkbook` behavior unchanged. Extract private shared header/style helpers inside the export module only where this prevents the student and book exports from drifting.
+- Add an exported, framework-neutral `buildBooksWorkbook(input)` function and explicit input/receipt-row types in the existing Excel export module. Its input contains active books, current-year logs, the complete current academic-year row, selected subject names, language, and translator.
+- Add a book-workbook download wrapper or generalize the existing browser download helper without changing the student-export filename or call behavior.
+- Add a focused Books export dialog component; keep data loading, busy/error state, notices, and lazy module import coordinated by `BooksScreen`.
+- Add localized English and Arabic strings for password label/error, export dialog copy, report titles, semester grid headings, and receipt columns.
+- Lock the new user-facing translations as follows; reuse the existing grade, semester, quantity, receipt-number, receipt-date, cancel, and export-success/error strings where they already exist:
+
+| Key/meaning | English | Arabic |
+| --- | --- | --- |
+| Delete password | Password | كلمة المرور |
+| Wrong password | Incorrect password. | كلمة المرور غير صحيحة. |
+| Books export action | Export inventory | تصدير المخزون |
+| Export dialog title | Export book inventory audit | تصدير مراجعة مخزون الكتب |
+| Subject selection label | Subjects to include | المواد المطلوب تضمينها |
+| General report title | Book Inventory Audit | مراجعة مخزون الكتب |
+| Single-subject title | {subject} Inventory Audit | مراجعة مخزون {subject} |
+| Book column | Book | الكتاب |
+| Receipt ID column | Receipt ID | رقم إذن الاستلام |
+- Do not change SQLite/Postgres schemas, sync commands, direct Neon transport, the rollback Svelte frontend, or release configuration.
+
+## Testing and Acceptance Criteria
+
+### Deletion tests
+
+- Student and book dialogs do not call their delete backend method for an empty or incorrect password.
+- `az2006` submits exactly once, preserves the existing success behavior, and cannot double-submit while pending.
+- Password matching is case-sensitive, wrong-password feedback is inline and localized, Enter submits through validation, and closing/reopening or switching targets clears both value and validation error.
+- Archived students still expose no deletion action; reversal and rollover confirmations remain unchanged.
+
+### Export tests
+
+- The selector defaults to all unique active book names, supports multiple selections, includes all grades for a selected name, and blocks an empty selection.
+- Receipt-date filtering uses the Cairo-local calendar date of the current-year creation timestamp, includes that date, and excludes earlier receipts.
+- Reversed stock receipts, deleted books, issuance/reversal logs, and unselected subjects are excluded.
+- A quantity of 25 creates one row containing `25`, its receipt date, and receipt ID.
+- Exactly one selected subject produces the subject-specific title; multiple/all selections produce the general title.
+- First- and second-semester rows occupy distinct side-by-side grids with the required columns, deterministic ordering, continuous borders, correct print area, landscape one-page-width setup, and no subject summaries or signature column.
+- Arabic serialization preserves RTL view, reading order, academic-year digit order, localized headings, and the first-semester grid's visual placement on the right.
+- Books-screen tests cover dialog open/cancel, selection changes, success, failure retention, busy-state duplicate prevention, and the generated filename.
+
+### Verification
+
+Run the focused React component and export suites first, then the complete sequential workspace gates:
+
+```powershell
+npm run test -w @app/desktop-react -- --run src/features/books/BooksScreen.test.tsx src/features/students/StudentsScreen.test.tsx src/core/export/excel-export.test.ts
+npm run typecheck -w @app/desktop-react
+npm run test
+npm run lint
+npm run typecheck
+npm run test:e2e
+npm run build
+```
+
+Render and inspect representative English and Arabic workbooks with unequal semester row counts. Confirm the institutional header, exact titles, subject filtering, receipt values, border continuity, RTL placement, and print area in a real spreadsheet viewer before calling the feature complete.
