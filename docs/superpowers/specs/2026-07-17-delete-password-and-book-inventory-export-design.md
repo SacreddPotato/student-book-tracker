@@ -30,6 +30,7 @@ Add an Export button beside Add Book in the Books workspace header. It opens a c
 
 - Selection identity is the stable `BookRow.id`. Every active subject-and-grade pair appears independently, so `Maths — 1st Primary`, `Maths — 2nd Primary`, and `Maths — 3rd Primary` are separate options even though they share the same stored name.
 - Each option label combines the stored book name with the localized exact grade label. The label is presentation-only and does not alter the book record.
+- Sort options deterministically by stored subject name first, using the active language for text comparison, so identically named subjects stay together. Within each subject, use the canonical school progression `KG 1`, `KG 2`, `Primary 1` through `Primary 6`, then `Preparatory 1` through `Preparatory 3`; use stable `BookRow.id` as the final tie-breaker. Do not use creation time or the translated grade label for ordering.
 - All available subject-grade options are selected whenever the dialog opens.
 - The user may select any combination of subject-grade options. Selecting one includes only the active book row with that ID.
 - Export is disabled when there is no current academic year, no active subject-grade option, no selected option, or an export is already running.
@@ -118,6 +119,7 @@ An eligible subject with no qualifying receipts produces no body rows; the workb
 ### Export tests
 
 - The selector defaults to every active subject-grade row, displays localized `subject — exact grade` labels, supports multiple selections, keeps duplicate names in different grades independent, and blocks an empty selection.
+- The selector groups subjects by localized name comparison and orders each subject's rows by the canonical school-grade progression, independent of creation time and translated ordinal text.
 - Receipt-date filtering uses the Cairo-local calendar date of the current-year creation timestamp, includes that date, and excludes earlier receipts.
 - Reversed stock receipts, deleted books, issuance/reversal logs, and unselected subjects are excluded.
 - A quantity of 25 creates one row containing `25`, its receipt date, and receipt ID.
