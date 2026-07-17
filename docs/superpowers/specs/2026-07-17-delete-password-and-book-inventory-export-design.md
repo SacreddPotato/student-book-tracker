@@ -5,7 +5,7 @@
 Add two small features to the active React desktop application:
 
 1. Require the exact case-sensitive password `az2006` before either a student or book deletion can be submitted.
-2. Add a Books-screen Excel export that audits current-academic-year stock receipts in separate first- and second-semester grids on one worksheet.
+2. Add a Books-screen Excel export that audits current-academic-year stock receipts in one unified table on one worksheet.
 
 Both features stay local to the React UI and existing Excel/log data paths. They require no SQLite or Postgres migration, no sync-protocol change, and no server or credential work.
 
@@ -51,7 +51,7 @@ From the current academic year's logs, include only transactions that meet every
 
 Each qualifying stock-receipt item produces exactly one report row. A receipt that added 25 copies appears once with quantity `25`; it is not expanded into 25 rows and is not aggregated with another receipt. Deleted books, reversed stock receipts, receipts before the cutoff, issuance rows, and reversal rows are omitted.
 
-Within each semester, sort rows by receipt date ascending, then receipt ID, book name, grade, and stable item ID. This makes the audit chronological and deterministic.
+Sort the unified rows by receipt date ascending, then receipt ID, base book name, semester (`first` before `second`), grade, and stable item ID. This makes the audit chronological and deterministic.
 
 ### Workbook layout
 
@@ -62,21 +62,22 @@ Replace the student export's grade title with:
 - localized `Book Inventory Audit` when all subjects or more than one subject is selected;
 - localized `{subject} Inventory Audit` when exactly one subject is selected, retaining the stored subject name verbatim.
 
-Below the shared institutional header, render two independent five-column tables side by side with one blank spacer column:
+Below the shared institutional header, render one continuous bordered table with these columns:
 
-| First-semester grid | Second-semester grid |
-| --- | --- |
-| Book | Book |
-| Grade | Grade |
-| Quantity | Quantity |
-| Receipt date | Receipt date |
-| Receipt ID | Receipt ID |
+| Book | Grade | Quantity | Receipt date | Receipt ID |
+| --- | --- | --- | --- | --- |
 
-Each grid has its localized semester name merged across its five columns, followed by the localized column-heading row and its receipt rows. Do not add subject summary rows, subject grouping headings, totals, student data, or signature columns. The book name appears only as part of each individual receipt row.
+Every qualifying receipt item occupies one table row. Do not add a separate semester column. Instead, append the localized term to the stored book name in the Book cell:
 
-In English/LTR display, the first-semester grid appears on the left and the second-semester grid on the right. In Arabic/RTL display, worksheet RTL rendering places the first-semester grid on the right and the second-semester grid on the left. The print area spans both grids and ends at the longer grid's final row. Fit to one page wide but allow vertical continuation onto additional printed pages so large reports remain legible.
+- English first-semester example: `English First Term`;
+- English second-semester example: `English Second Term`;
+- Arabic uses the stored book name followed by `الفصل الدراسي الأول` or `الفصل الدراسي الثاني`.
 
-An eligible subject with no qualifying receipts produces no body rows in its semester grid; the workbook is still valid and downloadable with its headers. Use the filename `book-inventory-audit-<academic-year>.xlsx`.
+The suffix is a presentation-only value; it does not rename the book or alter stored data. Do not add subject summary rows, subject grouping headings, totals, student data, or signature columns.
+
+The print area spans the unified table through its final receipt row. Fit to one page wide but allow vertical continuation onto additional printed pages so large reports remain legible. Arabic retains worksheet RTL rendering while preserving the same logical column order and localized cell alignment.
+
+An eligible subject with no qualifying receipts produces no body rows; the workbook is still valid and downloadable with its header and column headings. Use the filename `book-inventory-audit-<academic-year>.xlsx`.
 
 ## Implementation Boundaries and Interfaces
 
@@ -84,8 +85,8 @@ An eligible subject with no qualifying receipts produces no body rows in its sem
 - Add an exported, framework-neutral `buildBooksWorkbook(input)` function and explicit input/receipt-row types in the existing Excel export module. Its input contains active books, current-year logs, the complete current academic-year row, selected subject names, language, and translator.
 - Add a book-workbook download wrapper or generalize the existing browser download helper without changing the student-export filename or call behavior.
 - Add a focused Books export dialog component; keep data loading, busy/error state, notices, and lazy module import coordinated by `BooksScreen`.
-- Add localized English and Arabic strings for password label/error, export dialog copy, report titles, semester grid headings, and receipt columns.
-- Lock the new user-facing translations as follows; reuse the existing grade, semester, quantity, receipt-number, receipt-date, cancel, and export-success/error strings where they already exist:
+- Add localized English and Arabic strings for password label/error, export dialog copy, report titles, term suffixes, and receipt columns.
+- Lock the new user-facing translations as follows; reuse the existing grade, quantity, receipt-number, receipt-date, cancel, and export-success/error strings where they already exist:
 
 | Key/meaning | English | Arabic |
 | --- | --- | --- |
@@ -96,6 +97,8 @@ An eligible subject with no qualifying receipts produces no body rows in its sem
 | Subject selection label | Subjects to include | المواد المطلوب تضمينها |
 | General report title | Book Inventory Audit | مراجعة مخزون الكتب |
 | Single-subject title | {subject} Inventory Audit | مراجعة مخزون {subject} |
+| First-term suffix | First Term | الفصل الدراسي الأول |
+| Second-term suffix | Second Term | الفصل الدراسي الثاني |
 | Book column | Book | الكتاب |
 | Receipt ID column | Receipt ID | رقم إذن الاستلام |
 - Do not change SQLite/Postgres schemas, sync commands, direct Neon transport, the rollback Svelte frontend, or release configuration.
@@ -116,8 +119,9 @@ An eligible subject with no qualifying receipts produces no body rows in its sem
 - Reversed stock receipts, deleted books, issuance/reversal logs, and unselected subjects are excluded.
 - A quantity of 25 creates one row containing `25`, its receipt date, and receipt ID.
 - Exactly one selected subject produces the subject-specific title; multiple/all selections produce the general title.
-- First- and second-semester rows occupy distinct side-by-side grids with the required columns, deterministic ordering, continuous borders, correct print area, landscape one-page-width setup, and no subject summaries or signature column.
-- Arabic serialization preserves RTL view, reading order, academic-year digit order, localized headings, and the first-semester grid's visual placement on the right.
+- First- and second-semester receipts occupy one unified table, and each Book cell has exactly the appropriate localized `First Term` or `Second Term` suffix with no separate semester column.
+- The unified table has the required columns, deterministic ordering, continuous borders, correct print area, landscape one-page-width setup, and no subject summaries or signature column.
+- Arabic serialization preserves RTL view, reading order, academic-year digit order, localized headings, and Arabic term suffixes.
 - Books-screen tests cover dialog open/cancel, selection changes, success, failure retention, busy-state duplicate prevention, and the generated filename.
 
 ### Verification
@@ -134,4 +138,4 @@ npm run test:e2e
 npm run build
 ```
 
-Render and inspect representative English and Arabic workbooks with unequal semester row counts. Confirm the institutional header, exact titles, subject filtering, receipt values, border continuity, RTL placement, and print area in a real spreadsheet viewer before calling the feature complete.
+Render and inspect representative English and Arabic workbooks containing both semesters. Confirm the institutional header, exact titles, subject filtering, term-suffixed book names, receipt values, border continuity, RTL layout, and print area in a real spreadsheet viewer before calling the feature complete.
