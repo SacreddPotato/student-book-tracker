@@ -55,6 +55,8 @@ export const ar = {
   books: {
     title: "مخزون الكتب", description: "متابعة كتب كل صف والمخزون المتاح.",
     add: "إضافة كتاب", edit: "تعديل الكتاب", delete: "حذف الكتاب", addStock: "إضافة مخزون",
+    exportInventory: "تصدير المخزون", exportDialogTitle: "تصدير مراجعة مخزون الكتب",
+    exportSubjects: "المواد المطلوب تضمينها",
     deleteTitle: "حذف الكتاب", deleteDescription: "سيتم حذف الكتاب من المخزون النشط مع الاحتفاظ بسجل المعاملات التاريخي.",
     gradeSelection: "الصفوف التي تستخدم هذا الكتاب",
     addStockTo: "إضافة مخزون إلى {name}", addSemesterStockTo: "إضافة مخزون {semester} إلى {name}", searchPlaceholder: "ابحث باسم الكتاب",
@@ -103,7 +105,9 @@ export const ar = {
     eastTantaAdministrativeLearning: "إدارة شرق طنطا التعليمية",
     alRafiiSchools: "مدرسة الرافعي الرسميىة للغات", gradeHeading: "الصف {grade}",
     educationalYear: "للعام الدراسي: {year}",
-    studentSignature: "توقيع الطالب",
+    studentSignature: "توقيع الطالب", bookInventoryAudit: "مراجعة مخزون الكتب",
+    subjectInventoryAudit: "مراجعة مخزون {subject}", firstTerm: "الفصل الدراسي الأول", secondTerm: "الفصل الدراسي الثاني",
+    book: "الكتاب", grade: "الصف", quantity: "الكمية", receiptDate: "تاريخ إذن الاستلام", receiptId: "رقم إذن الاستلام",
   },
   feedback: {
     studentSaved: "تم حفظ الطالب.", studentDeleted: "تم حذف الطالب.", bookSaved: "تم حفظ الكتاب.", bookDeleted: "تم حذف الكتاب.",

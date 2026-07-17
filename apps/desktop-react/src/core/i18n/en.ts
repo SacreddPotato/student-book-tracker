@@ -69,6 +69,8 @@ export const en = {
   books: {
     title: "Book inventory", description: "Track grade-specific books and available stock.",
     add: "Add book", edit: "Edit book", delete: "Delete book", addStock: "Add stock", addStockTo: "Add stock to {name}",
+    exportInventory: "Export inventory", exportDialogTitle: "Export book inventory audit",
+    exportSubjects: "Subjects to include",
     deleteTitle: "Delete book", deleteDescription: "This removes the book from active inventory. Historical transactions remain available.",
     gradeSelection: "Grades that use this book",
     addSemesterStockTo: "Add {semester} stock to {name}",
@@ -117,7 +119,9 @@ export const en = {
     eastTantaAdministrativeLearning: "East Tanta Administrative Learning",
     alRafiiSchools: "Al-Rafii Schools", gradeHeading: "{grade}",
     educationalYear: "for the educational year: {year}",
-    studentSignature: "student signature",
+    studentSignature: "student signature", bookInventoryAudit: "Book Inventory Audit",
+    subjectInventoryAudit: "{subject} Inventory Audit", firstTerm: "First Term", secondTerm: "Second Term",
+    book: "Book", grade: "Grade", quantity: "Quantity", receiptDate: "Receipt date", receiptId: "Receipt ID",
   },
   feedback: {
     studentSaved: "Student saved.", studentDeleted: "Student deleted.", bookSaved: "Book saved.", bookDeleted: "Book deleted.", booksIssued: "Books issued.",

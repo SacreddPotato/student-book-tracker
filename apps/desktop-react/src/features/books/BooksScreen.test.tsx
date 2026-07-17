@@ -1,12 +1,23 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppProviders } from "../../app/AppProviders";
 import { AppShell } from "../../components/shell/AppShell";
 import { createFixtureBackend } from "../../core/backend/fixture-backend";
 import type { BookRow } from "../../core/db/repositories/books";
 import { BooksScreen } from "./BooksScreen";
+
+const exportMocks = vi.hoisted(() => ({
+  workbook: { kind: "book-workbook" },
+  buildBooksWorkbook: vi.fn(),
+  downloadBooksWorkbook: vi.fn(),
+}));
+
+vi.mock("../../core/export/excel-export", () => ({
+  buildBooksWorkbook: exportMocks.buildBooksWorkbook,
+  downloadBooksWorkbook: exportMocks.downloadBooksWorkbook,
+}));
 
 const now = "2026-07-08T10:00:00.000Z";
 const year = { academicYear: "2025-2026", status: "current" as const, createdAt: now, archivedAt: null };
@@ -24,6 +35,13 @@ function renderBooksWithBackend(backend: ReturnType<typeof createFixtureBackend>
 }
 
 describe("BooksScreen", () => {
+  beforeEach(() => {
+    exportMocks.buildBooksWorkbook.mockReset();
+    exportMocks.buildBooksWorkbook.mockReturnValue(exportMocks.workbook);
+    exportMocks.downloadBooksWorkbook.mockReset();
+    exportMocks.downloadBooksWorkbook.mockResolvedValue(undefined);
+  });
+
   it("creates independent books for every selected grade", async () => {
     const user = userEvent.setup();
     const backend = renderBooks(true);
@@ -147,5 +165,80 @@ describe("BooksScreen", () => {
 
     expect(screen.getByRole("dialog", { name: "Add first semester stock to Primary Math" })).toBeVisible();
     expect(disclosure).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("exports a resettable multi-subject current-year audit exactly once", async () => {
+    const user = userEvent.setup();
+    const primary2Math: BookRow = { ...stocked, id: "book-math-primary2", gradeLevel: "primary2" };
+    const backend = createFixtureBackend({
+      academicYears: [year],
+      books: [stocked, primary2Math, empty],
+      transactions: [{
+        id: "stock-export", scopeId: "global", academicYear: year.academicYear,
+        type: "stock_increase", studentId: null, receiptNumber: "R-41",
+        receiptDate: "2026-01-14", reversedTransactionId: null,
+        reversedByTransactionId: null, deviceId: "fixture", commandId: "command-export",
+        occurredAt: "2026-01-14T10:00:00.000Z", createdAt: "2026-01-14T10:00:00.000Z",
+      }],
+      items: [{
+        id: "item-export", transactionId: "stock-export", bookId: stocked.id,
+        semester: "first", quantityDelta: 25, quantityAfter: 25,
+        createdAt: "2026-01-14T10:00:00.000Z",
+      }],
+    });
+    const listLogs = vi.spyOn(backend, "listLogs");
+    renderBooksWithBackend(backend);
+
+    await user.click(await screen.findByRole("button", { name: "Export inventory" }));
+    let dialog = screen.getByRole("dialog", { name: "Export book inventory audit" });
+    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Math" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Science" })).toBeChecked();
+
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math" }));
+    expect(within(dialog).getByRole("button", { name: "Export inventory" })).toBeDisabled();
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math" }));
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    await user.click(screen.getByRole("button", { name: "Export inventory" }));
+    dialog = screen.getByRole("dialog", { name: "Export book inventory audit" });
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Science" })).toBeChecked();
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science" }));
+    await user.dblClick(within(dialog).getByRole("button", { name: "Export inventory" }));
+
+    await waitFor(() => expect(exportMocks.downloadBooksWorkbook).toHaveBeenCalledTimes(1));
+    expect(listLogs).toHaveBeenCalledWith("2025-2026");
+    expect(exportMocks.buildBooksWorkbook).toHaveBeenCalledWith(expect.objectContaining({
+      books: expect.arrayContaining([
+        expect.objectContaining({ id: "book-1", gradeLevel: "primary1" }),
+        expect.objectContaining({ id: "book-math-primary2", gradeLevel: "primary2" }),
+      ]),
+      academicYear: year,
+      selectedSubjects: ["Primary Math"],
+      language: "en",
+      logs: expect.arrayContaining([expect.objectContaining({ id: "stock-export" })]),
+    }));
+    expect(exportMocks.downloadBooksWorkbook).toHaveBeenCalledWith(
+      exportMocks.workbook,
+      "book-inventory-audit-2025-2026.xlsx",
+    );
+    expect(screen.queryByRole("dialog", { name: "Export book inventory audit" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Export created.")).toBeVisible();
+  });
+
+  it("retains the subject selection and shows an error when export fails", async () => {
+    const user = userEvent.setup();
+    exportMocks.downloadBooksWorkbook.mockRejectedValueOnce(new Error("write failed"));
+    renderBooks();
+
+    await user.click(await screen.findByRole("button", { name: "Export inventory" }));
+    const dialog = screen.getByRole("dialog", { name: "Export book inventory audit" });
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science" }));
+    await user.click(within(dialog).getByRole("button", { name: "Export inventory" }));
+
+    expect(await within(dialog).findByText("Could not create the export.")).toBeVisible();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Math" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Science" })).not.toBeChecked();
   });
 });
