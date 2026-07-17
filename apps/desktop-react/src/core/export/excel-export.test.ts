@@ -376,7 +376,7 @@ describe("book inventory Excel export", () => {
         stockLog({ id: "issue", book: englishPrimary1, semester: "first", quantity: -1, receiptDate: "2026-09-06", receiptNumber: "ISSUE", type: "student_issue" }),
       ],
       academicYear: currentAcademicYear,
-      selectedSubjects: ["English"],
+      selectedBookIds: [englishPrimary1.id, englishPrimary2.id],
       language: "en",
       translate: bookTranslate,
     });
@@ -397,7 +397,7 @@ describe("book inventory Excel export", () => {
     expect(worksheet.getRow(8).values).toEqual([
       undefined, "English Second Term", "1st Primary", 4, "2026-09-04", "R-4",
     ]);
-    expect(worksheet.getCell("B1").value).toBe("English Inventory Audit");
+    expect(worksheet.getCell("B1").value).toBe("Book Inventory Audit");
     expect(worksheet.getCell("B2").value).toBe("for the educational year: 2026-2027");
     expect(worksheet.getCell("B6").value).not.toBe("Primary");
     expect(worksheet.getRow(9).values).toEqual([]);
@@ -410,6 +410,30 @@ describe("book inventory Excel export", () => {
     });
   });
 
+  it("filters duplicate subject names by exact grade-specific book ID", async () => {
+    const workbook = buildBooksWorkbook({
+      books: [englishPrimary1, englishPrimary2],
+      logs: [
+        stockLog({ id: "selected-p1", book: englishPrimary1, semester: "first", quantity: 5, receiptDate: "2026-09-02", receiptNumber: "P1" }),
+        stockLog({ id: "excluded-p2", book: englishPrimary2, semester: "first", quantity: 7, receiptDate: "2026-09-03", receiptNumber: "P2" }),
+      ],
+      academicYear: currentAcademicYear,
+      selectedBookIds: [englishPrimary1.id],
+      language: "en",
+      translate: bookTranslate,
+    });
+    const data = await workbook.xlsx.writeBuffer();
+    const restored = new ExcelJS.Workbook();
+    await restored.xlsx.load(data);
+    const worksheet = restored.getWorksheet("Book Inventory")!;
+
+    expect(worksheet.getCell("B1").value).toBe("English — 1st Primary Inventory Audit");
+    expect(worksheet.getRow(6).values).toEqual([
+      undefined, "English First Term", "1st Primary", 5, "2026-09-02", "P1",
+    ]);
+    expect(worksheet.getRow(7).values).toEqual([]);
+  });
+
   it("uses the general title for multiple subjects and preserves Arabic RTL suffixes", async () => {
     const workbook = buildBooksWorkbook({
       books: [englishPrimary1, sciencePrimary1],
@@ -418,7 +442,7 @@ describe("book inventory Excel export", () => {
         stockLog({ id: "arabic-second", book: sciencePrimary1, semester: "second", quantity: 3, receiptDate: "2026-09-03", receiptNumber: "A-2" }),
       ],
       academicYear: currentAcademicYear,
-      selectedSubjects: ["English", "Science"],
+      selectedBookIds: [englishPrimary1.id, sciencePrimary1.id],
       language: "ar",
       translate: (key: string, values?: Record<string, string | number>) => ({
         ...Object.fromEntries([

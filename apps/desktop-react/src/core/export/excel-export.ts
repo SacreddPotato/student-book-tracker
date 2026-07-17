@@ -30,7 +30,7 @@ export type BooksWorkbookInput = {
   books: BookRow[];
   logs: LogEntry[];
   academicYear: AcademicYearRow;
-  selectedSubjects: string[];
+  selectedBookIds: string[];
   language: ExportLanguage;
   translate: TranslateExport;
 };
@@ -198,9 +198,9 @@ function cairoDateKey(utcIso: string): string {
 }
 
 function bookReceiptRows(input: BooksWorkbookInput): BookReceiptExportRow[] {
-  const selectedSubjects = new Set(input.selectedSubjects);
+  const selectedBookIds = new Set(input.selectedBookIds);
   const activeBooks = new Map(input.books
-    .filter((book) => !book.deletedAt && selectedSubjects.has(book.name))
+    .filter((book) => !book.deletedAt && selectedBookIds.has(book.id))
     .map((book) => [book.id, book]));
   const cutoff = cairoDateKey(input.academicYear.createdAt);
   const rows = input.logs.flatMap((log): BookReceiptExportRow[] => {
@@ -256,9 +256,13 @@ export function buildBooksWorkbook(input: BooksWorkbookInput): ExcelJS.Workbook 
     left: { style: "thin" },
     right: { style: "thin" },
   };
-  const selectedSubjects = [...new Set(input.selectedSubjects)];
-  const title = selectedSubjects.length === 1
-    ? t("export.subjectInventoryAudit", { subject: selectedSubjects[0] })
+  const selectedBookIds = new Set(input.selectedBookIds);
+  const selectedBooks = input.books.filter((book) =>
+    !book.deletedAt && selectedBookIds.has(book.id));
+  const title = selectedBooks.length === 1
+    ? t("export.subjectInventoryAudit", {
+        subject: `${selectedBooks[0].name} — ${t(`grades.${selectedBooks[0].gradeLevel}`)}`,
+      })
     : t("export.bookInventoryAudit");
 
   worksheet.views = [{ rightToLeft: input.language === "ar" }];

@@ -6,18 +6,23 @@ import { Button } from "../../components/ui/Button";
 import { Checkbox } from "../../components/ui/Checkbox";
 import { Dialog } from "../../components/ui/Dialog";
 
+export type BookInventoryExportOption = {
+  id: string;
+  label: string;
+};
+
 export type BookInventoryExportDialogProps = {
   open: boolean;
-  subjects: string[];
+  options: BookInventoryExportOption[];
   exporting: boolean;
   error: string | null;
   onOpenChange(open: boolean): void;
-  onExport(selectedSubjects: string[]): void;
+  onExport(selectedBookIds: string[]): void;
 };
 
 export function BookInventoryExportDialog({
   open,
-  subjects,
+  options,
   exporting,
   error,
   onOpenChange,
@@ -28,13 +33,13 @@ export function BookInventoryExportDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (open) setSelected(new Set(subjects));
-  }, [open, subjects]);
+    if (open) setSelected(new Set(options.map(({ id }) => id)));
+  }, [open, options]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!exporting && selected.size) {
-      onExport(subjects.filter((subject) => selected.has(subject)));
+      onExport(options.filter(({ id }) => selected.has(id)).map(({ id }) => id));
     }
   }
 
@@ -54,15 +59,15 @@ export function BookInventoryExportDialog({
         {error ? <Alert>{error}</Alert> : null}
         <fieldset className="book-export-subjects">
           <legend>{t("books.exportSubjects")}</legend>
-          {subjects.map((subject) => (
+          {options.map((option) => (
             <Checkbox
-              key={subject}
-              label={subject}
-              checked={selected.has(subject)}
+              key={option.id}
+              label={option.label}
+              checked={selected.has(option.id)}
               disabled={exporting}
               onCheckedChange={(checked) => setSelected((current) => {
                 const next = new Set(current);
-                if (checked) next.add(subject); else next.delete(subject);
+                if (checked) next.add(option.id); else next.delete(option.id);
                 return next;
               })}
             />

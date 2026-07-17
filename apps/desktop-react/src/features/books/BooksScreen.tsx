@@ -60,14 +60,18 @@ export function BooksScreen() {
     const needle = search.trim().toLocaleLowerCase();
     return (booksQuery.data ?? []).filter((book) => (stage === "all" || book.educationStage === stage) && (!needle || book.name.toLocaleLowerCase().includes(needle)));
   }, [booksQuery.data, search, stage]);
-  const subjects = useMemo(() => [...new Set((booksQuery.data ?? []).map(({ name }) => name))]
-    .sort((left, right) => left.localeCompare(right)), [booksQuery.data]);
+  const exportOptions = useMemo(() => (booksQuery.data ?? [])
+    .map((book) => ({
+      id: book.id,
+      label: `${book.name} — ${t(`grades.${book.gradeLevel}`)}`,
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label)), [booksQuery.data, t]);
   const currentAcademicYear = years.find((row) =>
     row.status === "current" && row.academicYear === currentYear) ?? null;
   const zeroCount = filtered.filter(({ firstSemesterQuantity, secondSemesterQuantity }) => firstSemesterQuantity === 0 || secondSemesterQuantity === 0).length;
 
-  async function exportInventory(selectedSubjects: string[]) {
-    if (!currentAcademicYear || exporting || !selectedSubjects.length) return;
+  async function exportInventory(selectedBookIds: string[]) {
+    if (!currentAcademicYear || exporting || !selectedBookIds.length) return;
     setExporting(true);
     setExportError(null);
     try {
@@ -77,7 +81,7 @@ export function BooksScreen() {
         books: booksQuery.data ?? [],
         logs,
         academicYear: currentAcademicYear,
-        selectedSubjects,
+        selectedBookIds,
         language,
         translate: (key, values) => t(key as Parameters<typeof t>[0], values),
       });
@@ -96,7 +100,7 @@ export function BooksScreen() {
       <header className="workspace-heading">
         <div><h2>{t("books.title")}</h2><p>{t("books.description")}</p></div>
         <div className="workspace-heading-actions">
-          <Button disabled={!currentAcademicYear || !subjects.length} busy={exporting} onClick={() => { setExportError(null); setExportOpen(true); }}><Download size={17} aria-hidden="true" />{t("books.exportInventory")}</Button>
+          <Button disabled={!currentAcademicYear || !exportOptions.length} busy={exporting} onClick={() => { setExportError(null); setExportOpen(true); }}><Download size={17} aria-hidden="true" />{t("books.exportInventory")}</Button>
           <Button intent="primary" onClick={() => { setEditing(null); setEditorError(null); setEditorOpen(true); }}><Plus size={17} aria-hidden="true" />{t("books.add")}</Button>
         </div>
       </header>
@@ -108,7 +112,7 @@ export function BooksScreen() {
       {booksQuery.isError ? <Alert>{t("errors.booksLoad")}</Alert> : booksQuery.isPending ? <LoadingState label={t("common.loading")} /> : filtered.length ? <BookTable books={filtered} onEdit={(book) => { setEditing(book); setEditorError(null); setEditorOpen(true); }} onDelete={setDeleteTarget} onAddStock={(book, semester) => { setStockError(null); setStockTarget({ book, semester }); }} /> : <EmptyState title={(booksQuery.data?.length ?? 0) ? t("books.noResults") : t("books.empty")} />}
       <BookEditorSheet open={editorOpen} book={editing} saving={saveMutation.isPending} error={editorError} onOpenChange={setEditorOpen} onSave={(input) => { if (!saveMutation.isPending) saveMutation.mutate(input); }} />
       <AddStockDialog target={stockTarget} saving={stockMutation.isPending} error={stockError} onOpenChange={(open) => { if (!open) setStockTarget(null); }} onAdd={(input) => { if (!stockMutation.isPending) stockMutation.mutate(input); }} />
-      <BookInventoryExportDialog open={exportOpen} subjects={subjects} exporting={exporting} error={exportError} onOpenChange={(open) => { setExportOpen(open); if (!open) setExportError(null); }} onExport={(selectedSubjects) => { void exportInventory(selectedSubjects); }} />
+      <BookInventoryExportDialog open={exportOpen} options={exportOptions} exporting={exporting} error={exportError} onOpenChange={(open) => { setExportOpen(open); if (!open) setExportError(null); }} onExport={(selectedBookIds) => { void exportInventory(selectedBookIds); }} />
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} title={t("books.deleteTitle")} description={t("books.deleteDescription")} entityName={deleteTarget?.name ?? ""} saving={deleteMutation.isPending} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} onConfirm={() => { if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(); }} />
     </section>
   );

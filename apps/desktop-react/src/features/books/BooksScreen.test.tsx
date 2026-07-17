@@ -167,12 +167,13 @@ describe("BooksScreen", () => {
     expect(disclosure).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("exports a resettable multi-subject current-year audit exactly once", async () => {
+  it("exports a resettable grade-specific current-year audit exactly once", async () => {
     const user = userEvent.setup();
     const primary2Math: BookRow = { ...stocked, id: "book-math-primary2", gradeLevel: "primary2" };
+    const primary3Math: BookRow = { ...stocked, id: "book-math-primary3", gradeLevel: "primary3" };
     const backend = createFixtureBackend({
       academicYears: [year],
-      books: [stocked, primary2Math, empty],
+      books: [stocked, primary2Math, primary3Math, empty],
       transactions: [{
         id: "stock-export", scopeId: "global", academicYear: year.academicYear,
         type: "stock_increase", studentId: null, receiptNumber: "R-41",
@@ -191,20 +192,26 @@ describe("BooksScreen", () => {
 
     await user.click(await screen.findByRole("button", { name: "Export inventory" }));
     let dialog = screen.getByRole("dialog", { name: "Export book inventory audit" });
-    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
-    expect(within(dialog).getByRole("checkbox", { name: "Primary Math" })).toBeChecked();
-    expect(within(dialog).getByRole("checkbox", { name: "Primary Science" })).toBeChecked();
+    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(4);
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Math — 1st Primary" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Math — 2nd Primary" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Math — 3rd Primary" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Science — 1st Primary" })).toBeChecked();
 
-    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science" }));
-    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science — 1st Primary" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math — 2nd Primary" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math — 3rd Primary" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math — 1st Primary" }));
     expect(within(dialog).getByRole("button", { name: "Export inventory" })).toBeDisabled();
-    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math — 1st Primary" }));
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
 
     await user.click(screen.getByRole("button", { name: "Export inventory" }));
     dialog = screen.getByRole("dialog", { name: "Export book inventory audit" });
-    expect(within(dialog).getByRole("checkbox", { name: "Primary Science" })).toBeChecked();
-    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science" }));
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Science — 1st Primary" })).toBeChecked();
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science — 1st Primary" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math — 2nd Primary" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Math — 3rd Primary" }));
     await user.dblClick(within(dialog).getByRole("button", { name: "Export inventory" }));
 
     await waitFor(() => expect(exportMocks.downloadBooksWorkbook).toHaveBeenCalledTimes(1));
@@ -213,9 +220,10 @@ describe("BooksScreen", () => {
       books: expect.arrayContaining([
         expect.objectContaining({ id: "book-1", gradeLevel: "primary1" }),
         expect.objectContaining({ id: "book-math-primary2", gradeLevel: "primary2" }),
+        expect.objectContaining({ id: "book-math-primary3", gradeLevel: "primary3" }),
       ]),
       academicYear: year,
-      selectedSubjects: ["Primary Math"],
+      selectedBookIds: ["book-1"],
       language: "en",
       logs: expect.arrayContaining([expect.objectContaining({ id: "stock-export" })]),
     }));
@@ -234,11 +242,11 @@ describe("BooksScreen", () => {
 
     await user.click(await screen.findByRole("button", { name: "Export inventory" }));
     const dialog = screen.getByRole("dialog", { name: "Export book inventory audit" });
-    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Primary Science — 1st Primary" }));
     await user.click(within(dialog).getByRole("button", { name: "Export inventory" }));
 
     expect(await within(dialog).findByText("Could not create the export.")).toBeVisible();
-    expect(within(dialog).getByRole("checkbox", { name: "Primary Math" })).toBeChecked();
-    expect(within(dialog).getByRole("checkbox", { name: "Primary Science" })).not.toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Math — 1st Primary" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Primary Science — 1st Primary" })).not.toBeChecked();
   });
 });
