@@ -1,4 +1,4 @@
-import { educationStages, type BookSemester, type EducationStage } from "@app/shared";
+import { educationStages, gradeLevelsByStage, type BookSemester, type EducationStage } from "@app/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -17,6 +17,7 @@ import { BookInventoryExportDialog } from "./BookInventoryExportDialog";
 import { BookTable } from "./BookTable";
 
 const booksKey = ["books"] as const;
+const exportGradeOrder = Object.values(gradeLevelsByStage).flat();
 type StageFilter = EducationStage | "all";
 
 export function BooksScreen() {
@@ -60,12 +61,22 @@ export function BooksScreen() {
     const needle = search.trim().toLocaleLowerCase();
     return (booksQuery.data ?? []).filter((book) => (stage === "all" || book.educationStage === stage) && (!needle || book.name.toLocaleLowerCase().includes(needle)));
   }, [booksQuery.data, search, stage]);
-  const exportOptions = useMemo(() => (booksQuery.data ?? [])
-    .map((book) => ({
-      id: book.id,
-      label: `${book.name} — ${t(`grades.${book.gradeLevel}`)}`,
-    }))
-    .sort((left, right) => left.label.localeCompare(right.label)), [booksQuery.data, t]);
+  const exportOptions = useMemo(() => {
+    const subjectCollator = new Intl.Collator(language === "ar" ? "ar" : "en", {
+      sensitivity: "base",
+      numeric: true,
+    });
+    return (booksQuery.data ?? [])
+      .map((book) => ({
+        id: book.id,
+        name: book.name,
+        gradeLevel: book.gradeLevel,
+        label: `${book.name} — ${t(`grades.${book.gradeLevel}`)}`,
+      }))
+      .sort((left, right) => subjectCollator.compare(left.name, right.name)
+        || exportGradeOrder.indexOf(left.gradeLevel) - exportGradeOrder.indexOf(right.gradeLevel)
+        || left.id.localeCompare(right.id));
+  }, [booksQuery.data, language, t]);
   const currentAcademicYear = years.find((row) =>
     row.status === "current" && row.academicYear === currentYear) ?? null;
   const zeroCount = filtered.filter(({ firstSemesterQuantity, secondSemesterQuantity }) => firstSemesterQuantity === 0 || secondSemesterQuantity === 0).length;

@@ -378,8 +378,15 @@ Grade-aware book audit selection correction (2026-07-17 Cairo):
 - Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. No database migration, Neon operation, credential change, tag, or push is required.
 - Local `main` fast-forwarded to verified correction commit `38a83fa` without fetching, tagging, or pushing. The complete post-merge suite passed with 255 tests and the same five live-gated skips; the isolated correction branch and worktree were removed.
 
+Book audit option ordering correction (2026-07-17 Cairo):
+
+- Root cause: export choices were sorted by the complete localized `{subject} — {grade}` label, so lexicographic grade text could interleave Preparatory entries among Primary entries and make creation-order fixtures appear random.
+- The export dialog now sorts first by subject name with a language-aware collator, then by the canonical shared school progression (`KG 1`, `KG 2`, `Primary 1-6`, `Preparatory 1-3`), and finally by stable book ID. Creation time no longer influences the displayed order.
+- TDD RED reproduced `Maths — 2nd Preparatory` appearing before later Primary grades. GREEN passed all eight Books screen tests plus React typecheck.
+- Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. No database migration, Neon operation, credential change, tag, or push is required.
+
 ## Next Starting Point
 
-1. Wait for the user's explicit approval before selecting a version, creating a tag, pushing `main`, or starting a release for the protected deletion and book audit export.
-2. Local `main` contains the verified grade-aware correction; no database migration or Neon operation is needed.
+1. Merge the verified book audit option-ordering correction into local `main`, preserving the user's existing uncommitted password edits.
+2. Then wait for the user's explicit approval before selecting a version, creating a tag, pushing `main`, or starting a release for the protected deletion and book audit export.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
