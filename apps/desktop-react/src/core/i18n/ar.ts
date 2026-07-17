@@ -10,6 +10,7 @@ export const ar = {
     retry: "إعادة المحاولة", actions: "الإجراءات", all: "الكل", none: "لا يوجد",
     status: "الحالة", details: "التفاصيل", selected: "محدد",
   },
+  deletion: { password: "كلمة المرور", incorrectPassword: "كلمة المرور غير صحيحة." },
   languages: { en: "الإنجليزية", ar: "العربية" },
   stages: { kg: "رياض الأطفال", primary: "الابتدائي", preparatory: "الإعدادي" },
   grades: {

@@ -156,13 +156,21 @@ describe("StudentsScreen", () => {
     expect(screen.queryByRole("button", { name: "Primary 2 Math" })).not.toBeInTheDocument();
   });
 
-  it("deletes a current-year student only after destructive confirmation", async () => {
+  it("deletes a current-year student only after the exact password", async () => {
     const user = userEvent.setup();
     const backend = renderStudents();
     await user.click(await screen.findByRole("button", { name: "Delete student Mona Ahmed" }));
     const dialog = screen.getByRole("dialog", { name: "Delete student" });
     expect(within(dialog).getByText(/Mona Ahmed/)).toBeVisible();
 
+    const password = within(dialog).getByLabelText("Password");
+    await user.type(password, "wrong");
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+    expect(within(dialog).getByText("Incorrect password.")).toBeVisible();
+    expect(await backend.listStudents("2025-2026")).toHaveLength(1);
+
+    await user.clear(password);
+    await user.type(password, "az2006");
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(screen.queryByText("Mona Ahmed")).not.toBeInTheDocument();

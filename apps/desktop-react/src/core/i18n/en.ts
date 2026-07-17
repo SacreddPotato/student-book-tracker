@@ -24,6 +24,7 @@ export const en = {
     details: "Details",
     selected: "Selected",
   },
+  deletion: { password: "Password", incorrectPassword: "Incorrect password." },
   languages: { en: "English", ar: "Arabic" },
   stages: { kg: "KG (Kindergarten)", primary: "Primary", preparatory: "Preparatory" },
   grades: {

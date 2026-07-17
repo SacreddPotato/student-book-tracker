@@ -40,13 +40,21 @@ describe("BooksScreen", () => {
     ]);
   }, 10_000);
 
-  it("deletes a subject only after destructive confirmation", async () => {
+  it("deletes a subject only after the exact password", async () => {
     const user = userEvent.setup();
     const backend = renderBooks();
     await user.click(await screen.findByRole("button", { name: "Delete book Primary Math" }));
     const dialog = screen.getByRole("dialog", { name: "Delete book" });
     expect(within(dialog).getByText(/Primary Math/)).toBeVisible();
 
+    const password = within(dialog).getByLabelText("Password");
+    await user.type(password, "wrong");
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+    expect(within(dialog).getByText("Incorrect password.")).toBeVisible();
+    expect(await backend.listBooks()).toHaveLength(2);
+
+    await user.clear(password);
+    await user.type(password, "az2006");
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(screen.queryByText("Primary Math")).not.toBeInTheDocument();
