@@ -5,7 +5,7 @@ import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 import { Field } from "./Field";
 
-const DELETE_PASSWORD = "az2006";
+const DELETE_PASSWORD = "az2026";
 
 export function DeleteConfirmationDialog({
   open,

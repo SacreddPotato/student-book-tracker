@@ -72,7 +72,7 @@ describe("BooksScreen", () => {
     expect(await backend.listBooks()).toHaveLength(2);
 
     await user.clear(password);
-    await user.type(password, "az2006");
+    await user.type(password, "az2026");
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(screen.queryByText("Primary Math")).not.toBeInTheDocument();

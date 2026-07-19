@@ -4,7 +4,7 @@
 
 Add two small features to the active React desktop application:
 
-1. Require the exact case-sensitive password `az2006` before either a student or book deletion can be submitted.
+1. Require the exact case-sensitive password `az2026` before either a student or book deletion can be submitted.
 2. Add a Books-screen Excel export that audits current-academic-year stock receipts in one unified table on one worksheet.
 
 Both features stay local to the React UI and existing Excel/log data paths. They require no SQLite or Postgres migration, no sync-protocol change, and no server or credential work.
@@ -13,7 +13,7 @@ Both features stay local to the React UI and existing Excel/log data paths. They
 
 The existing `DeleteConfirmationDialog` remains the single confirmation surface for current-year student deletion and active book deletion. Add one masked password field inside that dialog rather than introducing another modal, settings page, or authentication layer.
 
-- The accepted value is the exact, case-sensitive string `az2006`.
+- The accepted value is the exact, case-sensitive string `az2026`.
 - The password is checked in the React dialog before `onConfirm` is called. A wrong value keeps the dialog open, makes no backend call, and shows a localized inline error.
 - The field starts empty every time the dialog opens and is cleared when the dialog closes, the deletion target changes, or a deletion succeeds. The password is never stored, remembered, logged, synchronized, or sent to the backend.
 - The destructive action is disabled while the field is empty or while the existing deletion mutation is pending. Pressing Enter from the password field follows the same validation and submission path as the Delete button.
@@ -112,7 +112,7 @@ An eligible subject with no qualifying receipts produces no body rows; the workb
 ### Deletion tests
 
 - Student and book dialogs do not call their delete backend method for an empty or incorrect password.
-- `az2006` submits exactly once, preserves the existing success behavior, and cannot double-submit while pending.
+- `az2026` submits exactly once, preserves the existing success behavior, and cannot double-submit while pending.
 - Password matching is case-sensitive, wrong-password feedback is inline and localized, Enter submits through validation, and closing/reopening or switching targets clears both value and validation error.
 - Archived students still expose no deletion action; reversal and rollover confirmations remain unchanged.
 

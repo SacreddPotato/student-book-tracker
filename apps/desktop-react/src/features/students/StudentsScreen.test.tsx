@@ -170,7 +170,7 @@ describe("StudentsScreen", () => {
     expect(await backend.listStudents("2025-2026")).toHaveLength(1);
 
     await user.clear(password);
-    await user.type(password, "az2006");
+    await user.type(password, "az2026");
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(screen.queryByText("Mona Ahmed")).not.toBeInTheDocument();

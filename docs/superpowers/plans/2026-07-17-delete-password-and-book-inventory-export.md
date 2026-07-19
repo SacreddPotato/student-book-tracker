@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Require `az2006` for student/book deletion and add a subject-filtered current-year Book Inventory Audit workbook with one receipt per row.
+**Goal:** Require `az2026` for student/book deletion and add a subject-filtered current-year Book Inventory Audit workbook with one receipt per row.
 
 **Architecture:** Keep deletion authorization entirely inside the existing React confirmation dialog. Reuse active books, current academic-year metadata, and `AppBackend.listLogs()` to derive export rows in the framework-neutral Excel module; add a compact Books-screen selector and no database, backend-interface, sync, or release changes.
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- The delete password is exactly and case-sensitively `az2006`; it is a client-side accidental-action guard, not authentication.
+- The delete password is exactly and case-sensitively `az2026`; it is a client-side accidental-action guard, not authentication.
 - Never persist, log, sync, or send the password to a backend.
 - Export only active selected books and unreversed `stock_increase` receipt items from the current academic year whose `receiptDate` is on or after the Cairo-local calendar date of the current academic-year row's `createdAt` timestamp.
 - One receipt item creates one row with its full quantity; do not expand quantities or aggregate receipts.
@@ -38,7 +38,7 @@
 
 - [ ] **Step 1: Write failing password-dialog and screen tests**
 
-Create a focused test that renders the dialog in `AppProviders`, enters `AZ2006` and expects localized inline failure with no callback, enters `az2006` and expects one callback, submits with Enter, and rerenders through close/reopen plus a changed `entityName` to prove the field/error reset. Update the existing Books and Students deletion journeys to assert the record remains after an incorrect password and disappears only after typing `az2006`.
+Create a focused test that renders the dialog in `AppProviders`, enters `AZ2026` and expects localized inline failure with no callback, enters `az2026` and expects one callback, submits with Enter, and rerenders through close/reopen plus a changed `entityName` to prove the field/error reset. Update the existing Books and Students deletion journeys to assert the record remains after an incorrect password and disappears only after typing `az2026`.
 
 Use this interaction shape in both screen tests:
 
@@ -49,7 +49,7 @@ await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 expect(within(dialog).getByText("Incorrect password.")).toBeVisible();
 expect(await backend.listBooks()).toHaveLength(2); // use listStudents for the student test
 await user.clear(password);
-await user.type(password, "az2006");
+await user.type(password, "az2026");
 await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 ```
 
@@ -68,7 +68,7 @@ Expected: failures show that the password field/error do not exist and current d
 Use a form so Enter and button submission share one path. Keep the password constant module-private and preserve the component props:
 
 ```tsx
-const DELETE_PASSWORD = "az2006";
+const DELETE_PASSWORD = "az2026";
 
 const [password, setPassword] = useState("");
 const [passwordError, setPasswordError] = useState<string | null>(null);

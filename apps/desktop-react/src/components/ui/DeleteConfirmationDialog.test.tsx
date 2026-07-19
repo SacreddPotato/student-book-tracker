@@ -31,14 +31,14 @@ describe("DeleteConfirmationDialog", () => {
     const password = within(modal).getByLabelText("Password");
 
     expect(within(modal).getByRole("button", { name: "Delete" })).toBeDisabled();
-    await user.type(password, "AZ2006");
+    await user.type(password, "AZ2026");
     await user.click(within(modal).getByRole("button", { name: "Delete" }));
 
     expect(within(modal).getByText("Incorrect password.")).toBeVisible();
     expect(onConfirm).not.toHaveBeenCalled();
 
     await user.clear(password);
-    await user.type(password, "az2006");
+    await user.type(password, "az2026");
     await user.click(within(modal).getByRole("button", { name: "Delete" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
@@ -57,7 +57,7 @@ describe("DeleteConfirmationDialog", () => {
     expect(within(modal).getByLabelText("Password")).toHaveValue("");
     expect(within(modal).queryByText("Incorrect password.")).not.toBeInTheDocument();
 
-    await user.type(within(modal).getByLabelText("Password"), "az2006{enter}");
+    await user.type(within(modal).getByLabelText("Password"), "az2026{enter}");
     expect(onConfirm).toHaveBeenCalledTimes(1);
 
     view.rerender(dialog(true, "Primary Science", onConfirm));
