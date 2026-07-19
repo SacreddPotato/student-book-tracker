@@ -393,8 +393,17 @@ Book audit option ordering correction (2026-07-17 Cairo):
 - Sequential local release gates passed at `1.0.7`: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys.
 - Remote inspection confirmed `main` has no divergent commits and neither tag nor release `v1.0.7` exists. This release requires no database migration, Neon operation, or credential change.
 
+`v1.0.7` release checkpoint (2026-07-19 Cairo):
+
+- Release commit `2ae8b0069d294c652b41fad23a62cd8dfced2063` was pushed to `main`; annotated tag `v1.0.7` peels to that exact commit. Main CI run `29702602775` passed lint, typecheck, all tests, five rendered Chromium journeys, and the workspace build.
+- Signed Windows release run `29702603957` revalidated the tagged source, built and signed the updater payload, verified the draft assets, and published the non-draft/non-prerelease release at `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.7`.
+- EXE: `Student.Book.Tracker_1.0.7_x64-setup.exe`, 4,464,114 bytes, SHA-256 `5a74205e7084615433d768fd1e3df0cba8cd766a6e56799758af719ffa46dc73`; downloaded ProductVersion and FileVersion both report `1.0.7`.
+- Updater signature: 436 bytes, SHA-256 `727aa65844b87a775df285291972e232059c2de51f735d8878f9cd34b53805d1`.
+- `latest.json`: 1,354 bytes, SHA-256 `81aac0680f963a22ff56aca4704856480913968e212c86cc05d62b5f56ca4a56`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.7`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
+- No database migration, Neon operation, credential change, or additional release dispatch was performed.
+
 ## Next Starting Point
 
-1. Commit the verified `1.0.7` release metadata and this checkpoint, create annotated tag `v1.0.7` on that exact commit, and push local `main` plus the tag.
-2. Monitor the signed Windows release workflow through publication, then verify installer/signature hashes and byte-for-byte `latest.json` updater-feed integrity before recording the final release checkpoint.
+1. `v1.0.7` is published and independently verified. Start the next feature from current `main`; do not retag or redispatch this release.
+2. No database migration or Neon operation is pending for the protected deletion and book audit export release.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
