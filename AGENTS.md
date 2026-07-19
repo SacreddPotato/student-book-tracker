@@ -386,8 +386,15 @@ Book audit option ordering correction (2026-07-17 Cairo):
 - Sequential final verification passed: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys. No database migration, Neon operation, credential change, tag, or push is required.
 - Local `main` fast-forwarded to implementation commit `284e150` without fetching, tagging, or pushing. The clean post-merge workspace suite passed with 255 tests and the same five live-gated skips.
 
+`v1.0.7` release candidate checkpoint (2026-07-19 Cairo):
+
+- The pending deletion-password correction is committed as `b88ec23`: the exact case-sensitive client-side guard is `az2026`. A mechanical edit had changed the negative case-sensitivity test to the valid password; TDD RED reproduced the missing-error failure, and restoring the invalid probe to `AZ2026` made the focused deletion suite pass 3 files / 19 tests.
+- Desktop package and lockfile metadata advanced from `1.0.6` to `1.0.7`. The production Tauri configuration continues to resolve its version from the React package, preserving the application identifier, database path, updater key, and feed.
+- Sequential local release gates passed at `1.0.7`: legacy 18 files / 67 tests; React 30 passed files / 135 tests with one live-only test skipped; sync API 4 passed files / 27 tests with four live-gated tests skipped; shared 5 files / 26 tests; workspace lint/typecheck/build; and all five rendered Chromium journeys.
+- Remote inspection confirmed `main` has no divergent commits and neither tag nor release `v1.0.7` exists. This release requires no database migration, Neon operation, or credential change.
+
 ## Next Starting Point
 
-1. Wait for the user's explicit approval before selecting a version, creating a tag, pushing `main`, or starting a release for the protected deletion and book audit export.
-2. Local `main` contains the verified grade-aware selection and canonical option-ordering corrections; no database migration or Neon operation is needed.
+1. Commit the verified `1.0.7` release metadata and this checkpoint, create annotated tag `v1.0.7` on that exact commit, and push local `main` plus the tag.
+2. Monitor the signed Windows release workflow through publication, then verify installer/signature hashes and byte-for-byte `latest.json` updater-feed integrity before recording the final release checkpoint.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
