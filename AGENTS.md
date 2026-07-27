@@ -412,15 +412,21 @@ Excel export header logo checkpoint (2026-07-27 Cairo):
 - A temporary workspace-test failure caused by removing `docs/runbooks/database-migrations.md` was resolved by restoring the historical documentation tree in commit `286fe3c`; the sync-role suite again verifies its operator guidance without changing application code.
 - Microsoft Excel COM and LibreOffice are unavailable in this environment. No database migration, Neon operation, credential change, version bump, tag, push, or release dispatch was required.
 
-`v1.0.8` release candidate checkpoint (2026-07-27 Cairo):
+`v1.0.8` release checkpoint (2026-07-27 Cairo):
 
 - The release contains the proportional Excel header logo and the restored historical documentation tree. Desktop package and lockfile metadata advanced from `1.0.7` to `1.0.8`; Tauri continues to resolve the version from the React package.
 - Base commit `286fe3c` passed main CI run `30291289500`, including lint, typecheck, all workspace tests, five rendered Chromium journeys, and the workspace build.
 - Sequential local `1.0.8` release gates passed: workspace lint and typecheck; legacy 18 files / 67 tests; React 30 passed files / 137 tests with one live-only skip; sync API 4 passed files / 27 tests with four live-gated skips; shared 5 files / 26 tests; five rendered Chromium journeys; and every workspace build.
-- Remote inspection confirmed neither tag nor release `v1.0.8` exists. This release requires no database migration, Neon operation, or credential change.
+- Release commit `b11949867cb6a430aafec12bddbf538a21235aa4` is the exact target of annotated tag `v1.0.8`. Main CI run `30291890544` and signed Windows release run `30291891067` passed.
+- Release: `https://github.com/SacreddPotato/student-book-tracker/releases/tag/v1.0.8`.
+- EXE: `Student.Book.Tracker_1.0.8_x64-setup.exe`, 4,756,163 bytes, SHA-256 `b55152b3598cacd95a7e827e1f6c3c05e763757861f4472725d7713122244c37`; downloaded ProductVersion and FileVersion both report `1.0.8`.
+- Updater signature: 436 bytes, SHA-256 `d405359ed0f9fa3264d7ddf692f410491069f41b9abadcced1ea6e4b75817978`.
+- `latest.json`: 1,354 bytes, SHA-256 `4b407e797928494870cc5a218b048216892e6204a0eada7d30cb936fd1048bf7`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.8`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
+- No database migration, Neon operation, credential change, or additional release dispatch was performed.
+- The user is reviewing three uncommitted workbook samples that replace the student's two-column-by-three-row logo span with one square cell sized 64, 128, or 256 pixels. `v1.0.8` retains the released wide-slot layout.
 
 ## Next Starting Point
 
-1. Commit the verified `1.0.8` metadata and this handoff, create annotated tag `v1.0.8` on that exact commit, then push `main` and the tag without moving any prior tag.
-2. Monitor main CI and the signed Windows release workflow, then verify the published installer, signature, tagged `latest.json`, and global updater feed.
+1. Wait for the user's 64/128/256-pixel single-cell logo-slot choice, then apply only the selected layout to both Excel exporters and update the focused export tests.
+2. Reopen and visually verify representative student and inventory workbooks before any further version bump or release.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.
