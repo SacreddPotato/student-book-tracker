@@ -402,8 +402,18 @@ Book audit option ordering correction (2026-07-17 Cairo):
 - `latest.json`: 1,354 bytes, SHA-256 `81aac0680f963a22ff56aca4704856480913968e212c86cc05d62b5f56ca4a56`; the global `releases/latest` feed matched byte-for-byte, reported version `1.0.7`, and exposed matching `windows-x86_64` and `windows-x86_64-nsis` targets.
 - No database migration, Neon operation, credential change, or additional release dispatch was performed.
 
+Excel export header logo checkpoint (2026-07-27 Cairo):
+
+- The supplied `apps/desktop-react/assets/logo.jpeg` is bundled by Vite as an inline data URL and embedded once in both React Excel exports. The student workbook uses its existing dynamic right-side logo span; the book-inventory workbook uses `E1:E3`.
+- A shared ExcelJS helper increases header rows 1-3 to 24 points, preserves the source `1080:1063` aspect ratio, constrains the drawing by both available width and height, centers it inside the reserved region, and anchors it without changing either synchronous workbook-builder API.
+- Export data, filtering, localization, RTL behavior, table borders, calculated print areas, filenames, database behavior, sync contracts, and backend APIs are unchanged.
+- TDD RED reproduced both workbooks serializing without media. Focused GREEN passed 13 export tests. The complete React verification passed 30 files / 137 tests with one live-only test skipped, including React typecheck.
+- The React production Vite build passed and emitted the logo-bearing lazy Excel export chunk. Representative Arabic student and inventory XLSX files were generated and reopened; each contained exactly one JPEG, proportional drawing extents, intact header/table data, and no formula-error cells. The artifact renderer painted the inventory logo in `E1:E3`; its current renderer does not paint drawings inside the student's multi-column merged logo span, but independent media, drawing relationship, anchor, extent, and OpenXML checks all passed.
+- A later workspace `npm test` run passed legacy (18 files / 67 tests), React (30 passed files / 137 tests with one live-only skip), and shared (5 files / 26 tests). Sync API had one unrelated failure because current main intentionally deleted the ignored `docs/runbooks/database-migrations.md` while `tests/sync-role.test.ts` still reads it; 26 sync API tests passed and four live tests skipped. The logo change does not touch that package or deleted documentation.
+- Microsoft Excel COM and LibreOffice are unavailable in this environment. No database migration, Neon operation, credential change, version bump, tag, push, or release dispatch was required.
+
 ## Next Starting Point
 
-1. `v1.0.7` is published and independently verified. Start the next feature from current `main`; do not retag or redispatch this release.
-2. No database migration or Neon operation is pending for the protected deletion and book audit export release.
+1. The Excel header-logo addition is complete on current `main`. If a release is requested, first reconcile the sync-role test with the intentional runbook deletion, then run the full sequential workspace gates and make a deliberate version bump; do not reuse or move `v1.0.7`.
+2. No database migration, Neon operation, credential change, or remote release action is pending for the logo addition.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.

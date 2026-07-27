@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import type { BookSemester, GradeLevel } from "@app/shared";
 
+import logoDataUrl from "../../../assets/logo.jpeg?inline";
 import type { AcademicYearRow } from "../db/repositories/academic-years";
 import type { LogEntry } from "../backend/types";
 import type { BookRow } from "../db/repositories/books";
@@ -46,8 +47,71 @@ export type BookReceiptExportRow = {
   receiptNumber: string;
 };
 
+const LOGO_SOURCE_WIDTH = 1080;
+const LOGO_SOURCE_HEIGHT = 1063;
+const HEADER_ROW_HEIGHT_POINTS = 24;
+const POINTS_TO_PIXELS = 4 / 3;
+const DEFAULT_COLUMN_WIDTH = 8.43;
+
 function formatAcademicYear(academicYear: string, language: ExportLanguage): string {
   return language === "ar" ? `\u200E${academicYear}\u200E` : academicYear;
+}
+
+function columnWidthPixels(worksheet: ExcelJS.Worksheet, column: number): number {
+  return Math.floor((worksheet.getColumn(column).width ?? DEFAULT_COLUMN_WIDTH) * 7 + 5);
+}
+
+function columnAnchorForOffset(
+  worksheet: ExcelJS.Worksheet,
+  startColumn: number,
+  endColumn: number,
+  offsetPixels: number,
+): number {
+  let remainingPixels = offsetPixels;
+  for (let column = startColumn; column <= endColumn; column += 1) {
+    const widthPixels = columnWidthPixels(worksheet, column);
+    if (remainingPixels <= widthPixels) {
+      return column - 1 + remainingPixels / widthPixels;
+    }
+    remainingPixels -= widthPixels;
+  }
+  return endColumn - 0.01;
+}
+
+function addHeaderLogo(
+  workbook: ExcelJS.Workbook,
+  worksheet: ExcelJS.Worksheet,
+  startColumn: number,
+  endColumn: number,
+): void {
+  for (let row = 1; row <= 3; row += 1) {
+    worksheet.getRow(row).height = HEADER_ROW_HEIGHT_POINTS;
+  }
+  const availableWidth = Array.from(
+    { length: endColumn - startColumn + 1 },
+    (_, index) => columnWidthPixels(worksheet, startColumn + index),
+  ).reduce((total, width) => total + width, 0);
+  const availableHeight = HEADER_ROW_HEIGHT_POINTS * POINTS_TO_PIXELS * 3;
+  const logoRatio = LOGO_SOURCE_WIDTH / LOGO_SOURCE_HEIGHT;
+  const maxWidth = availableWidth - 24;
+  const maxHeight = availableHeight - 12;
+  const width = Math.min(maxWidth, maxHeight * logoRatio);
+  const height = width / logoRatio;
+  const leftOffset = (availableWidth - width) / 2;
+  const topOffset = (availableHeight - height) / 2;
+  const imageId = workbook.addImage({
+    base64: logoDataUrl,
+    extension: "jpeg",
+  });
+
+  worksheet.addImage(imageId, {
+    tl: {
+      col: columnAnchorForOffset(worksheet, startColumn, endColumn, leftOffset),
+      row: topOffset / (HEADER_ROW_HEIGHT_POINTS * POINTS_TO_PIXELS),
+    },
+    ext: { width, height },
+    editAs: "oneCell",
+  });
 }
 
 export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Workbook {
@@ -137,6 +201,7 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
     top: { style: "thin" }, left: { style: "thin" },
     bottom: { style: "thin" }, right: { style: "thin" },
   };
+  addHeaderLogo(workbook, worksheet, logoStartColumn, headerColumnCount);
 
   const headerRow = 5;
   const nameHeader = tableCell(headerRow, 1);
@@ -285,6 +350,7 @@ export function buildBooksWorkbook(input: BooksWorkbookInput): ExcelJS.Workbook 
   worksheet.getCell("B2").font = { bold: true, size: 12 };
   worksheet.getCell("B2").alignment = centeredAlignment;
   worksheet.getCell("E1").border = tableBorder;
+  addHeaderLogo(workbook, worksheet, 5, 5);
 
   const headerRow = 5;
   const headings = ["book", "grade", "quantity", "receiptDate", "receiptId"];

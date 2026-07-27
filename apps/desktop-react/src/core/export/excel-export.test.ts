@@ -36,7 +36,50 @@ function expectThinBorder(cell: ExcelJS.Cell) {
   });
 }
 
+async function expectEmbeddedHeaderLogo(
+  workbook: ExcelJS.Workbook,
+  sheetName: string,
+  startColumn: number,
+  endColumn: number,
+) {
+  const data = await workbook.xlsx.writeBuffer();
+  const restored = new ExcelJS.Workbook();
+  await restored.xlsx.load(data);
+  const worksheet = restored.getWorksheet(sheetName)!;
+  const images = worksheet.getImages();
+
+  expect(restored.model.media).toHaveLength(1);
+  expect(restored.model.media[0]).toMatchObject({
+    type: "image",
+    extension: "jpeg",
+  });
+  expect(images).toHaveLength(1);
+  const range = images[0].range as ExcelJS.ImageRange & {
+    ext?: { width: number; height: number };
+  };
+  expect(range.tl.col).toBeGreaterThanOrEqual(startColumn - 1);
+  expect(range.tl.col).toBeLessThan(endColumn);
+  expect(range.tl.row).toBeGreaterThanOrEqual(0);
+  expect(range.tl.row).toBeLessThan(3);
+  expect(range.ext).toBeDefined();
+  expect(range.ext!.width / range.ext!.height).toBeCloseTo(1080 / 1063, 2);
+}
+
 describe("student Excel export", () => {
+  it("embeds a proportional JPEG logo in the reserved header area", async () => {
+    const workbook = buildStudentsWorkbook({
+      students,
+      books,
+      gradeLevel: "primary1",
+      academicYear: "2025-2026",
+      language: "en",
+      issuedBookSelectionsByStudentId: {},
+      translate: (key) => key,
+    });
+
+    await expectEmbeddedHeaderLogo(workbook, "Students", 7, 8);
+  });
+
   it("centers the full Arabic grade and selected academic year in a two-line header", () => {
     const preparatoryStudent: StudentRow = {
       ...students[0],
@@ -362,6 +405,19 @@ const bookTranslate = (key: string, values?: Record<string, string | number>) =>
 }[key] ?? key);
 
 describe("book inventory Excel export", () => {
+  it("embeds a proportional JPEG logo in the reserved header area", async () => {
+    const workbook = buildBooksWorkbook({
+      books: [englishPrimary1],
+      logs: [],
+      academicYear: currentAcademicYear,
+      selectedBookIds: [englishPrimary1.id],
+      language: "en",
+      translate: bookTranslate,
+    });
+
+    await expectEmbeddedHeaderLogo(workbook, "Book Inventory", 5, 5);
+  });
+
   it("builds one chronological receipt table with exact grades and term-suffixed books", async () => {
     const workbook = buildBooksWorkbook({
       books: [englishPrimary1, englishPrimary2, sciencePrimary1, deletedEnglish],
