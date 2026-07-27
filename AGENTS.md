@@ -425,8 +425,18 @@ Excel export header logo checkpoint (2026-07-27 Cairo):
 - No database migration, Neon operation, credential change, or additional release dispatch was performed.
 - The user is reviewing three uncommitted workbook samples that replace the student's two-column-by-three-row logo span with one square cell sized 64, 128, or 256 pixels. `v1.0.8` retains the released wide-slot layout.
 
+`v1.0.9` release candidate checkpoint (2026-07-27 Cairo):
+
+- The user selected the 128-pixel option and clarified that the logo's center must align with the complete three-row header's vertical centerline.
+- Both React Excel exports now use one unmerged final-column cell in row 2. The logo column is 128 pixels wide, row 2 is 128 pixels high, and rows 1 and 3 remain equal at 24 points. The `1080:1063` JPEG is drawn at `128 x 125.985` pixels with a centered one-pixel vertical offset.
+- Student grade/year headings extend through the column immediately before the logo. The old student multi-column/three-row merge and inventory `E1:E3` merge are removed; export APIs, data, RTL behavior, tables, print areas, and filenames are unchanged.
+- TDD RED first produced four failures for the old wide/three-row geometry, then two focused failures exposed the initial row-1 placement. The corrected row-2 implementation passes all 13 focused export tests.
+- Representative Arabic student, Arabic inventory, and LTR student workbooks were generated and reopened. Each contains one JPEG anchored in row 2 at the exact proportional extent and no formula-error cells. Visual renders show the logo centered on the header midpoint without clipping or overlap; the artifact renderer retains its known omission of the drawing only in the RTL student preview, while the same file's drawing/media inspection and the LTR render verify the geometry.
+- Desktop metadata advanced from `1.0.8` to `1.0.9`. Sequential local release gates passed: workspace lint and typecheck; legacy 18 files / 67 tests; React 30 passed files / 137 tests with one live-only skip; sync API 4 passed files / 27 tests with four live-gated skips; shared 5 files / 26 tests; five rendered Chromium journeys; and every workspace build.
+- No database migration, Neon operation, credential change, or remote release mutation has been performed at this checkpoint.
+
 ## Next Starting Point
 
-1. Wait for the user's 64/128/256-pixel single-cell logo-slot choice, then apply only the selected layout to both Excel exporters and update the focused export tests.
-2. Reopen and visually verify representative student and inventory workbooks before any further version bump or release.
+1. Commit the verified `1.0.9` release source, create annotated tag `v1.0.9` on that exact commit, then push `main` and the tag without moving any prior tag.
+2. Confirm the main CI and signed Windows release workflows were dispatched; per user instruction, continuous workflow monitoring is not required.
 3. Preserve the offline-first global dataset and restricted `student_book_sync_client` transport. Keep owner database and management credentials out of the desktop.

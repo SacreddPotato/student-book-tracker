@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Preserve the logo's `1080:1063` aspect ratio.
-- Use one unmerged 128-by-128-pixel header cell in both exports.
+- Use one unmerged 128-by-128-pixel middle-row header cell in both exports.
 - Preserve export data, localization, RTL behavior, table layout, print areas, and filenames.
 - Release as the next unused stable patch version after `v1.0.8`.
 
@@ -29,7 +29,7 @@
 
 - [ ] **Step 1: Write failing workbook tests**
 
-Assert after XLSX reopening that row 1 is 96 points, the logo column is approximately 17.57 Excel width units, the image is 128 pixels wide with proportional height and a vertically centered top-left row offset, and the old logo merges are absent.
+Assert after XLSX reopening that row 2 is 96 points while rows 1 and 3 remain 24 points, the logo column is approximately 17.57 Excel width units, the image is 128 pixels wide with proportional height and a vertically centered row-2 anchor, and the old logo merges are absent.
 
 - [ ] **Step 2: Run the focused test to verify RED**
 
@@ -39,7 +39,7 @@ Expected: FAIL because the current workbooks reserve multi-column or three-row l
 
 - [ ] **Step 3: Implement the minimal geometry change**
 
-Set row 1 to 96 points, rows 2-3 to 24 points, set the single logo column to `(128 - 5) / 7`, remove both logo merges, and anchor a 128-pixel-wide proportional drawing at the vertically centered fractional row offset.
+Set row 2 to 96 points, rows 1 and 3 to 24 points, set the single logo column to `(128 - 5) / 7`, remove both logo merges, and anchor a 128-pixel-wide proportional drawing at the vertically centered fractional offset inside row 2.
 
 - [ ] **Step 4: Verify focused and React regression suites**
 

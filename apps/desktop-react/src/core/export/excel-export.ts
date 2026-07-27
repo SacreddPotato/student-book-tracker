@@ -69,8 +69,8 @@ function addHeaderLogo(
   column: number,
 ): void {
   worksheet.getColumn(column).width = LOGO_COLUMN_WIDTH;
-  worksheet.getRow(1).height = LOGO_CELL_SIZE_PIXELS / POINTS_TO_PIXELS;
-  worksheet.getRow(2).height = HEADER_ROW_HEIGHT_POINTS;
+  worksheet.getRow(1).height = HEADER_ROW_HEIGHT_POINTS;
+  worksheet.getRow(2).height = LOGO_CELL_SIZE_PIXELS / POINTS_TO_PIXELS;
   worksheet.getRow(3).height = HEADER_ROW_HEIGHT_POINTS;
   const availableWidth = columnWidthPixels(worksheet, column);
   const availableHeight = LOGO_CELL_SIZE_PIXELS;
@@ -87,7 +87,7 @@ function addHeaderLogo(
   worksheet.addImage(imageId, {
     tl: {
       col: column - 1 + leftOffset / availableWidth,
-      row: topOffset / availableHeight,
+      row: 1 + topOffset / availableHeight,
     },
     ext: { width, height },
     editAs: "oneCell",
@@ -176,7 +176,7 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   });
   yearHeader.font = { bold: true, size: 12 };
   yearHeader.alignment = centeredAlignment;
-  worksheet.getCell(1, logoColumn).border = {
+  worksheet.getCell(2, logoColumn).border = {
     top: { style: "thin" }, left: { style: "thin" },
     bottom: { style: "thin" }, right: { style: "thin" },
   };
@@ -327,7 +327,7 @@ export function buildBooksWorkbook(input: BooksWorkbookInput): ExcelJS.Workbook 
   });
   worksheet.getCell("B2").font = { bold: true, size: 12 };
   worksheet.getCell("B2").alignment = centeredAlignment;
-  worksheet.getCell("E1").border = tableBorder;
+  worksheet.getCell("E2").border = tableBorder;
   addHeaderLogo(workbook, worksheet, 5);
 
   const headerRow = 5;

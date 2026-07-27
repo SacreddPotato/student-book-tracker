@@ -56,13 +56,13 @@ async function expectSingleCellHeaderLogo(
   const range = images[0].range as ExcelJS.ImageRange & {
     ext?: { width: number; height: number };
   };
-  expect(worksheet.getRow(1).height).toBe(96);
-  expect(worksheet.getRow(2).height).toBe(24);
+  expect(worksheet.getRow(1).height).toBe(24);
+  expect(worksheet.getRow(2).height).toBe(96);
   expect(worksheet.getRow(3).height).toBe(24);
   expect(worksheet.getColumn(column).width).toBeCloseTo((128 - 5) / 7, 5);
   expect(range.tl.col).toBeCloseTo(column - 1, 5);
   const expectedHeight = 128 / (1080 / 1063);
-  expect(range.tl.row).toBeCloseTo((128 - expectedHeight) / 2 / 128, 3);
+  expect(range.tl.row).toBeCloseTo(1 + (128 - expectedHeight) / 2 / 128, 3);
   expect(range.ext).toBeDefined();
   expect(range.ext!.width).toBeCloseTo(128, 5);
   expect(range.ext!.height).toBeCloseTo(expectedHeight, 3);
@@ -70,7 +70,7 @@ async function expectSingleCellHeaderLogo(
 }
 
 describe("student Excel export", () => {
-  it("embeds a vertically centered 128px JPEG logo in one final-column cell", async () => {
+  it("centers a 128px JPEG logo in the middle header row's final cell", async () => {
     const workbook = buildStudentsWorkbook({
       students,
       books,
@@ -411,7 +411,7 @@ const bookTranslate = (key: string, values?: Record<string, string | number>) =>
 }[key] ?? key);
 
 describe("book inventory Excel export", () => {
-  it("embeds a vertically centered 128px JPEG logo in cell E1", async () => {
+  it("centers a 128px JPEG logo in middle header cell E2", async () => {
     const workbook = buildBooksWorkbook({
       books: [englishPrimary1],
       logs: [],

@@ -2,13 +2,13 @@
 
 ## Scope
 
-Replace the logo reservation in both React Excel exports with one unmerged header cell. The selected cell is 128 by 128 pixels, and the JPEG logo is centered vertically inside it while preserving its `1080:1063` aspect ratio.
+Replace the logo reservation in both React Excel exports with one unmerged middle-row header cell. The selected cell is 128 by 128 pixels, and the JPEG logo is centered vertically inside it while preserving its `1080:1063` aspect ratio. Equal-height rows above and below place the logo's center on the full three-row header's vertical centerline.
 
 ## Layout
 
-- Student export: use the final printable column's first cell for the logo; remove the former multi-column, three-row logo merge and extend the centered grade/year block through the column immediately before the logo.
-- Book-inventory export: use `E1` only; remove the `E1:E3` merge.
-- Set the logo column to 128 pixels and row 1 to 128 pixels. Keep rows 2 and 3 at the existing 24-point header height.
+- Student export: use the final printable column's row-2 cell for the logo; remove the former multi-column, three-row logo merge and extend the centered grade/year block through the column immediately before the logo.
+- Book-inventory export: use `E2` only; remove the `E1:E3` merge.
+- Set the logo column to 128 pixels and row 2 to 128 pixels. Keep rows 1 and 3 at the existing 24-point header height.
 - Draw a thin border around only the logo cell. Keep the logo within that cell, centered vertically, with a 128-pixel width and proportional height.
 
 ## Compatibility
