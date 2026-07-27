@@ -13,4 +13,4 @@ playwright-report/
 *.local
 .vscode
 .worktrees/
-docs/
+outputs/
