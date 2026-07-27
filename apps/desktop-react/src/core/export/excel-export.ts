@@ -49,9 +49,11 @@ export type BookReceiptExportRow = {
 
 const LOGO_SOURCE_WIDTH = 1080;
 const LOGO_SOURCE_HEIGHT = 1063;
+const LOGO_CELL_SIZE_PIXELS = 128;
 const HEADER_ROW_HEIGHT_POINTS = 24;
 const POINTS_TO_PIXELS = 4 / 3;
 const DEFAULT_COLUMN_WIDTH = 8.43;
+const LOGO_COLUMN_WIDTH = (LOGO_CELL_SIZE_PIXELS - 5) / 7;
 
 function formatAcademicYear(academicYear: string, language: ExportLanguage): string {
   return language === "ar" ? `\u200E${academicYear}\u200E` : academicYear;
@@ -61,41 +63,19 @@ function columnWidthPixels(worksheet: ExcelJS.Worksheet, column: number): number
   return Math.floor((worksheet.getColumn(column).width ?? DEFAULT_COLUMN_WIDTH) * 7 + 5);
 }
 
-function columnAnchorForOffset(
-  worksheet: ExcelJS.Worksheet,
-  startColumn: number,
-  endColumn: number,
-  offsetPixels: number,
-): number {
-  let remainingPixels = offsetPixels;
-  for (let column = startColumn; column <= endColumn; column += 1) {
-    const widthPixels = columnWidthPixels(worksheet, column);
-    if (remainingPixels <= widthPixels) {
-      return column - 1 + remainingPixels / widthPixels;
-    }
-    remainingPixels -= widthPixels;
-  }
-  return endColumn - 0.01;
-}
-
 function addHeaderLogo(
   workbook: ExcelJS.Workbook,
   worksheet: ExcelJS.Worksheet,
-  startColumn: number,
-  endColumn: number,
+  column: number,
 ): void {
-  for (let row = 1; row <= 3; row += 1) {
-    worksheet.getRow(row).height = HEADER_ROW_HEIGHT_POINTS;
-  }
-  const availableWidth = Array.from(
-    { length: endColumn - startColumn + 1 },
-    (_, index) => columnWidthPixels(worksheet, startColumn + index),
-  ).reduce((total, width) => total + width, 0);
-  const availableHeight = HEADER_ROW_HEIGHT_POINTS * POINTS_TO_PIXELS * 3;
+  worksheet.getColumn(column).width = LOGO_COLUMN_WIDTH;
+  worksheet.getRow(1).height = LOGO_CELL_SIZE_PIXELS / POINTS_TO_PIXELS;
+  worksheet.getRow(2).height = HEADER_ROW_HEIGHT_POINTS;
+  worksheet.getRow(3).height = HEADER_ROW_HEIGHT_POINTS;
+  const availableWidth = columnWidthPixels(worksheet, column);
+  const availableHeight = LOGO_CELL_SIZE_PIXELS;
   const logoRatio = LOGO_SOURCE_WIDTH / LOGO_SOURCE_HEIGHT;
-  const maxWidth = availableWidth - 24;
-  const maxHeight = availableHeight - 12;
-  const width = Math.min(maxWidth, maxHeight * logoRatio);
+  const width = Math.min(availableWidth, availableHeight * logoRatio);
   const height = width / logoRatio;
   const leftOffset = (availableWidth - width) / 2;
   const topOffset = (availableHeight - height) / 2;
@@ -106,8 +86,8 @@ function addHeaderLogo(
 
   worksheet.addImage(imageId, {
     tl: {
-      col: columnAnchorForOffset(worksheet, startColumn, endColumn, leftOffset),
-      row: topOffset / (HEADER_ROW_HEIGHT_POINTS * POINTS_TO_PIXELS),
+      col: column - 1 + leftOffset / availableWidth,
+      row: topOffset / availableHeight,
     },
     ext: { width, height },
     editAs: "oneCell",
@@ -131,8 +111,8 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   const headerColumnCount = Math.max(dataColumnCount, 8);
   const sideColumnCount = Math.min(3, Math.floor(headerColumnCount / 3));
   const centerStartColumn = sideColumnCount + 1;
-  const centerEndColumn = headerColumnCount - sideColumnCount;
-  const logoStartColumn = centerEndColumn + 1;
+  const logoColumn = headerColumnCount;
+  const centerEndColumn = logoColumn - 1;
   const readingOrder = input.language === "ar" ? "rtl" : "ltr";
   const textAlignment: Partial<ExcelJS.Alignment> = {
     horizontal: input.language === "ar" ? "right" : "left",
@@ -177,7 +157,6 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   }
   worksheet.mergeCells(1, centerStartColumn, 1, centerEndColumn);
   worksheet.mergeCells(2, centerStartColumn, 2, centerEndColumn);
-  worksheet.mergeCells(1, logoStartColumn, 3, headerColumnCount);
 
   worksheet.getCell(1, 1).value = t("export.alGharbia");
   worksheet.getCell(2, 1).value = t("export.eastTantaAdministrativeLearning");
@@ -197,11 +176,11 @@ export function buildStudentsWorkbook(input: StudentsWorkbookInput): ExcelJS.Wor
   });
   yearHeader.font = { bold: true, size: 12 };
   yearHeader.alignment = centeredAlignment;
-  worksheet.getCell(1, logoStartColumn).border = {
+  worksheet.getCell(1, logoColumn).border = {
     top: { style: "thin" }, left: { style: "thin" },
     bottom: { style: "thin" }, right: { style: "thin" },
   };
-  addHeaderLogo(workbook, worksheet, logoStartColumn, headerColumnCount);
+  addHeaderLogo(workbook, worksheet, logoColumn);
 
   const headerRow = 5;
   const nameHeader = tableCell(headerRow, 1);
@@ -336,7 +315,6 @@ export function buildBooksWorkbook(input: BooksWorkbookInput): ExcelJS.Workbook 
   ];
   worksheet.mergeCells("B1:D1");
   worksheet.mergeCells("B2:D2");
-  worksheet.mergeCells("E1:E3");
   worksheet.getCell("A1").value = t("export.alGharbia");
   worksheet.getCell("A2").value = t("export.eastTantaAdministrativeLearning");
   worksheet.getCell("A3").value = t("export.alRafiiSchools");
@@ -350,7 +328,7 @@ export function buildBooksWorkbook(input: BooksWorkbookInput): ExcelJS.Workbook 
   worksheet.getCell("B2").font = { bold: true, size: 12 };
   worksheet.getCell("B2").alignment = centeredAlignment;
   worksheet.getCell("E1").border = tableBorder;
-  addHeaderLogo(workbook, worksheet, 5, 5);
+  addHeaderLogo(workbook, worksheet, 5);
 
   const headerRow = 5;
   const headings = ["book", "grade", "quantity", "receiptDate", "receiptId"];

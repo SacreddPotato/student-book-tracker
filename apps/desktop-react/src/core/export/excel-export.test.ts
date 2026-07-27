@@ -36,11 +36,10 @@ function expectThinBorder(cell: ExcelJS.Cell) {
   });
 }
 
-async function expectEmbeddedHeaderLogo(
+async function expectSingleCellHeaderLogo(
   workbook: ExcelJS.Workbook,
   sheetName: string,
-  startColumn: number,
-  endColumn: number,
+  column: number,
 ) {
   const data = await workbook.xlsx.writeBuffer();
   const restored = new ExcelJS.Workbook();
@@ -57,16 +56,21 @@ async function expectEmbeddedHeaderLogo(
   const range = images[0].range as ExcelJS.ImageRange & {
     ext?: { width: number; height: number };
   };
-  expect(range.tl.col).toBeGreaterThanOrEqual(startColumn - 1);
-  expect(range.tl.col).toBeLessThan(endColumn);
-  expect(range.tl.row).toBeGreaterThanOrEqual(0);
-  expect(range.tl.row).toBeLessThan(3);
+  expect(worksheet.getRow(1).height).toBe(96);
+  expect(worksheet.getRow(2).height).toBe(24);
+  expect(worksheet.getRow(3).height).toBe(24);
+  expect(worksheet.getColumn(column).width).toBeCloseTo((128 - 5) / 7, 5);
+  expect(range.tl.col).toBeCloseTo(column - 1, 5);
+  const expectedHeight = 128 / (1080 / 1063);
+  expect(range.tl.row).toBeCloseTo((128 - expectedHeight) / 2 / 128, 3);
   expect(range.ext).toBeDefined();
+  expect(range.ext!.width).toBeCloseTo(128, 5);
+  expect(range.ext!.height).toBeCloseTo(expectedHeight, 3);
   expect(range.ext!.width / range.ext!.height).toBeCloseTo(1080 / 1063, 2);
 }
 
 describe("student Excel export", () => {
-  it("embeds a proportional JPEG logo in the reserved header area", async () => {
+  it("embeds a vertically centered 128px JPEG logo in one final-column cell", async () => {
     const workbook = buildStudentsWorkbook({
       students,
       books,
@@ -77,7 +81,8 @@ describe("student Excel export", () => {
       translate: (key) => key,
     });
 
-    await expectEmbeddedHeaderLogo(workbook, "Students", 7, 8);
+    await expectSingleCellHeaderLogo(workbook, "Students", 8);
+    expect(workbook.getWorksheet("Students")!.model.merges).not.toContain("G1:H3");
   });
 
   it("centers the full Arabic grade and selected academic year in a two-line header", () => {
@@ -116,7 +121,7 @@ describe("student Excel export", () => {
     });
     const worksheet = workbook.getWorksheet("Students")!;
 
-    expect(worksheet.model.merges).toEqual(expect.arrayContaining(["C1:F1", "C2:F2"]));
+    expect(worksheet.model.merges).toEqual(expect.arrayContaining(["C1:G1", "C2:G2"]));
     expect(worksheet.getCell("C1").value).toBe("الصف الثاني الإعدادي");
     expect(worksheet.getCell("C2").value).toBe("للعام الدراسي: \u200E2025-2026\u200E");
     expect(worksheet.getCell("C1").font).toMatchObject({ bold: true, size: 14 });
@@ -248,7 +253,7 @@ describe("student Excel export", () => {
     expect(worksheet.pageSetup.printArea).toBe("A1:J6");
   });
 
-  it("keeps a wide subject header symmetric and configures one-page-width printing", () => {
+  it("uses one final-column logo cell and configures one-page-width printing", () => {
     const manyBooks = Array.from({ length: 8 }, (_, index): BookRow => ({
       ...books[0],
       id: `book-${index + 1}`,
@@ -275,8 +280,9 @@ describe("student Excel export", () => {
     const worksheet = workbook.getWorksheet("Students")!;
 
     expect(worksheet.model.merges).toEqual(expect.arrayContaining([
-      "A1:C1", "A2:C2", "A3:C3", "D1:G1", "D2:G2", "H1:J3",
+      "A1:C1", "A2:C2", "A3:C3", "D1:I1", "D2:I2",
     ]));
+    expect(worksheet.model.merges).not.toContain("H1:J3");
     expect(worksheet.pageSetup).toMatchObject({
       orientation: "landscape",
       fitToPage: true,
@@ -405,7 +411,7 @@ const bookTranslate = (key: string, values?: Record<string, string | number>) =>
 }[key] ?? key);
 
 describe("book inventory Excel export", () => {
-  it("embeds a proportional JPEG logo in the reserved header area", async () => {
+  it("embeds a vertically centered 128px JPEG logo in cell E1", async () => {
     const workbook = buildBooksWorkbook({
       books: [englishPrimary1],
       logs: [],
@@ -415,7 +421,8 @@ describe("book inventory Excel export", () => {
       translate: bookTranslate,
     });
 
-    await expectEmbeddedHeaderLogo(workbook, "Book Inventory", 5, 5);
+    await expectSingleCellHeaderLogo(workbook, "Book Inventory", 5);
+    expect(workbook.getWorksheet("Book Inventory")!.model.merges).not.toContain("E1:E3");
   });
 
   it("builds one chronological receipt table with exact grades and term-suffixed books", async () => {
